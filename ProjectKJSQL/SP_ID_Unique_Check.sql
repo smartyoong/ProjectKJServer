@@ -1,0 +1,22 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE SP_ID_Unique_Check
+    @ID VARCHAR(50)
+AS
+BEGIN
+	/*ID 중복 검사*/
+    DECLARE @ErrorCode INT;
+    SET @ErrorCode = (SELECT COUNT(*) FROM TBL_ACCOUNT WHERE ID = @ID);
+	IF @ErrorCode > 0
+	BEGIN
+		RETURN -1;
+	END
+    RETURN 0;
+END
+GO
+
+
