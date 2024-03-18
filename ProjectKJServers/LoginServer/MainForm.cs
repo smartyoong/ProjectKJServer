@@ -1,8 +1,8 @@
 namespace LoginServer
 {
-    public partial class Form1 : Form
+    public partial class LoginServer : Form
     {
-        public Form1()
+        public LoginServer()
         {
             InitializeComponent();
         }
