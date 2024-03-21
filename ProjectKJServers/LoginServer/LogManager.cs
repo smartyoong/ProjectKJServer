@@ -46,6 +46,7 @@ namespace LoginServer
                 }
                 else
                 {
+                    // 생성자에서 에러가 날 경우 그냥 종료가 낫다
                     MessageBox.Show("로그 디렉토리를 생성하지 못했습니다. 프로그램을 종료합니다.");
                     Environment.Exit(0);
                 }
