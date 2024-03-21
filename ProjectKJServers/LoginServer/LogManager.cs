@@ -100,6 +100,7 @@ namespace LoginServer
             if (Disposing)
             {
                 LogStringBuilder.Clear();
+                LogEvent = null;
             }
             LogFile.Dispose();
             LogSemaphoreSlim.Dispose();
