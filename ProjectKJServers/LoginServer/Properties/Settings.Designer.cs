@@ -25,7 +25,7 @@ namespace LoginServer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\\Log")]
+        [global::System.Configuration.DefaultSettingValueAttribute("\\LoginServerLog")]
         public string LogDirectory {
             get {
                 return ((string)(this["LogDirectory"]));

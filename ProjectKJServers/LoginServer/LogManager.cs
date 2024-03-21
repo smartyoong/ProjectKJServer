@@ -13,47 +13,72 @@ namespace LoginServer
     internal class LogManager : IDisposable
     {
         private bool IsAlreadyDisposed = false;
-        private readonly string LogDirectory = Properties.Settings.Default.LogDirectory;
+        private readonly string LogFilePath = Properties.Settings.Default.LogDirectory;
         private readonly StreamWriter LogFile;
         private readonly Channel<string> LogChannel = Channel.CreateUnbounded<string>();
         private readonly SemaphoreSlim LogSemaphoreSlim = new SemaphoreSlim(1, 1);
         private readonly CancellationTokenSource LogCancellationTokenSource = new CancellationTokenSource();
-        public LogManager()
+        private readonly StringBuilder LogStringBuilder = new StringBuilder();
+
+        private static readonly Lazy<LogManager> Lazy = new Lazy<LogManager>(() => new LogManager());
+        // 지연 생성 및 싱글톤 패턴 구현
+        public static LogManager GetSingletone { get { return Lazy.Value; } }
+
+        // ListBox 등 UI에 표현하기 위해 이벤트 사용
+        public event Action<string>? LogEvent;
+        private LogManager()
         {
-            if(string.IsNullOrEmpty(LogDirectory))
+            // 디렉토리를 설정한다 여기서는 그냥 stringbuilder 사용 안함
+            if(string.IsNullOrEmpty(LogFilePath))
             {
-                LogDirectory = Environment.CurrentDirectory;
+                LogFilePath = Environment.CurrentDirectory + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".log";
             }
-            string LogFileName = LogDirectory + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".log";
-            LogFile = new StreamWriter(LogFileName, true);
-        }
-        public LogManager(string LogDirectory)
-        {
-            this.LogDirectory = LogDirectory;
-            Properties.Settings.Default.LogDirectory = LogDirectory;
-            Properties.Settings.Default.Save();
-            string LogFileName = LogDirectory + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".log";
-            LogFile = new StreamWriter(LogFileName, true);
+            else
+            {
+                LogFilePath = LogFilePath + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".log";
+            }
+            string? DirectoryPath = Path.GetDirectoryName(LogFilePath);
+            if (!Directory.Exists(DirectoryPath))
+            {
+                if(DirectoryPath != null)
+                {
+                    Directory.CreateDirectory(DirectoryPath);
+                }
+                else
+                {
+                    MessageBox.Show("로그 디렉토리를 생성하지 못했습니다. 프로그램을 종료합니다.");
+                    Environment.Exit(0);
+                }
+            }
+            if (!File.Exists(LogFilePath))
+            {
+                File.Create(LogFilePath).Close();
+            }
+            LogFile = new StreamWriter(LogFilePath, true);
+            Start();
         }
         ~LogManager()
         {
             Dispose(false);
         }
+        // Dispose 패턴 구현
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-        public void Start()
+        // Channel을 사용하여 로그를 비동기로 처리한다.
+        private void Start()
         {
             Task.Run(async () =>
             {
                 while (!LogCancellationTokenSource.IsCancellationRequested)
                 {
-                    await PopLogAsync();
+                    await PopLogAsync().ConfigureAwait(false);
                 }
             }, LogCancellationTokenSource.Token);
         }
+        // 관련 리소스를 정리한다 반드시 불려야한다
         public void Close()
         {
             LogChannel.Writer.Complete();
@@ -66,64 +91,105 @@ namespace LoginServer
                 return;
             if (Disposing)
             {
-                
+                LogStringBuilder.Clear();
             }
             LogFile.Dispose();
             LogSemaphoreSlim.Dispose();
             LogCancellationTokenSource.Dispose();
             IsAlreadyDisposed = true;
         }
-
+        // 현재 파일이 없다면 생성하고 Channel을 통해 로그를 쓴다.
         public async void WriteLog(string Log)
         {
-            if(Directory.Exists(LogDirectory) == false)
-            {
-                Directory.CreateDirectory(LogDirectory);
-            }
             await PushLogAsync(Log);
         }
+        // 에러 로그를 쓴다. StringBuilder를 사용하여 여러줄을 쓴다.
         public void WriteErrorLog(Exception ex)
         {
-            WriteLog("[EXCEPTION] : " + ex.Message);
-            WriteLog("[EXCEPTION] Source :" + ex.Source);
+            LogStringBuilder.Append("[EXCEPTION] : ");
+            LogStringBuilder.Append(ex.Message);
+            WriteLog(LogStringBuilder.ToString());
+            LogStringBuilder.Clear();
             if(ex.StackTrace != null)
             {
                 foreach (string StackTrace in ex.StackTrace.Split('\n'))
                 {
-                    WriteLog("[EXCEPTION] StackTrace :" + StackTrace);
+                    LogStringBuilder.Append("[EXCEPTION] StackTrace :");
+                    LogStringBuilder.Append(StackTrace);
+                    WriteLog(LogStringBuilder.ToString());
+                    LogStringBuilder.Clear();
                 }
             }
-            WriteLog("[EXCEPTION] TargetSite :" + ex.TargetSite);
-            WriteLog("[EXCEPTION] Data :" + ex.Data);
+            if(ex.HelpLink != null)
+            {
+                LogStringBuilder.Append("[EXCEPTION] HelpLink :");
+                LogStringBuilder.Append(ex.HelpLink);
+                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Clear();
+            }
+            if(ex.Source != null)
+            {
+                LogStringBuilder.Append("[EXCEPTION] Source :");
+                LogStringBuilder.Append(ex.Source);
+                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Clear();
+            }
+            if(ex.TargetSite != null)
+            {
+                LogStringBuilder.Append("[EXCEPTION] TargetSite :");
+                LogStringBuilder.Append(ex.TargetSite);
+                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Clear();
+            }
+            if(ex.Data != null)
+            {
+                LogStringBuilder.Append("[EXCEPTION] Data :");
+                LogStringBuilder.Append(ex.Data);
+                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Clear();
+            }
             if(ex.InnerException != null)
             {
-                WriteLog("[EXCEPTION] InnerException :" + ex.InnerException);
+                LogStringBuilder.Append("[EXCEPTION] InnerException :");
+                LogStringBuilder.Append(ex.InnerException);
+                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Clear();
                 if(ex.InnerException.StackTrace != null)
                 {
                     foreach (string InnerStackTrace in ex.InnerException.StackTrace.Split('\n'))
                     {
-                        WriteLog("[EXCEPTION] InnerStackTrace :" + InnerStackTrace);
+                        LogStringBuilder.Append("[EXCEPTION] InnerStackTrace :");
+                        LogStringBuilder.Append(InnerStackTrace);
+                        WriteLog(LogStringBuilder.ToString());
+                        LogStringBuilder.Clear();
                     }
                 }
             }
         }
+        // Channel에 로그를 넣는다
         private async Task PushLogAsync(string Log)
         {
-            await LogChannel.Writer.WriteAsync(Log);
+            await LogChannel.Writer.WriteAsync(Log).ConfigureAwait(false);
         }
-        private async Task<string> PopLogAsync()
+        // Channel에서 로그를 빼서 파일에 쓴다.
+        private async Task PopLogAsync()
         {
-            string Log = await LogChannel.Reader.ReadAsync(LogCancellationTokenSource.Token);
-            await LogSemaphoreSlim.WaitAsync();
+            string Log = await LogChannel.Reader.ReadAsync(LogCancellationTokenSource.Token).ConfigureAwait(false);
+            await LogSemaphoreSlim.WaitAsync().ConfigureAwait(false);
             try
             {
-                LogFile.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + Log);
+                LogStringBuilder.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                LogStringBuilder.Append(" : ");
+                LogStringBuilder.Append(Log);
+                LogFile.WriteLine(LogStringBuilder.ToString());
+                LogEvent?.Invoke(LogStringBuilder.ToString());
+                LogFile.Flush();
+                LogStringBuilder.Clear();
             }
             finally
             {
                 LogSemaphoreSlim.Release();
             }
-            return Log;
         }
     }
 }

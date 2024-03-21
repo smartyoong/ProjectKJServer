@@ -33,14 +33,17 @@
             ServerStartButton = new Button();
             DBServerStatusTextBox = new TextBox();
             GameServerStatusTextBox = new TextBox();
+            ServerStatusTextBox = new TextBox();
             SuspendLayout();
             // 
             // LogListBox
             // 
             LogListBox.FormattingEnabled = true;
+            LogListBox.HorizontalScrollbar = true;
             LogListBox.ItemHeight = 15;
             LogListBox.Location = new Point(12, 12);
             LogListBox.Name = "LogListBox";
+            LogListBox.ScrollAlwaysVisible = true;
             LogListBox.SelectionMode = SelectionMode.None;
             LogListBox.Size = new Size(607, 409);
             LogListBox.TabIndex = 0;
@@ -66,6 +69,7 @@
             ServerStartButton.TabIndex = 2;
             ServerStartButton.Text = "서버시작";
             ServerStartButton.UseVisualStyleBackColor = true;
+            ServerStartButton.Click += ServerStartButton_Click;
             // 
             // DBServerStatusTextBox
             // 
@@ -89,11 +93,23 @@
             GameServerStatusTextBox.Text = "GameServer";
             GameServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
+            // ServerStatusTextBox
+            // 
+            ServerStatusTextBox.Font = new Font("맑은 고딕", 15.75F);
+            ServerStatusTextBox.Location = new Point(625, 94);
+            ServerStatusTextBox.Name = "ServerStatusTextBox";
+            ServerStatusTextBox.ReadOnly = true;
+            ServerStatusTextBox.Size = new Size(163, 35);
+            ServerStatusTextBox.TabIndex = 5;
+            ServerStatusTextBox.Text = "Status";
+            ServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
             // LoginServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(ServerStatusTextBox);
             Controls.Add(GameServerStatusTextBox);
             Controls.Add(DBServerStatusTextBox);
             Controls.Add(ServerStartButton);
@@ -112,5 +128,6 @@
         private Button ServerStartButton;
         private TextBox DBServerStatusTextBox;
         private TextBox GameServerStatusTextBox;
+        private TextBox ServerStatusTextBox;
     }
 }

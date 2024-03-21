@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="LogDirectory" Type="System.String" Scope="User">
-      <Value Profile="(Default)">\Log</Value>
+      <Value Profile="(Default)">\LoginServerLog</Value>
     </Setting>
   </Settings>
 </SettingsFile>
