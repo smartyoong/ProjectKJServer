@@ -20,8 +20,8 @@ namespace LoginServer
         private readonly CancellationTokenSource LogCancellationTokenSource = new CancellationTokenSource();
         private readonly StringBuilder LogStringBuilder = new StringBuilder();
 
-        private static readonly Lazy<LogManager> Lazy = new Lazy<LogManager>(() => new LogManager());
         // 지연 생성 및 싱글톤 패턴 구현
+        private static readonly Lazy<LogManager> Lazy = new Lazy<LogManager>(() => new LogManager());
         public static LogManager GetSingletone { get { return Lazy.Value; } }
 
         // ListBox 등 UI에 표현하기 위해 이벤트 사용
@@ -77,7 +77,14 @@ namespace LoginServer
                 {
                     await PopLogAsync().ConfigureAwait(false);
                 }
-            }, LogCancellationTokenSource.Token);
+            }, LogCancellationTokenSource.Token).ContinueWith(LogTask =>
+            {
+                if (LogTask.IsFaulted)
+                {
+                    // 로깅 클래스에서 에러가 날 경우 로깅이 불가능하므로 메세지박스로 처리한다
+                    MessageBox.Show(LogTask.Exception?.Message);
+                }
+            });
         }
         // 관련 리소스를 정리한다 반드시 불려야한다
         public void Close()
