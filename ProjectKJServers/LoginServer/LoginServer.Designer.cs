@@ -34,6 +34,8 @@
             DBServerStatusTextBox = new TextBox();
             GameServerStatusTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
+            CurrentUserCountTextBox = new TextBox();
+            UserCountLabel = new Label();
             SuspendLayout();
             // 
             // LogListBox
@@ -104,11 +106,33 @@
             ServerStatusTextBox.Text = "Status";
             ServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
+            // CurrentUserCountTextBox
+            // 
+            CurrentUserCountTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            CurrentUserCountTextBox.Location = new Point(693, 135);
+            CurrentUserCountTextBox.Name = "CurrentUserCountTextBox";
+            CurrentUserCountTextBox.ReadOnly = true;
+            CurrentUserCountTextBox.Size = new Size(95, 21);
+            CurrentUserCountTextBox.TabIndex = 6;
+            CurrentUserCountTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // UserCountLabel
+            // 
+            UserCountLabel.AutoSize = true;
+            UserCountLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            UserCountLabel.Location = new Point(625, 138);
+            UserCountLabel.Name = "UserCountLabel";
+            UserCountLabel.Size = new Size(61, 13);
+            UserCountLabel.TabIndex = 7;
+            UserCountLabel.Text = "동접자 수 :";
+            // 
             // LoginServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(UserCountLabel);
+            Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(GameServerStatusTextBox);
             Controls.Add(DBServerStatusTextBox);
@@ -129,5 +153,7 @@
         private TextBox DBServerStatusTextBox;
         private TextBox GameServerStatusTextBox;
         private TextBox ServerStatusTextBox;
+        private TextBox CurrentUserCountTextBox;
+        private Label UserCountLabel;
     }
 }

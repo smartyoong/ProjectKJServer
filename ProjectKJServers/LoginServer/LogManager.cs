@@ -26,6 +26,7 @@ namespace LoginServer
 
         // ListBox 등 UI에 표현하기 위해 이벤트 사용
         public event Action<string>? LogEvent;
+            /// 생성자에서 로그 파일을 생성하고 Channel을 통해 로그를 쓴다. 
         private LogManager()
         {
             // 디렉토리를 설정한다 여기서는 그냥 stringbuilder 사용 안함
@@ -191,14 +192,14 @@ namespace LoginServer
                 LogStringBuilder.Append(" : ");
                 LogStringBuilder.Append(Log);
                 LogFile.WriteLine(LogStringBuilder.ToString());
-                LogEvent?.Invoke(LogStringBuilder.ToString());
-                LogFile.Flush();
-                LogStringBuilder.Clear();
             }
             finally
             {
                 LogSemaphoreSlim.Release();
             }
+            LogEvent?.Invoke(LogStringBuilder.ToString());
+            LogFile.Flush();
+            LogStringBuilder.Clear();
         }
     }
 }
