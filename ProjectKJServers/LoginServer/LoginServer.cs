@@ -1,21 +1,21 @@
-using System.Windows.Forms;
+ï»¿using System.Windows.Forms;
 
 namespace LoginServer
 {
     /// <summary>
-    /// LoginServer Å¬·¡½º ÀÔ´Ï´Ù.
-    /// MainForm¿ªÇÒÀ» ÇÏ¸ç, UI ¹× »ç¿ëÀÚ¿ÍÀÇ »óÈ£ÀÛ¿ëÀ» ´ã´çÇÕ´Ï´Ù.
+    /// LoginServer í´ë˜ìŠ¤ ì…ë‹ˆë‹¤.
+    /// MainFormì—­í• ì„ í•˜ë©°, UI ë° ì‚¬ìš©ìì™€ì˜ ìƒí˜¸ì‘ìš©ì„ ë‹´ë‹¹í•©ë‹ˆë‹¤.
     /// </summary>
     public partial class LoginServer : Form
     {
         /// <summary>
-        /// LoginServer »ı¼ºÀÚÀÔ´Ï´Ù.
-        /// ¸ğµç LoginServerÀÇ Å¬·¡½ºÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ÁøÇàÇÕ´Ï´Ù.
-        /// LogManager Å¬·¡½ºÀÇ ³»ºÎ »ı¼º ÀÛ¾÷À» ÁøÇàÇÕ´Ï´Ù.
-        /// LogManager Å¬·¡½ºÀÇ LogEvent ÀÌº¥Æ®¸¦ ±¸µ¶ÇÕ´Ï´Ù.
-        /// LogManager Å¬·¡½º »ı¼ºÁß ¿¡·¯°¡ ¹ß»ıÇÏ¸é ÇÁ·Î±×·¥ÀÌ Á¾·áµË´Ï´Ù.
+        /// LoginServer ìƒì„±ìì…ë‹ˆë‹¤.
+        /// ëª¨ë“  LoginServerì˜ í´ë˜ìŠ¤ì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ì§„í–‰í•©ë‹ˆë‹¤.
+        /// LogManager í´ë˜ìŠ¤ì˜ ë‚´ë¶€ ìƒì„± ì‘ì—…ì„ ì§„í–‰í•©ë‹ˆë‹¤.
+        /// LogManager í´ë˜ìŠ¤ì˜ LogEvent ì´ë²¤íŠ¸ë¥¼ êµ¬ë…í•©ë‹ˆë‹¤.
+        /// LogManager í´ë˜ìŠ¤ ìƒì„±ì¤‘ ì—ëŸ¬ê°€ ë°œìƒí•˜ë©´ í”„ë¡œê·¸ë¨ì´ ì¢…ë£Œë©ë‹ˆë‹¤.
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">LogManager »ı¼º½Ã µğ·ºÅä¸® »ı¼º¿¡ ½ÇÆĞÇÏ¸é ÇÁ·Î±×·¥ÀÌ Á¾·áµË´Ï´Ù.</exception>
+        /// <exception cref="System.InvalidOperationException">LogManager ìƒì„±ì‹œ ë””ë ‰í† ë¦¬ ìƒì„±ì— ì‹¤íŒ¨í•˜ë©´ í”„ë¡œê·¸ë¨ì´ ì¢…ë£Œë©ë‹ˆë‹¤.</exception>
         /// <see cref="LogManager()"/>
         public LoginServer()
         {
@@ -32,7 +32,7 @@ namespace LoginServer
 
         private void ServerStartButton_Click(object sender, EventArgs e)
         {
-            LogManager.GetSingletone.WriteLog("¼­¹ö ½ÃÀÛ");
+            LogManager.GetSingletone.WriteLog("ì„œë²„ ì‹œì‘");
         }
     }
 }

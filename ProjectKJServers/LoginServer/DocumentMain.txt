@@ -1,7 +1,0 @@
-﻿/*! @mainpage ProjectKJ LoginServer Guide
-* ProjectKJ LoginServer 관련 문서입니다.\n
-* 왼쪽의 목차를 보고 관심있는 메서드 설명을 참조해주세요.\n
-* @section ProjectKJ Diagram ProjectKJ 다이어그램
-* ProjectKJ의 다이어그램입니다.
-* @image html ProjectKJDiagram.jpg "ProjectKJ Diagram"
-*/
