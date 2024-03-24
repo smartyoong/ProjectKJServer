@@ -30,9 +30,14 @@ namespace LoginServer
             };
         }
 
-        private void ServerStartButton_Click(object sender, EventArgs e)
+        private async void ServerStartButton_Click(object sender, EventArgs e)
         {
-            LogManager.GetSingletone.WriteLog("서버 시작");
+            await LogManager.GetSingletone.WriteLog("서버 시작");
+        }
+
+        private void ServerStopButton_Click(object sender, EventArgs e)
+        {
+            LogManager.GetSingletone.Close();
         }
     }
 }

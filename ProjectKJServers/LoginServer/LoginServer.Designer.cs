@@ -60,6 +60,7 @@
             ServerStopButton.TabIndex = 1;
             ServerStopButton.Text = "서버종료";
             ServerStopButton.UseVisualStyleBackColor = true;
+            ServerStopButton.Click += ServerStopButton_Click;
             // 
             // ServerStartButton
             // 

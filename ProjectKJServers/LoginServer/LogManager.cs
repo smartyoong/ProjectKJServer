@@ -20,9 +20,9 @@ namespace LoginServer
     {
         private bool IsAlreadyDisposed = false;
         private readonly string LogFilePath = Properties.Settings.Default.LogDirectory;
+        /// <value>StreamWriter는 내부적으로 버퍼링을 사용하기에 동기화 코드를 제거했습니다.</value>
         private readonly StreamWriter LogFile;
         private readonly Channel<string> LogChannel = Channel.CreateUnbounded<string>();
-        private readonly SemaphoreSlim LogSemaphoreSlim = new SemaphoreSlim(1, 1);
         private readonly CancellationTokenSource LogCancellationTokenSource = new CancellationTokenSource();
         private readonly StringBuilder LogStringBuilder = new StringBuilder();
 
@@ -87,6 +87,8 @@ namespace LoginServer
         /// </summary>
         public void Dispose()
         {
+            if(IsAlreadyDisposed)
+                return;
             Dispose(true);
             GC.SuppressFinalize(this);
         }
@@ -126,8 +128,10 @@ namespace LoginServer
         /// <see cref="LogManager.Dispose()"/>
         public void Close()
         {
-            LogChannel.Writer.Complete();
+            if(IsAlreadyDisposed)
+                return;
             LogCancellationTokenSource.Cancel();
+            LogChannel.Writer.Complete();
             Dispose();
         }
 
@@ -145,7 +149,6 @@ namespace LoginServer
                 LogEvent = null;
             }
             LogFile.Dispose();
-            LogSemaphoreSlim.Dispose();
             LogCancellationTokenSource.Dispose();
             IsAlreadyDisposed = true;
         }
@@ -164,22 +167,12 @@ namespace LoginServer
         /// 취소 프로토콜을 지원합니다. 취소가 요청되면 예외가 발생합니다.
         /// 또한 LogTask에서 예외가 발생하면 메시지박스로 출력합니다.
         /// </exception>
-        public void WriteLog(string Log)
+        public async Task WriteLog(string Log)
         {
-            Task LogTask = Task.Run(()=>PushLogAsync(Log),LogCancellationTokenSource.Token);
-            if(LogTask.IsFaulted)
-            {
-                if(LogTask.Exception != null)
-                {
-                    if(LogTask.Exception.InnerException != null)
-                    {
-                        if(LogTask.Exception.InnerException is not OperationCanceledException)
-                        {
-                            MessageBox.Show(LogTask.Exception.Message);
-                        }
-                    }
-                }
-            }
+            if(IsAlreadyDisposed)
+                return;
+
+            await PushLogAsync(Log).ConfigureAwait(false);
         }
 
 
@@ -199,63 +192,66 @@ namespace LoginServer
         /// 또한 LogTask에서 예외가 발생하면 메시지박스로 출력합니다.
         /// </exception>
         /// <see cref="LogManager.WriteLog(string)"/>
-        public void WriteErrorLog(Exception ex)
+        public async Task WriteErrorLog(Exception ex)
         {
-            LogStringBuilder.Append("[EXCEPTION] : ");
-            LogStringBuilder.Append(ex.Message);
-            WriteLog(LogStringBuilder.ToString());
+            if(IsAlreadyDisposed)
+                return;
+
+            LogStringBuilder.Append("[EXCEPTION] : ")
+            .Append(ex.Message);
+            await WriteLog(LogStringBuilder.ToString());
             LogStringBuilder.Clear();
             if(ex.StackTrace != null)
             {
                 foreach (string StackTrace in ex.StackTrace.Split('\n'))
                 {
-                    LogStringBuilder.Append("[EXCEPTION] StackTrace :");
-                    LogStringBuilder.Append(StackTrace);
-                    WriteLog(LogStringBuilder.ToString());
+                    LogStringBuilder.Append("[EXCEPTION] StackTrace :")
+                    .Append(StackTrace);
+                    await WriteLog(LogStringBuilder.ToString());
                     LogStringBuilder.Clear();
                 }
             }
             if(ex.HelpLink != null)
             {
-                LogStringBuilder.Append("[EXCEPTION] HelpLink :");
-                LogStringBuilder.Append(ex.HelpLink);
-                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Append("[EXCEPTION] HelpLink :")
+                .Append(ex.HelpLink);
+                await WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.Source != null)
             {
-                LogStringBuilder.Append("[EXCEPTION] Source :");
-                LogStringBuilder.Append(ex.Source);
-                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Append("[EXCEPTION] Source :")
+                .Append(ex.Source);
+                await WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.TargetSite != null)
             {
-                LogStringBuilder.Append("[EXCEPTION] TargetSite :");
-                LogStringBuilder.Append(ex.TargetSite);
-                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Append("[EXCEPTION] TargetSite :")
+                .Append(ex.TargetSite);
+                await WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.Data != null)
             {
-                LogStringBuilder.Append("[EXCEPTION] Data :");
-                LogStringBuilder.Append(ex.Data);
-                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Append("[EXCEPTION] Data :")
+                .Append(ex.Data);
+                await WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.InnerException != null)
             {
-                LogStringBuilder.Append("[EXCEPTION] InnerException :");
-                LogStringBuilder.Append(ex.InnerException);
-                WriteLog(LogStringBuilder.ToString());
+                LogStringBuilder.Append("[EXCEPTION] InnerException :")
+                .Append(ex.InnerException);
+                await WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
                 if(ex.InnerException.StackTrace != null)
                 {
                     foreach (string InnerStackTrace in ex.InnerException.StackTrace.Split('\n'))
                     {
-                        LogStringBuilder.Append("[EXCEPTION] InnerStackTrace :");
-                        LogStringBuilder.Append(InnerStackTrace);
-                        WriteLog(LogStringBuilder.ToString());
+                        LogStringBuilder.Append("[EXCEPTION] InnerStackTrace :")
+                        .Append(InnerStackTrace);
+                        await WriteLog(LogStringBuilder.ToString());
                         LogStringBuilder.Clear();
                     }
                 }
@@ -266,28 +262,45 @@ namespace LoginServer
         /// </summary>
         private async Task PushLogAsync(string Log)
         {
-            await LogChannel.Writer.WriteAsync(Log).ConfigureAwait(false);
+            try
+            {
+                await LogChannel.Writer.WriteAsync(Log, LogCancellationTokenSource.Token).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                MessageBox.Show($"PushLogAsync : {ex.Message}");
+            }
         }
         /// <summary>
         /// 비동기 큐에서 로그를 빼는 메서드입니다.
         /// </summary>
         private async Task PopLogAsync()
         {
-            string Log = await LogChannel.Reader.ReadAsync(LogCancellationTokenSource.Token).ConfigureAwait(false);
-            await LogSemaphoreSlim.WaitAsync().ConfigureAwait(false);
             try
             {
-                LogStringBuilder.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                LogStringBuilder.Append(" : ");
-                LogStringBuilder.Append(Log);
-                LogFile.WriteLine(LogStringBuilder.ToString());
+                string Log = await LogChannel.Reader.ReadAsync(LogCancellationTokenSource.Token).ConfigureAwait(false);
+                await LogFile.WriteLineAsync(LogStringBuilder.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
+                .Append(" : ")
+                .Append(Log)
+                , LogCancellationTokenSource.Token);
+                LogFile.Flush();
             }
-            finally
+            catch (AggregateException ae)
             {
-                LogSemaphoreSlim.Release();
+                ae = ae.Flatten(); // 중첩된 AggregateException을 평탄화합니다.
+                foreach (var ex in ae.InnerExceptions)
+                {
+                    if (ex is not OperationCanceledException)
+                    {
+                        MessageBox.Show($"PopLogAsync Aggregate : {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                MessageBox.Show($"PopLogAsync : {ex.Message}");
             }
             LogEvent?.Invoke(LogStringBuilder.ToString());
-            LogFile.Flush();
             LogStringBuilder.Clear();
         }
     }
