@@ -34,5 +34,41 @@ namespace LoginServer.Properties {
                 this["LogDirectory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int DBServerConnectCount {
+            get {
+                return ((int)(this["DBServerConnectCount"]));
+            }
+            set {
+                this["DBServerConnectCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("12476")]
+        public int DBServerPort {
+            get {
+                return ((int)(this["DBServerPort"]));
+            }
+            set {
+                this["DBServerPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
+        public string DBServerIPAddress {
+            get {
+                return ((string)(this["DBServerIPAddress"]));
+            }
+            set {
+                this["DBServerIPAddress"] = value;
+            }
+        }
     }
 }

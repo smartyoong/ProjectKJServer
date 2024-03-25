@@ -5,5 +5,14 @@
     <Setting Name="LogDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">\LoginServerLog</Value>
     </Setting>
+    <Setting Name="DBServerConnectCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="DBServerPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">12476</Value>
+    </Setting>
+    <Setting Name="DBServerIPAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">127.0.0.1</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

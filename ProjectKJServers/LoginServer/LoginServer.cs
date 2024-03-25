@@ -22,22 +22,48 @@ namespace LoginServer
             InitializeComponent();
             LogManager.GetSingletone.LogEvent += Log =>
             {
-                LogListBox.Invoke((Action)(() =>
+                LogListBox.Invoke((() =>
                 {
                     LogListBox.Items.Add(Log);
                     LogListBox.TopIndex = LogListBox.Items.Count - 1;
                 }));
             };
+            DBServer.GetSingletone.DBServerEvent += (bool IsConnected) =>
+            {
+                if (IsConnected)
+                    DBServerStatusTextBox.BackColor = Color.Blue;
+                else
+                    DBServerStatusTextBox.BackColor = Color.Red;
+            };
+            ServerStopButton.Enabled = false;
+            ServerStatusTextBox.BackColor = Color.Red;
+            DBServerStatusTextBox.BackColor = Color.Red;
+            GameServerStatusTextBox.BackColor = Color.Red;
+            DBServerStatusTextBox.ReadOnly = true;
+            DBServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            GameServerStatusTextBox.ReadOnly = true;
+            GameServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            ServerStatusTextBox.ReadOnly = true;
+            ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
         }
 
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
-            await LogManager.GetSingletone.WriteLog("서버 시작");
+            await LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
+            ServerStartButton.Enabled = false;
+            ServerStopButton.Enabled = true;
+            await LogManager.GetSingletone.WriteLog("DB서버와의 연결을 대기중 입니다.");
+            DBServer.GetSingletone.Start();
+            await LogManager.GetSingletone.WriteLog("DB서버와 연결되었습니다.");
         }
 
-        private void ServerStopButton_Click(object sender, EventArgs e)
+        private async void ServerStopButton_Click(object sender, EventArgs e)
         {
+            await LogManager.GetSingletone.WriteLog("서버를 종료완료, 몇 초 대기후 프로그램을 종료합니다");
+            DBServer.GetSingletone.Stop();
+            await Task.Delay(5000);
             LogManager.GetSingletone.Close();
+            Environment.Exit(0);
         }
     }
 }
