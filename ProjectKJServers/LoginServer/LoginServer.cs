@@ -45,6 +45,8 @@ namespace LoginServer
             GameServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             ServerStatusTextBox.ReadOnly = true;
             ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            CurrentUserCountTextBox.ReadOnly = true;
+            CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
         }
 
         private async void ServerStartButton_Click(object sender, EventArgs e)

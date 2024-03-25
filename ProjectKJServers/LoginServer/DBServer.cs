@@ -41,6 +41,8 @@ namespace LoginServer
         /// </summary>
         public void Start()
         {
+            if (DBServerCancelToken.Token.IsCancellationRequested)
+                return;
             DBServerTaskList.Add(ConnectToDBServer(Settings.Default.DBServerConnectCount));
             UpdateDBServerStatus(IsDBServerConnected());
         }
@@ -52,10 +54,12 @@ namespace LoginServer
         /// <exception>
         /// Task.Status가 Wait For Activation 상태일 경우 Dispose가 정상적으로 작동하지 않습니다.
         /// </exception>
-        public void Stop()
+        public async void Stop()
         {
             List<Task> WaitForCompleteTaskList = new List<Task>();
             DBServerCancelToken.Cancel();
+            // Cancel 시키고 바로 종료하면 Status가 바뀌지 않는다. 그래서 3초 대기
+            await Task.Delay(3000);
             foreach(var DBTask in DBServerTaskList)
             {
                 if(DBTask.Status == TaskStatus.Running)
@@ -64,6 +68,7 @@ namespace LoginServer
                     DBServerTaskList.Remove(DBTask);
                 }
             }
+            await LogManager.GetSingletone.WriteLog("DB서버와 실행중인 남은 Task 완료를 대기합니다.");
             Task.WaitAll(WaitForCompleteTaskList.ToArray());
             Dispose();
         }
@@ -97,6 +102,11 @@ namespace LoginServer
                 {
                     await LogManager.GetSingletone.WriteLog($"DB서버와 연결에 실패하였습니다. {i}번째 객체 시도중");
                     i--;
+                }
+                catch (OperationCanceledException)
+                {
+                    // 연결이 취소되었으므로 메서드를 종료합니다.
+                    return;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
