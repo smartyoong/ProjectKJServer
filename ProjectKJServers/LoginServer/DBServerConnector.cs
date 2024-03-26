@@ -5,16 +5,16 @@ using System.Net.Sockets;
 
 namespace LoginServer
 {
-    internal class DBServer : IDisposable
+    internal class DBServerConnector : IDisposable
     {
         private bool IsAlreadyDisposed = false;
         /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
-        private static readonly Lazy<DBServer> Lazy = new Lazy<DBServer>(() => new DBServer());
+        private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
 
         /// <value> UI 갱신용 이벤트.</value>
         public event Action<bool>? DBServerEvent;
 
-        public static DBServer GetSingletone { get { return Lazy.Value; } }
+        public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
 
         private List<Socket> DBSocketList;
         private CancellationTokenSource DBServerCancelToken;
@@ -25,7 +25,7 @@ namespace LoginServer
         /// DBServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private DBServer()
+        private DBServerConnector()
         {
             DBSocketList = new List<Socket>();
             DBServerCancelToken = new CancellationTokenSource();
@@ -70,6 +70,11 @@ namespace LoginServer
             }
             await LogManager.GetSingletone.WriteLog("DB서버와 실행중인 남은 Task 완료를 대기합니다.");
             Task.WaitAll(WaitForCompleteTaskList.ToArray());
+            foreach (var DBTask in WaitForCompleteTaskList)
+            {
+                // Task가 완료되었으므로 Dispose하기 위해 다시 List에 추가.
+                DBServerTaskList.Add(DBTask);
+            }
             Dispose();
         }
 
@@ -146,7 +151,7 @@ namespace LoginServer
         /// 종료자입니다.
         /// 최후의 수단이며, 직접 사용은 절대하지 마세요.
         /// </summary>
-        ~DBServer()
+        ~DBServerConnector()
         {
             Dispose(false);
         }
