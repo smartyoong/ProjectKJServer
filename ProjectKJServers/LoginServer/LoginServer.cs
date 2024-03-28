@@ -1,6 +1,4 @@
-﻿using System.Windows.Forms;
-
-namespace LoginServer
+﻿namespace LoginServer
 {
     /// <summary>
     /// LoginServer 클래스 입니다.
@@ -20,21 +18,30 @@ namespace LoginServer
         public LoginServer()
         {
             InitializeComponent();
-            LogManager.GetSingletone.LogEvent += Log =>
-            {
-                LogListBox.Invoke((() =>
+            UIEvent.GetSingletone.SubscribeLogEvent(
+            Log =>
                 {
-                    LogListBox.Items.Add(Log);
-                    LogListBox.TopIndex = LogListBox.Items.Count - 1;
-                }));
-            };
-            DBServerConnector.GetSingletone.DBServerEvent += (bool IsConnected) =>
-            {
-                if (IsConnected)
-                    DBServerStatusTextBox.BackColor = Color.Blue;
-                else
-                    DBServerStatusTextBox.BackColor = Color.Red;
-            };
+                    LogListBox.Invoke(() =>
+                    {
+                        LogListBox.Items.Add(Log);
+                        LogListBox.TopIndex = LogListBox.Items.Count - 1;
+                    });
+                }
+            );
+            UIEvent.GetSingletone.SubscribeDBServerStatusEvent(
+                IsConnected =>
+                {
+                    if (IsConnected)
+                    {
+                        DBServerStatusTextBox.BackColor = Color.Green;
+
+                    }
+                    else
+                    {
+                        DBServerStatusTextBox.BackColor = Color.Red;
+                    }
+                }
+            );
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
             DBServerStatusTextBox.BackColor = Color.Red;
@@ -54,15 +61,13 @@ namespace LoginServer
             await LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            await LogManager.GetSingletone.WriteLog("DB서버와의 연결을 대기중 입니다.");
             DBServerConnector.GetSingletone.Start();
-            await LogManager.GetSingletone.WriteLog("DB서버와 연결되었습니다.");
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             await LogManager.GetSingletone.WriteLog("서버를 종료완료, 몇 초 대기후 프로그램을 종료합니다");
-            DBServerConnector.GetSingletone.Stop();
+            await DBServerConnector.GetSingletone.Stop();
             await Task.Delay(5000);
             LogManager.GetSingletone.Close();
             Environment.Exit(0);

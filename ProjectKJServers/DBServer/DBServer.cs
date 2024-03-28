@@ -17,14 +17,15 @@ namespace DBServer
             ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             CurrentUserCountTextBox.ReadOnly = true;
             CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
-            LogManager.GetSingletone.LogEvent += Log =>
-            {
-                LogListBox.Invoke((() =>
+            UIEvent.GetSingletone.SubscribeLogEvent(Log =>
                 {
-                    LogListBox.Items.Add(Log);
-                    LogListBox.TopIndex = LogListBox.Items.Count - 1;
-                }));
-            };
+                    LogListBox.Invoke((() =>
+                    {
+                        LogListBox.Items.Add(Log);
+                        LogListBox.TopIndex = LogListBox.Items.Count - 1;
+                    }));
+                }
+            );
         }
     }
 }

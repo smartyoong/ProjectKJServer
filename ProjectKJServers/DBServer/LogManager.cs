@@ -30,8 +30,6 @@ namespace DBServer
         private static readonly Lazy<LogManager> Lazy = new Lazy<LogManager>(() => new LogManager());
         public static LogManager GetSingletone { get { return Lazy.Value; } }
 
-        // ListBox 등 UI에 표현하기 위해 이벤트 사용
-        public event Action<string>? LogEvent;
 
 
         /// <summary>
@@ -146,7 +144,6 @@ namespace DBServer
             if (Disposing)
             {
                 LogStringBuilder.Clear();
-                LogEvent = null;
             }
             LogFile.Dispose();
             LogCancellationTokenSource.Dispose();
@@ -192,7 +189,7 @@ namespace DBServer
         /// 또한 LogTask에서 예외가 발생하면 메시지박스로 출력합니다.
         /// </exception>
         /// <see cref="LogManager.WriteLog(string)"/>
-        public async Task WriteErrorLog(Exception ex)
+        public async Task WriteLog(Exception ex)
         {
             if(IsAlreadyDisposed)
                 return;
@@ -300,7 +297,7 @@ namespace DBServer
             {
                 MessageBox.Show($"PopLogAsync : {ex.Message}");
             }
-            LogEvent?.Invoke(LogStringBuilder.ToString());
+            UIEvent.GetSingletone.AddLogToUI(LogStringBuilder.ToString());
             LogStringBuilder.Clear();
         }
     }
