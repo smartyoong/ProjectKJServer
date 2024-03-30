@@ -36,7 +36,7 @@ namespace LoginServer
         /// </summary>
         public void Start()
         {
-            Start("DB서버");
+            Start(new IPEndPoint(IPAddress.Parse(Settings.Default.DBServerIPAddress), Settings.Default.DBServerPort), "DB서버");
         }
 
         /// <summary>

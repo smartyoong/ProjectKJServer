@@ -71,11 +71,11 @@ namespace LoginServer
             }
         }
 
-        protected virtual void Start(string ServerName)
+        protected virtual void Start(IPEndPoint IPAddr, string ServerName)
         {
             if (ConnectCancelToken.Token.IsCancellationRequested)
                 return;
-            TryConnectTaskList.Add(TryConnect(new IPEndPoint(IPAddress.Parse(Settings.Default.DBServerIPAddress), Settings.Default.DBServerPort), ServerName));
+            TryConnectTaskList.Add(TryConnect(IPAddr, ServerName));
         }
 
         /// <summary>
