@@ -4,6 +4,14 @@ using System.Net.Sockets;
 
 namespace LoginServer
 {
+
+    /// <summary>
+    /// DB서버와 연결을 담당하는 클래스입니다.
+    /// 사실상 모든 연결 기능은 Connector 클래스의 기능을 사용합니다.
+    /// 이 클래스를 만든 이유는, 명시적으로 DB서버와 통신하는 객체인것을 알려주기 위함이고
+    /// UI EVENT와 DB서버 관련 패킷 Process의 매개자 역할을 하기 위함입니다.
+    /// 즉, 핵심 기능들은 Connector 클래스에 존재하고 상속을 받아서, 명시적 표현 및 결합도 관련 로직을 담당합니다.
+    /// </summary>
     internal class DBServerConnector : Connector, IDisposable
     {
         private bool IsAlreadyDisposed = false;
@@ -20,14 +28,6 @@ namespace LoginServer
         private DBServerConnector()
         {
             Init(Settings.Default.DBServerConnectCount);
-        }
-
-        protected override void Init(int MakeSocketCount)
-        {
-            for (int i = 0; i < MakeSocketCount; i++)
-            {
-                ConnectSocketList.Add(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
-            }
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace LoginServer
         /// </summary>
         public async Task Stop()
         {
-            await Stop("DB서버",3000);
+            await Stop("DB서버",TimeSpan.FromSeconds(3));
             UIEvent.GetSingletone.UpdateDBServerStatus(false);
             Dispose();
         }

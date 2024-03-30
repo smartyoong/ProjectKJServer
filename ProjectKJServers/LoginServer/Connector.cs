@@ -86,7 +86,7 @@ namespace LoginServer
         /// <exception>
         /// Task.Status가 Wait For Activation 상태일 경우 Dispose가 정상적으로 작동하지 않습니다.
         /// </exception>
-        protected virtual async Task Stop(string ServerName, int DelayTime)
+        protected virtual async Task Stop(string ServerName, TimeSpan DelayTime)
         {
             await CancelConnect(DelayTime);
             await CleanUpConnectTask(ServerName);
@@ -161,7 +161,7 @@ namespace LoginServer
             return true;
         }
 
-        private async Task CancelConnect(int DelayTime)
+        private async Task CancelConnect(TimeSpan DelayTime)
         {
             ConnectCancelToken.Cancel();
             // Cancel 시키고 바로 종료하면 Status가 바뀌지 않는다. 그래서 3초 대기
