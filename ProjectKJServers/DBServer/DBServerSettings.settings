@@ -14,5 +14,23 @@
     <Setting Name="LoginServerIPAdress" Type="System.String" Scope="User">
       <Value Profile="(Default)">127.0.0.1</Value>
     </Setting>
+    <Setting Name="SQLDataSoruce" Type="System.String" Scope="User">
+      <Value Profile="(Default)">SMARTYOONG\SQLEXPRESS</Value>
+    </Setting>
+    <Setting Name="SQLAccountDataBaseName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">AccountDB</Value>
+    </Setting>
+    <Setting Name="SQLSecurity" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SQLPoolMinSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="SQLPoolMaxSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">150</Value>
+    </Setting>
+    <Setting Name="SQLGameDataBaseName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">GameDB</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
