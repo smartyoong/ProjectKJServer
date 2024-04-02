@@ -47,7 +47,7 @@ namespace DBServer
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 await LogManager.GetSingletone.WriteLog(e.Message);
-                return int.MinValue;
+                return (int)SP_ERROR.CONNECTION_ERROR;
             }
         }
 
@@ -89,7 +89,7 @@ namespace DBServer
             catch(Exception e) when (e is not OperationCanceledException)
             {
                 await LogManager.GetSingletone.WriteLog(e.Message);
-                return int.MinValue;
+                return (int)SP_ERROR.CONNECTION_ERROR;
             }
         }
 
