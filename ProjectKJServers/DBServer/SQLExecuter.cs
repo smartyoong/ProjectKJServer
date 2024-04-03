@@ -72,7 +72,7 @@ namespace DBServer
             }
         }
 
-        public async Task<(int,List<List<object>>)> ExecuteSqlSPGetListResultAsync(string SPName ,params SqlParameter[] SQLParameters)
+        public async Task<(int ErrorCode ,List<List<object>> ValueList)> ExecuteSqlSPGetListResultAsync(string SPName ,params SqlParameter[] SQLParameters)
         {
             List<List<object>> ResultList = new List<List<object>>();
             try
