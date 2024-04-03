@@ -49,14 +49,6 @@ namespace LoginServer
                 ConnectSocketList.Clear();
             }
 
-            foreach (var ConnectTask in TryConnectTaskList)
-            {
-                if (ConnectTask.Status == TaskStatus.Canceled || ConnectTask.Status == TaskStatus.RanToCompletion || ConnectTask.Status == TaskStatus.Faulted)
-                {
-                    ConnectTask.Dispose();
-                }
-            }
-
             ConnectCancelToken.Dispose();
 
             IsAlreadyDisposed = true;
@@ -87,8 +79,8 @@ namespace LoginServer
         /// </exception>
         protected virtual async Task Stop(string ServerName, TimeSpan DelayTime)
         {
-            await CancelConnect(DelayTime);
-            await CleanUpConnectTask(ServerName);
+            await CancelConnect(DelayTime).ConfigureAwait(false);
+            await CleanUpConnectTask(ServerName).ConfigureAwait(false);
         }
 
 
@@ -116,11 +108,11 @@ namespace LoginServer
                 {
                     if (ConnectCancelToken.Token.IsCancellationRequested)
                         return;
-                    await ConnectSocketList[i].ConnectAsync(IPAddr, ConnectCancelToken.Token);
+                    await ConnectSocketList[i].ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
                 {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i}번째 객체 시도중");
+                    await LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i}번째 객체 시도중").ConfigureAwait(false);
                     i--;
                 }
                 catch (OperationCanceledException)
@@ -130,7 +122,7 @@ namespace LoginServer
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
-                    await LogManager.GetSingletone.WriteLog(e);
+                    await LogManager.GetSingletone.WriteLog(e).ConfigureAwait(false);
                 }
             }
             UIEvent.GetSingletone.UpdateDBServerStatus(IsConnected());
@@ -164,27 +156,15 @@ namespace LoginServer
         {
             ConnectCancelToken.Cancel();
             // Cancel 시키고 바로 종료하면 Status가 바뀌지 않는다. 그래서 3초 대기
-            await Task.Delay(DelayTime);
+            await Task.Delay(DelayTime).ConfigureAwait(false);
         }
 
         private async Task CleanUpConnectTask(string ServerName)
         {
-            List<Task> WaitForCompleteTaskList = new List<Task>();
-            foreach (var ConnectTask in TryConnectTaskList)
-            {
-                if (ConnectTask.Status == TaskStatus.Running)
-                {
-                    WaitForCompleteTaskList.Add(ConnectTask);
-                    TryConnectTaskList.Remove(ConnectTask);
-                }
-            }
-            await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.");
-            Task.WaitAll(WaitForCompleteTaskList.ToArray());
-            foreach (var WaitConnectTask in WaitForCompleteTaskList)
-            {
-                // Task가 완료되었으므로 Dispose하기 위해 다시 List에 추가.
-                TryConnectTaskList.Add(WaitConnectTask);
-            }
+            List<Task> RunningTasks = TryConnectTaskList.Where(task => task.Status == TaskStatus.Running).ToList();
+            TryConnectTaskList = TryConnectTaskList.Except(RunningTasks).ToList();
+            await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.").ConfigureAwait(false);
+            await Task.WhenAll(RunningTasks).ConfigureAwait(false);
         }
     }
 }
