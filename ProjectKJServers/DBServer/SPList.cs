@@ -8,7 +8,8 @@ namespace DBServer
 {
     enum SP_ERROR
     {
-        CONNECTION_ERROR = int.MinValue,
+        CONNECTION_ERROR = -1,
+        SQL_QUERY_ERROR = -2,
         NONE = 0
     }
     enum SP

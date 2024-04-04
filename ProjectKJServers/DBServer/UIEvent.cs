@@ -18,7 +18,7 @@ namespace DBServer
         private event Action<string>? LogEvent;
 
         /// <value> UI 갱신용 이벤트.</value>
-        public event Action<bool>? LoginServerEvent;
+        public event Action<bool>? DBServerEvent;
 
         private UIEvent()
         {
@@ -49,12 +49,12 @@ namespace DBServer
 
         public void SubscribeDBServerStatusEvent(Action<bool> action)
         {
-            LoginServerEvent += action;
+            DBServerEvent += action;
         }
 
         public void UnsubscribeDBServerStatusEvent(Action<bool> action)
         {
-            LoginServerEvent -= action;
+            DBServerEvent -= action;
         }
 
         public void AddLogToUI(string log)
@@ -64,7 +64,13 @@ namespace DBServer
 
         public void UpdateLoginServerStatus(bool IsConnected)
         {
-            LoginServerEvent?.Invoke(IsConnected);
+            DBServerEvent?.Invoke(IsConnected);
+        }
+
+        public void UpdateDBServerStatus(bool IsConnected)
+        {
+            // SQL서버와 연결 상태를 UI에 표시하기 위한 이벤트
+            DBServerEvent?.Invoke(IsConnected);
         }
 
     }

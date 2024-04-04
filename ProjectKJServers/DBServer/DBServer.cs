@@ -26,6 +26,23 @@ namespace DBServer
                     }));
                 }
             );
+            UIEvent.GetSingletone.SubscribeDBServerStatusEvent(IsConnected =>
+                {
+                    ServerStatusTextBox.Invoke((() =>
+                    {
+                        if (IsConnected)
+                        {
+                            ServerStatusTextBox.BackColor = Color.Green;
+                            ServerStatusTextBox.Text = "서버 가동중";
+                        }
+                        else
+                        {
+                            ServerStatusTextBox.BackColor = Color.Red;
+                            ServerStatusTextBox.Text = "서버 중지중";
+                        }
+                    }));
+                }
+            );
         }
     }
 }

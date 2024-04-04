@@ -15,26 +15,47 @@ namespace DBServer
     {
         private readonly string ConnectString;
         private CancellationTokenSource CancelSQL = new CancellationTokenSource();
-        private ConcurrentStack<Task> TaskStatcks = new ConcurrentStack<Task>();
         private bool IsAlreadyDisposed = false;
+        int SQLTimeout = 30;
 
-        SQLExecuter(string DBSource, string DBName, bool UseSecurity, int MinPoolSize = 2, int MaxPoolSize = 100)
+        SQLExecuter(string DBSource, string DBName, bool UseSecurity, int MinPoolSize = 2, int MaxPoolSize = 100, int TimeOut = 30)
         {
-            ConnectString = $@"Data Source={DBSource};Initial Catalog={DBName};Integrated Security={UseSecurity};Min Pool Size={MinPoolSize};Max Pool Size={MaxPoolSize}";
+            ConnectString = $@"Data Source={DBSource};Initial Catalog={DBName};Integrated Security={UseSecurity};Min Pool Size={MinPoolSize};Max Pool Size={MaxPoolSize};Connection Timeout={TimeOut}";
+            SQLTimeout = TimeOut;
         }
 
-        public async Task<bool> ConnectCheckAsync()
+        public async Task TryConnect()
+        {
+            while (!CancelSQL.Token.IsCancellationRequested)
+            {
+                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 시도합니다.").ConfigureAwait(false);
+
+                if (await ConnectCheckAsync().ConfigureAwait(false))
+                {
+                    break;
+                }
+                else
+                {
+                    await Task.Delay(3000).ConfigureAwait(false);
+                }
+            }
+        }
+
+        private async Task<bool> ConnectCheckAsync()
         {
             try
             {
                 using (SqlConnection Connection = new SqlConnection(ConnectString))
                 {
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
+                    UIEvent.GetSingletone.UpdateDBServerStatus(true);
+                    await LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.").ConfigureAwait(false);
                     return true;
                 }
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
+                UIEvent.GetSingletone.UpdateDBServerStatus(false);
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
                 return false;
             }
@@ -50,6 +71,7 @@ namespace DBServer
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
                     {
+                        SQLCommand.CommandTimeout = SQLTimeout;
                         SQLCommand.CommandType = CommandType.StoredProcedure;
 
                         SQLCommand.Parameters.AddRange(SqlParameters);
@@ -65,10 +87,16 @@ namespace DBServer
                     }
                 }
             }
+            catch (SqlException se) when (se.Number == -2)
+            {
+                UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                return (int)SP_ERROR.CONNECTION_ERROR;
+            }
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
-                return (int)SP_ERROR.CONNECTION_ERROR;
+                return (int)SP_ERROR.SQL_QUERY_ERROR;
             }
         }
 
@@ -83,6 +111,7 @@ namespace DBServer
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
                     {
+                        SQLCommand.CommandTimeout = SQLTimeout;
                         SQLCommand.CommandType = CommandType.StoredProcedure;
 
                         SQLCommand.Parameters.AddRange(SQLParameters);
@@ -110,25 +139,25 @@ namespace DBServer
                     }
                 }
             }
+            catch(SqlException se) when (se.Number == -2)
+            {
+                UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                return ((int)SP_ERROR.CONNECTION_ERROR, ResultList);
+            }
             catch(Exception e) when (e is not OperationCanceledException)
             {
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
-                return ((int)SP_ERROR.CONNECTION_ERROR,ResultList);
+                return ((int)SP_ERROR.SQL_QUERY_ERROR,ResultList);
             }
         }
 
         public async Task Cancel()
         {
             CancelSQL.Cancel();
+            UIEvent.GetSingletone.UpdateDBServerStatus(false);
             await Task.Delay(3000).ConfigureAwait(false);
-            CleanUp();
             Dispose();
-        }
-
-        // 여기서 실행중인 Task는 대기하고 끝난 Task는 Dispose할 수 있도록 정리하자 컨테이너를 정리하자
-        private void CleanUp()
-        {
-
         }
 
         public void Dispose()
@@ -149,7 +178,6 @@ namespace DBServer
                 CancelSQL.Dispose();
             }
 
-            TaskStatcks.ToList().ForEach(x => x.Dispose());
         }
 
         ~SQLExecuter()
