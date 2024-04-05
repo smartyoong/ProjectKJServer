@@ -101,6 +101,7 @@
             ServerStartButton.TabIndex = 10;
             ServerStartButton.Text = "서버시작";
             ServerStartButton.UseVisualStyleBackColor = true;
+            ServerStartButton.Click += ServerStartButton_Click;
             // 
             // ServerStopButton
             // 
@@ -112,12 +113,12 @@
             ServerStopButton.TabIndex = 9;
             ServerStopButton.Text = "서버종료";
             ServerStopButton.UseVisualStyleBackColor = true;
+            ServerStopButton.Click += ServerStopButton_Click;
             // 
             // LogListBox
             // 
             LogListBox.FormattingEnabled = true;
             LogListBox.HorizontalScrollbar = true;
-            LogListBox.ItemHeight = 15;
             LogListBox.Location = new Point(12, 21);
             LogListBox.Name = "LogListBox";
             LogListBox.ScrollAlwaysVisible = true;

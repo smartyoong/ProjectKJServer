@@ -32,7 +32,7 @@ namespace DBServer
                     {
                         if (IsConnected)
                         {
-                            ServerStatusTextBox.BackColor = Color.Green;
+                            ServerStatusTextBox.BackColor = Color.Blue;
                             ServerStatusTextBox.Text = "서버 가동중";
                         }
                         else
@@ -43,6 +43,25 @@ namespace DBServer
                     }));
                 }
             );
+        }
+
+        private async void ServerStartButton_Click(object sender, EventArgs e)
+        {
+            ServerStartButton.Enabled = false;
+            ServerStopButton.Enabled = true;
+            await LogManager.GetSingletone.WriteLog("서버를 가동합니다.").ConfigureAwait(false);
+            await SQLManager.GetSingletone.ConnectToSQL().ConfigureAwait(false);
+            await LogManager.GetSingletone.WriteLog("로그인 서버의 연결의 대기합니다.").ConfigureAwait(false);
+        }
+
+        private async void ServerStopButton_Click(object sender, EventArgs e)
+        {
+            await LogManager.GetSingletone.WriteLog("서버를 중지합니다.").ConfigureAwait(false);
+            await SQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
+            ServerStartButton.Enabled = true;
+            ServerStopButton.Enabled = false;
+            await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
+            await LogManager.GetSingletone.WriteLog("서버를 중지했습니다.").ConfigureAwait(false);
         }
     }
 }

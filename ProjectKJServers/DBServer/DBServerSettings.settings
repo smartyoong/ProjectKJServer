@@ -32,5 +32,8 @@
     <Setting Name="SQLGameDataBaseName" Type="System.String" Scope="User">
       <Value Profile="(Default)">GameDB</Value>
     </Setting>
+    <Setting Name="SQLTimeOut" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">60</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

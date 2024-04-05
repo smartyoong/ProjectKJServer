@@ -142,5 +142,17 @@ namespace DBServer {
                 this["SQLGameDataBaseName"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
+        public int SQLTimeOut {
+            get {
+                return ((int)(this["SQLTimeOut"]));
+            }
+            set {
+                this["SQLTimeOut"] = value;
+            }
+        }
     }
 }

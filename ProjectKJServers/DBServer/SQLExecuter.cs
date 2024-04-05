@@ -18,7 +18,7 @@ namespace DBServer
         private bool IsAlreadyDisposed = false;
         int SQLTimeout = 30;
 
-        SQLExecuter(string DBSource, string DBName, bool UseSecurity, int MinPoolSize = 2, int MaxPoolSize = 100, int TimeOut = 30)
+        public SQLExecuter(string DBSource, string DBName, bool UseSecurity, int MinPoolSize = 2, int MaxPoolSize = 100, int TimeOut = 30)
         {
             ConnectString = $@"Data Source={DBSource};Initial Catalog={DBName};Integrated Security={UseSecurity};Min Pool Size={MinPoolSize};Max Pool Size={MaxPoolSize};Connection Timeout={TimeOut}";
             SQLTimeout = TimeOut;
@@ -100,7 +100,7 @@ namespace DBServer
             }
         }
 
-        public async Task<(int ErrorCode ,List<List<object>> ValueList)> ExecuteSqlSPGetListResultAsync(string SPName ,params SqlParameter[] SQLParameters)
+        public async Task<(int ErrorCode ,List<List<object>> ValueList)> ExecuteSqlSPGeResulttListAsync(string SPName ,params SqlParameter[] SQLParameters)
         {
             List<List<object>> ResultList = new List<List<object>>();
             try
