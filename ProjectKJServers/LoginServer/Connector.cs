@@ -67,6 +67,7 @@ namespace LoginServer
             if (ConnectCancelToken.Token.IsCancellationRequested)
                 return;
             TryConnectTaskList.Add(TryConnect(IPAddr, ServerName));
+
         }
 
         /// <summary>
@@ -125,7 +126,6 @@ namespace LoginServer
                     await LogManager.GetSingletone.WriteLog(e).ConfigureAwait(false);
                 }
             }
-            UIEvent.GetSingletone.UpdateDBServerStatus(IsConnected());
         }
 
 

@@ -17,31 +17,49 @@ namespace DBServer
             ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             CurrentUserCountTextBox.ReadOnly = true;
             CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            SubscribeAllEvent();
+        }
+
+        private void SubscribeAllEvent()
+        {
             UIEvent.GetSingletone.SubscribeLogEvent(Log =>
+            {
+                LogListBox.Invoke((() =>
                 {
-                    LogListBox.Invoke((() =>
-                    {
-                        LogListBox.Items.Add(Log);
-                        LogListBox.TopIndex = LogListBox.Items.Count - 1;
-                    }));
-                }
-            );
+                    LogListBox.Items.Add(Log);
+                    LogListBox.TopIndex = LogListBox.Items.Count - 1;
+                }));
+            }
+);
             UIEvent.GetSingletone.SubscribeDBServerStatusEvent(IsConnected =>
+            {
+                ServerStatusTextBox.Invoke((() =>
                 {
-                    ServerStatusTextBox.Invoke((() =>
+                    if (IsConnected)
                     {
-                        if (IsConnected)
-                        {
-                            ServerStatusTextBox.BackColor = Color.Blue;
-                            ServerStatusTextBox.Text = "서버 가동중";
-                        }
-                        else
-                        {
-                            ServerStatusTextBox.BackColor = Color.Red;
-                            ServerStatusTextBox.Text = "서버 중지중";
-                        }
-                    }));
-                }
+                        ServerStatusTextBox.BackColor = Color.Blue;
+                    }
+                    else
+                    {
+                        ServerStatusTextBox.BackColor = Color.Red;
+                    }
+                }));
+            }
+            );
+            UIEvent.GetSingletone.SubscribeLoginServerStatusEvent(IsConnected =>
+            {
+                ServerStatusTextBox.Invoke((() =>
+                {
+                    if (IsConnected)
+                    {
+                        LoginServerStatusTextBox.BackColor = Color.Blue;
+                    }
+                    else
+                    {
+                        LoginServerStatusTextBox.BackColor = Color.Red;
+                    }
+                }));
+            }
             );
         }
 
@@ -58,7 +76,6 @@ namespace DBServer
         {
             await LogManager.GetSingletone.WriteLog("서버를 중지합니다.").ConfigureAwait(false);
             await SQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
-            ServerStartButton.Enabled = true;
             ServerStopButton.Enabled = false;
             await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("서버를 중지했습니다.").ConfigureAwait(false);

@@ -18,7 +18,13 @@ namespace DBServer
         private event Action<string>? LogEvent;
 
         /// <value> UI 갱신용 이벤트.</value>
-        public event Action<bool>? DBServerEvent;
+        private event Action<bool>? DBServerEvent;
+
+        /// <value> UI 갱신용 이벤트.</value>
+        private event Action<bool>? LoginServerEvent;
+
+        /// <value> UI 갱신용 이벤트.</value>
+        private event Action<bool>? UserCountEvent;
 
         private UIEvent()
         {
@@ -57,6 +63,26 @@ namespace DBServer
             DBServerEvent -= action;
         }
 
+        public void SubscribeLoginServerStatusEvent(Action<bool> action)
+        {
+            LoginServerEvent += action;
+        }
+
+        public void UnsubscribeLoginServerStatusEvent(Action<bool> action)
+        {
+            LoginServerEvent -= action;
+        }
+
+        public void SubscribeUserCountEvent(Action<bool> action)
+        {
+            UserCountEvent += action;
+        }
+
+        public void UnsubscribeUserCountEvent(Action<bool> action)
+        {
+            UserCountEvent -= action;
+        }
+
         public void AddLogToUI(string log)
         {
             LogEvent?.Invoke(log);
@@ -64,7 +90,7 @@ namespace DBServer
 
         public void UpdateLoginServerStatus(bool IsConnected)
         {
-            DBServerEvent?.Invoke(IsConnected);
+            LoginServerEvent?.Invoke(IsConnected);
         }
 
         public void UpdateDBServerStatus(bool IsConnected)
@@ -72,6 +98,11 @@ namespace DBServer
             // SQL서버와 연결 상태를 UI에 표시하기 위한 이벤트
             DBServerEvent?.Invoke(IsConnected);
         }
+        public void IncreaseUserCount(bool IsIncrease)
+        {
+            UserCountEvent?.Invoke(IsIncrease);
+        }
+
 
     }
 }

@@ -37,6 +37,8 @@ namespace LoginServer
         public void Start()
         {
             Start(new IPEndPoint(IPAddress.Parse(Settings.Default.DBServerIPAddress), Settings.Default.DBServerPort), "DB서버");
+            // UI 갱신하는 부분을 생각해보자
+            UIEvent.GetSingletone.UpdateDBServerStatus(IsConnected());
         }
 
         /// <summary>
