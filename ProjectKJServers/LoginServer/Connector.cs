@@ -147,8 +147,16 @@ namespace LoginServer
 
             foreach (var Socket in ConnectSocketList)
             {
-                if (!Socket.Connected || Socket.Poll(1000, SelectMode.SelectRead) && Socket.Available == 0)
+                try
                 {
+                    if (!Socket.Connected || Socket.Poll(1000, SelectMode.SelectRead) && Socket.Available == 0)
+                    {
+                        return false;
+                    }
+                }
+                catch(Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog(e).Wait();
                     return false;
                 }
             }
