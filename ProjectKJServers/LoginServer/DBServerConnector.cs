@@ -20,6 +20,8 @@ namespace LoginServer
 
         public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
 
+        private CancellationTokenSource CheckProcessToken;
+
 
         /// <summary>
         /// DBServer 클래스의 생성자입니다.
@@ -27,6 +29,7 @@ namespace LoginServer
         /// </summary>
         private DBServerConnector()
         {
+            CheckProcessToken = new CancellationTokenSource();
             Init(Settings.Default.DBServerConnectCount);
         }
 
@@ -37,8 +40,7 @@ namespace LoginServer
         public void Start()
         {
             Start(new IPEndPoint(IPAddress.Parse(Settings.Default.DBServerIPAddress), Settings.Default.DBServerPort), "DB서버");
-            // UI 갱신하는 부분을 생각해보자
-            UIEvent.GetSingletone.UpdateDBServerStatus(IsConnected());
+            ProcessCheck();
         }
 
         /// <summary>
@@ -92,8 +94,23 @@ namespace LoginServer
             {
 
             }
+            CheckProcessToken.Dispose();
             base.Dispose(Disposing);
             IsAlreadyDisposed = true;
+        }
+
+        private void ProcessCheck()
+        {
+            Task.Run(async () => {
+                while (!CheckProcessToken.IsCancellationRequested)
+                {
+                    if (IsConnected())
+                        UIEvent.GetSingletone.UpdateDBServerStatus(true);
+                    else
+                        UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                    await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+                }
+            }, CheckProcessToken.Token);
         }
     }
 }

@@ -77,7 +77,7 @@ namespace DBServer
             {
                 for(int i=0; i < MaxAcceptCount; i++)
                 {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i}번째 연결을 대기합니다.").ConfigureAwait(false);
+                    await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
 
                     if(AcceptCancelToken.Token.IsCancellationRequested)
                     {
@@ -90,7 +90,7 @@ namespace DBServer
                         if (CheckIsAllowedIP(ClientSocket))
                         {
                             ClientSocketList.Add(ClientSocket);
-                            await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i}개 연결되었습니다.").ConfigureAwait(false);
+                            await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
                         }
                         else
                         {
@@ -122,7 +122,7 @@ namespace DBServer
 
             foreach (var Socket in ClientSocketList)
             {
-                if (!Socket.Connected)
+                if (!Socket.Connected || Socket.Poll(1000, SelectMode.SelectRead) && Socket.Available == 0)
                 {
                     return false;
                 }

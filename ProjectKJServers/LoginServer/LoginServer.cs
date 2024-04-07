@@ -33,7 +33,7 @@
                 {
                     if (IsConnected)
                     {
-                        DBServerStatusTextBox.BackColor = Color.Green;
+                        DBServerStatusTextBox.BackColor = Color.Blue;
 
                     }
                     else

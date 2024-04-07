@@ -110,10 +110,11 @@ namespace LoginServer
                     if (ConnectCancelToken.Token.IsCancellationRequested)
                         return;
                     await ConnectSocketList[i].ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
+                    await LogManager.GetSingletone.WriteLog($"{i+1}번째 객체가 {ServerName}와 연결에 성공하였습니다.").ConfigureAwait(false);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
                 {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i}번째 객체 시도중").ConfigureAwait(false);
+                    await LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i+1}번째 객체 시도중").ConfigureAwait(false);
                     i--;
                 }
                 catch (OperationCanceledException)
@@ -131,6 +132,8 @@ namespace LoginServer
 
         /// <summary>
         /// 정해진 소켓이 전부 연결되었는지 확인하는 메서드입니다.
+        /// 이 메서드는 정해진 시간동안 해당 스레드가 블로킹되기 때문에
+        /// 비동기적으로 호출하는 것을 권장합니다
         /// </summary>
         /// <returns>
         /// 전부 연결되었으면 true, 아니면 false를 반환합니다.
@@ -144,7 +147,7 @@ namespace LoginServer
 
             foreach (var Socket in ConnectSocketList)
             {
-                if (!Socket.Connected)
+                if (!Socket.Connected || Socket.Poll(1000, SelectMode.SelectRead) && Socket.Available == 0)
                 {
                     return false;
                 }

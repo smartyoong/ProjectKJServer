@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace DBServer
 {
@@ -13,22 +14,24 @@ namespace DBServer
 
         private bool IsAlreadyDisposed = false;
 
+        private CancellationTokenSource CheckCancelToken;
+
+
         private LoginServerAcceptor()
         {
-
+            CheckCancelToken = new CancellationTokenSource();
         }
 
         public void Start()
         {
-            Init(new System.Net.IPAddress(new byte[] { 127, 0, 0, 1 }), 11000);
-            base.Start();
-            // UI 갱신하는 부분을 생각해보자
-            UIEvent.GetSingletone.UpdateLoginServerStatus(IsConnected());
+            Init(IPAddress.Parse(DBServerSettings.Default.LoginServerIPAdress), DBServerSettings.Default.LoginServerAcceptPort);
+            Start("LoginServer",DBServerSettings.Default.LoginServerAcceptCount);
+            ProcessCheck();
         }
 
-        public void Stop()
+        public async Task Stop()
         {
-            base.Stop();
+            await Stop("LoginServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
 
@@ -51,8 +54,23 @@ namespace DBServer
             {
 
             }
+            CheckCancelToken.Dispose();
             base.Dispose(Disposing);
             IsAlreadyDisposed = true;
+        }
+
+        private void ProcessCheck()
+        {
+            Task.Run(async () => {
+               while(!CheckCancelToken.IsCancellationRequested)
+                {
+                     if(IsConnected())
+                        UIEvent.GetSingletone.UpdateLoginServerStatus(true);
+                     else
+                        UIEvent.GetSingletone.UpdateLoginServerStatus(false);
+                    await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+                }
+            }, CheckCancelToken.Token);
         }
     }
 }
