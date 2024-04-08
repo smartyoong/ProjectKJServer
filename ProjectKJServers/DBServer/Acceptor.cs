@@ -7,7 +7,7 @@ namespace DBServer
     {
         private bool IsAlreadyDisposed = false;
 
-        private List<Socket> ClientSocketList;
+        private SocketManager ClientSocketList;
 
         private CancellationTokenSource AcceptCancelToken;
 

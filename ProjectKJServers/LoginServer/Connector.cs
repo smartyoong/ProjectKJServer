@@ -7,16 +7,20 @@ namespace LoginServer
     {
         private bool IsAlreadyDisposed = false;
 
-        protected List<Socket> ConnectSocketList;
+        protected SocketManager ConnectSocketList;
 
         protected private CancellationTokenSource ConnectCancelToken;
 
         private List<Task> TryConnectTaskList = new List<Task>();
 
-        protected Connector()
+        private int MakeSocketCount = 0;
+
+
+        protected Connector(int MakeSocketCount)
         {
             ConnectCancelToken = new CancellationTokenSource();
-            ConnectSocketList = new List<Socket>();
+            ConnectSocketList = new SocketManager(MakeSocketCount);
+            this.MakeSocketCount = MakeSocketCount;
         }
 
         ~Connector()
@@ -40,14 +44,6 @@ namespace LoginServer
 
             }
 
-            if (ConnectSocketList != null)
-            {
-                foreach (var Socket in ConnectSocketList)
-                {
-                    Socket.Close();
-                }
-                ConnectSocketList.Clear();
-            }
 
             ConnectCancelToken.Dispose();
 
@@ -58,7 +54,7 @@ namespace LoginServer
         {
             for (int i = 0; i < MakeSocketCount; i++)
             {
-                ConnectSocketList.Add(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
+                ConnectSocketList.AddSocket(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
             }
         }
 
@@ -103,7 +99,7 @@ namespace LoginServer
         protected virtual async Task TryConnect(IPEndPoint IPAddr, string ServerName)
         {
             int i = 0;
-            for (; i < ConnectSocketList.Count; i++)
+            for (; i < ConnectSocketList.GetMaxCount(); i++)
             {
                 try
                 {
@@ -165,6 +161,7 @@ namespace LoginServer
 
         private async Task CancelConnect(TimeSpan DelayTime)
         {
+            await ConnectSocketList.Cancel().ConfigureAwait(false);
             ConnectCancelToken.Cancel();
             // Cancel 시키고 바로 종료하면 Status가 바뀌지 않는다. 그래서 3초 대기
             await Task.Delay(DelayTime).ConfigureAwait(false);
