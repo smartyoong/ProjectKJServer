@@ -30,7 +30,6 @@ namespace LoginServer
         private DBServerConnector() : base(Settings.Default.DBServerConnectCount)
         {
             CheckProcessToken = new CancellationTokenSource();
-            Init(Settings.Default.DBServerConnectCount);
         }
 
         /// <summary>

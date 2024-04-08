@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace LoginServer
 {
@@ -13,14 +14,11 @@ namespace LoginServer
 
         private List<Task> TryConnectTaskList = new List<Task>();
 
-        private int MakeSocketCount = 0;
-
 
         protected Connector(int MakeSocketCount)
         {
             ConnectCancelToken = new CancellationTokenSource();
-            ConnectSocketList = new SocketManager(MakeSocketCount);
-            this.MakeSocketCount = MakeSocketCount;
+            ConnectSocketList = new SocketManager(MakeSocketCount);;
         }
 
         ~Connector()
@@ -48,14 +46,6 @@ namespace LoginServer
             ConnectCancelToken.Dispose();
 
             IsAlreadyDisposed = true;
-        }
-
-        protected virtual void Init(int MakeSocketCount)
-        {
-            for (int i = 0; i < MakeSocketCount; i++)
-            {
-                ConnectSocketList.AddSocket(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
-            }
         }
 
         protected virtual void Start(IPEndPoint IPAddr, string ServerName)
@@ -99,13 +89,14 @@ namespace LoginServer
         protected virtual async Task TryConnect(IPEndPoint IPAddr, string ServerName)
         {
             int i = 0;
-            for (; i < ConnectSocketList.GetMaxCount(); i++)
+            for (; i < ConnectSocketList.GetCount(); i++)
             {
+                if (ConnectCancelToken.Token.IsCancellationRequested)
+                    return;
+                Socket Sock = await ConnectSocketList.GetAvailableSocket().ConfigureAwait(false);
                 try
                 {
-                    if (ConnectCancelToken.Token.IsCancellationRequested)
-                        return;
-                    await ConnectSocketList[i].ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
+                    await Sock.ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
                     await LogManager.GetSingletone.WriteLog($"{i+1}번째 객체가 {ServerName}와 연결에 성공하였습니다.").ConfigureAwait(false);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
@@ -122,6 +113,10 @@ namespace LoginServer
                 {
                     await LogManager.GetSingletone.WriteLog(e).ConfigureAwait(false);
                 }
+                finally
+                {
+                    ConnectSocketList.ReturnSocket(Sock);
+                }
             }
         }
 
@@ -136,7 +131,7 @@ namespace LoginServer
         /// </returns>
         public virtual bool IsConnected()
         {
-            if(ConnectSocketList.Count == 0 || ConnectSocketList == null)
+            if(ConnectSocketList.GetCount() == 0 || ConnectSocketList == null)
             {
                 return false;
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,24 +9,21 @@ using System.Threading.Tasks;
 
 namespace LoginServer
 {
-    internal class SocketManager : IDisposable
+    internal class SocketManager : IDisposable, IEnumerable<Socket>
     {
         private Queue<Socket> AvailableSockets = new Queue<Socket>();
         private SemaphoreSlim AvailableSocketSync;
         private CancellationTokenSource SocketManagerCancelToken;
         private bool IsAlreadyDisposed = false;
-        private int MaxCount = 0;
 
         public SocketManager(int MaxSocketCount)
         {
             AvailableSocketSync = new SemaphoreSlim(MaxSocketCount);
             SocketManagerCancelToken = new CancellationTokenSource();
-        }
-
-        public void AddSocket(Socket Socket)
-        {
-            AvailableSockets.Enqueue(Socket);
-            MaxCount++;
+            for (int i = 0; i < MaxSocketCount; i++)
+            {
+                AvailableSockets.Enqueue(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
+            }
         }
 
         public async Task<Socket> GetAvailableSocket()
@@ -46,14 +44,18 @@ namespace LoginServer
             AvailableSocketSync.Release();
         }
 
-        public int GetMaxCount()
-        {
-            return MaxCount;
-        }
-
-        public int GetCurrentCount()
+        public int GetCount()
         {
             return AvailableSockets.Count;
+        }
+
+        public IEnumerator<Socket> GetEnumerator()
+        {
+            return AvailableSockets.GetEnumerator();
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
         
         public void Dispose()

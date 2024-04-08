@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 
 namespace DBServer
 {
+    // 유저는 개개인별로 Socket을 들고있게하면되는데,,,
+    // 음,,, Acceptor는 어캐해야하냐
+    // GeyAvailableSocket () = await AcceptAsync?? 이렇게 사용해봐?
     internal class SocketManager : IDisposable
     {
         private Queue<Socket> AvailableSockets = new Queue<Socket>();
         private SemaphoreSlim AvailableSocketSync;
         private CancellationTokenSource SocketManagerCancelToken;
         private bool IsAlreadyDisposed = false;
-        private int MaxCount = 0;
 
         public SocketManager(int MaxSocketCount)
         {
             AvailableSocketSync = new SemaphoreSlim(MaxSocketCount);
             SocketManagerCancelToken = new CancellationTokenSource();
-        }
-
-        public void AddSocket(Socket Socket)
-        {
-            AvailableSockets.Enqueue(Socket);
-            MaxCount++;
+            for (int i = 0; i < MaxSocketCount; i++)
+            {
+                AvailableSockets.Enqueue(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
+            }
         }
 
         public async Task<Socket> GetAvailableSocket()
@@ -45,10 +45,6 @@ namespace DBServer
             AvailableSocketSync.Release();
         }
 
-        public int GetMaxCount()
-        {
-            return MaxCount;
-        }
 
         public int GetCurrentCount()
         {
