@@ -2,10 +2,12 @@
 using System.Net.Sockets;
 using System.Threading;
 using PacketUtility;
+using SocketUtility;
+using LogUtility;
 
-namespace DBServer
+namespace AcceptUtility
 {
-    internal class Acceptor : IDisposable
+    public class Acceptor : IDisposable
     {
         private bool IsAlreadyDisposed = false;
 
@@ -178,7 +180,7 @@ namespace DBServer
         }
         protected virtual async Task<byte[]> RecvData()
         {
-            while(!AcceptCancelToken.Token.IsCancellationRequested)
+            while (!AcceptCancelToken.Token.IsCancellationRequested)
             {
                 Socket? RecvSocket = null;
                 try
@@ -186,19 +188,19 @@ namespace DBServer
                     RecvSocket = await ClientSocketList.GetAvailableSocket().ConfigureAwait(false);
                     RecvSocket.ReceiveTimeout = 500;
                     byte[] DataSizeBuffer = new byte[sizeof(int)];
-                    await RecvSocket.ReceiveAsync(DataSizeBuffer,AcceptCancelToken.Token).ConfigureAwait(false);
+                    await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                     byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                     await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                     return DataBuffer;
 
                     // 이 아래부터는 어떻게 할지 생각해보자
                 }
-                catch(SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                 {
                     byte[] DataSizeBuffer = new byte[sizeof(int)];
                     return DataSizeBuffer;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     LogManager.GetSingletone.WriteLog(e.Message).Wait();
                     byte[] DataSizeBuffer = new byte[sizeof(int)];
