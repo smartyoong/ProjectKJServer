@@ -17,7 +17,7 @@ namespace DBServer
         private CancellationTokenSource CheckCancelToken;
 
 
-        private LoginServerAcceptor()
+        private LoginServerAcceptor() : base(DBServerSettings.Default.LoginServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
         }
@@ -25,7 +25,7 @@ namespace DBServer
         public void Start()
         {
             Init(IPAddress.Parse(DBServerSettings.Default.LoginServerIPAdress), DBServerSettings.Default.LoginServerAcceptPort);
-            Start("LoginServer",DBServerSettings.Default.LoginServerAcceptCount);
+            Start("LoginServer");
             ProcessCheck();
         }
 

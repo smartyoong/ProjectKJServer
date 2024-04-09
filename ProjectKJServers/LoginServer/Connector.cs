@@ -18,7 +18,7 @@ namespace LoginServer
         protected Connector(int MakeSocketCount)
         {
             ConnectCancelToken = new CancellationTokenSource();
-            ConnectSocketList = new SocketManager(MakeSocketCount);;
+            ConnectSocketList = new SocketManager(MakeSocketCount,true);
         }
 
         ~Connector()
@@ -93,9 +93,10 @@ namespace LoginServer
             {
                 if (ConnectCancelToken.Token.IsCancellationRequested)
                     return;
-                Socket Sock = await ConnectSocketList.GetAvailableSocket().ConfigureAwait(false);
+                Socket? Sock = null;
                 try
                 {
+                    Sock = await ConnectSocketList.GetAvailableSocket().ConfigureAwait(false);
                     await Sock.ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
                     await LogManager.GetSingletone.WriteLog($"{i+1}번째 객체가 {ServerName}와 연결에 성공하였습니다.").ConfigureAwait(false);
                 }
@@ -115,7 +116,10 @@ namespace LoginServer
                 }
                 finally
                 {
-                    ConnectSocketList.ReturnSocket(Sock);
+                    if (Sock != null && ConnectSocketList.CanReturnSocket())
+                        ConnectSocketList.ReturnSocket(Sock);
+                    else if (Sock != null && !ConnectSocketList.CanReturnSocket())
+                        Sock.Close();
                 }
             }
         }

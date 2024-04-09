@@ -17,11 +17,14 @@ namespace DBServer
 
         private IPAddress AllowSpecificIP = IPAddress.Any;
 
-        protected Acceptor()
+        private int MaxAcceptCount;
+
+        protected Acceptor(int MaxAcceptCount)
         {
             AcceptCancelToken = new CancellationTokenSource();
-            ClientSocketList = new List<Socket>();
+            ClientSocketList = new SocketManager(MaxAcceptCount,false);
             ListenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.MaxAcceptCount = MaxAcceptCount;
         }
 
         public virtual void Dispose()
@@ -38,15 +41,6 @@ namespace DBServer
             if (Disposing)
             {
 
-            }
-
-            if (ClientSocketList != null)
-            {
-                foreach (var Socket in ClientSocketList)
-                {
-                    Socket.Close();
-                }
-                ClientSocketList.Clear();
             }
 
             AcceptCancelToken.Dispose();
@@ -71,7 +65,7 @@ namespace DBServer
             }
         }
 
-        protected virtual void Start(string ServerName, int MaxAcceptCount)
+        protected virtual void Start(string ServerName)
         {
             TryAcceptTaskList.Add(Task.Run(async () =>
             {
@@ -89,7 +83,7 @@ namespace DBServer
                         Socket ClientSocket = await ListenSocket.AcceptAsync();
                         if (CheckIsAllowedIP(ClientSocket))
                         {
-                            ClientSocketList.Add(ClientSocket);
+                            ClientSocketList.AddSocket(ClientSocket);
                             await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
                         }
                         else
@@ -110,12 +104,13 @@ namespace DBServer
         protected virtual async Task Stop(string ServerName, TimeSpan DelayTime)
         {
             await CancelAccept(DelayTime).ConfigureAwait(false);
+            await ClientSocketList.Cancel().ConfigureAwait(false);
             await CleanUpAcceptTask(ServerName).ConfigureAwait(false);
         }
 
         public virtual bool IsConnected()
         {
-            if (ClientSocketList.Count == 0 || ClientSocketList == null)
+            if (ClientSocketList.GetCount() == 0 || ClientSocketList == null)
             {
                 return false;
             }
