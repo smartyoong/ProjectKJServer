@@ -1,3 +1,6 @@
+using UIEventManager;
+using LogUtility;
+
 namespace DBServer
 {
     public partial class DBServer : Form
@@ -5,6 +8,7 @@ namespace DBServer
         public DBServer()
         {
             InitializeComponent();
+            LogManager.SetLogPath(DBServerSettings.Default.LogDirectory);
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
             LoginServerStatusTextBox.BackColor = Color.Red;
@@ -61,6 +65,7 @@ namespace DBServer
                 }));
             }
             );
+            UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
         }
 
         private async void ServerStartButton_Click(object sender, EventArgs e)

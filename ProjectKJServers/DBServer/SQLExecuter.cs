@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using LogUtility;
+using UIEventManager;
 
 namespace DBServer
 {

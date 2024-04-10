@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Utility;
+using UIEventManager;
 
 namespace LogUtility
 {
@@ -19,7 +20,7 @@ namespace LogUtility
     public class LogManager : IDisposable
     {
         private bool IsAlreadyDisposed = false;
-        private readonly string LogFilePath = UtilitySettings.Default.LogDirectory;
+        private static string LogFilePath = UtilitySettings.Default.LogDirectory;
         /// <value>StreamWriter는 내부적으로 버퍼링을 사용하기에 동기화 코드를 제거했습니다.</value>
         private readonly StreamWriter LogFile;
         private readonly Channel<string> LogChannel = Channel.CreateUnbounded<string>();
@@ -59,7 +60,7 @@ namespace LogUtility
                 else
                 {
                     // 생성자에서 에러가 날 경우 그냥 종료가 낫다
-                    MessageBox.Show("로그 디렉토리를 생성하지 못했습니다. 프로그램을 종료합니다.");
+                    UIEvent.GetSingletone.ShowMessageBoxLogError("로그 디렉토리를 생성하지 못했습니다. 프로그램을 종료합니다.");
                     Environment.Exit(0);
                 }
             }
@@ -69,6 +70,21 @@ namespace LogUtility
             }
             LogFile = new StreamWriter(LogFilePath, true);
             Start();
+        }
+
+        /// <summary>
+        /// 새로운 Lazy 인스턴스는 Value 속성에 처음 액세스할 때까지 인스턴스화하지 않기때문에
+        /// Lazy가 인스턴스화 하기 전에 해당 변수값을 재설정하게 할 수 있다.
+        /// </summary>
+        /// <param name="Path"></param>
+        static public void SetLogPath(string Path)
+        {
+            if(Lazy.IsValueCreated)
+            {
+                UIEvent.GetSingletone.ShowMessageBoxLogError("로그 디렉토리를 변경할 수 없습니다. \n이미 Lazy 객체가 생성되었습니다.");
+                return;
+            }
+            LogFilePath = Path;
         }
 
         /// <summary>
@@ -110,7 +126,7 @@ namespace LogUtility
                 if (LogTask.IsFaulted)
                 {
                     // 로깅 클래스에서 에러가 날 경우 로깅이 불가능하므로 메세지박스로 처리한다
-                    MessageBox.Show(LogTask.Exception?.Message);
+                    UIEvent.GetSingletone.ShowMessageBoxLogError(LogTask.Exception?.Message);
                 }
             });
         }
@@ -265,7 +281,7 @@ namespace LogUtility
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                MessageBox.Show($"PushLogAsync : {ex.Message}");
+                UIEvent.GetSingletone.ShowMessageBoxLogError($"PushLogAsync : {ex.Message}");
             }
         }
         /// <summary>
@@ -289,13 +305,13 @@ namespace LogUtility
                 {
                     if (ex is not OperationCanceledException)
                     {
-                        MessageBox.Show($"PopLogAsync Aggregate : {ex.Message}");
+                        UIEvent.GetSingletone.ShowMessageBoxLogError($"PopLogAsync Aggregate : {ex.Message}");
                     }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                MessageBox.Show($"PopLogAsync : {ex.Message}");
+                UIEvent.GetSingletone.ShowMessageBoxLogError($"PopLogAsync : {ex.Message}");
             }
             UIEvent.GetSingletone.AddLogToUI(LogStringBuilder.ToString());
             LogStringBuilder.Clear();

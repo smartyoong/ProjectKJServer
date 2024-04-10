@@ -4,27 +4,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DBServer
+namespace UIEventManager
 {
     /// <summary>
     /// UI관련 업데이트가 필요할때마다 중간에서 매개체 역할을 하는 클래스입니다.
     /// 싱글톤 패턴입니다.
     /// </summary>
-    internal class UIEvent
+    public class UIEvent
     {
         private static UIEvent? Instance = null;
 
         // ListBox 등 UI에 표현하기 위해 이벤트 사용
         private event Action<string>? LogEvent;
 
-        /// <value> UI 갱신용 이벤트.</value>
+        /// <value> DB 서버 UI 갱신용 이벤트.</value>
         private event Action<bool>? DBServerEvent;
 
-        /// <value> UI 갱신용 이벤트.</value>
+        /// <value> 로그인 서버 UI 갱신용 이벤트.</value>
         private event Action<bool>? LoginServerEvent;
 
-        /// <value> UI 갱신용 이벤트.</value>
+        /// <value> 동접자 수 UI 갱신용 이벤트.</value>
         private event Action<bool>? UserCountEvent;
+
+        /// <value> 로그 에러 전용 메세지 박스 출력용 이벤트.</value>
+        private event Action<string>? LogErrorEvent;
 
         private UIEvent()
         {
@@ -83,6 +86,16 @@ namespace DBServer
             UserCountEvent -= action;
         }
 
+        public void SubscribeLogErrorEvent(Action<string> action)
+        {
+            LogErrorEvent += action;
+        }
+
+        public void UnsubscribeLogErrorEvent(Action<string> action)
+        {
+            LogErrorEvent -= action;
+        }
+
         public void AddLogToUI(string log)
         {
             LogEvent?.Invoke(log);
@@ -101,6 +114,13 @@ namespace DBServer
         public void IncreaseUserCount(bool IsIncrease)
         {
             UserCountEvent?.Invoke(IsIncrease);
+        }
+
+        public void ShowMessageBoxLogError(string? Log)
+        {
+            if (Log == null)
+                return;
+            LogErrorEvent?.Invoke(Log);
         }
 
 

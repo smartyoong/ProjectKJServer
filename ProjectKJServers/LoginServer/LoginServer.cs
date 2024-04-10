@@ -1,4 +1,8 @@
-﻿namespace LoginServer
+﻿using LoginServer.Properties;
+using UIEventManager;
+using LogUtility;
+
+namespace LoginServer
 {
     /// <summary>
     /// LoginServer 클래스 입니다.
@@ -18,6 +22,8 @@
         public LoginServer()
         {
             InitializeComponent();
+            LogManager.SetLogPath(Settings.Default.LogDirectory);
+            UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
             UIEvent.GetSingletone.SubscribeLogEvent(
             Log =>
                 {
