@@ -153,7 +153,7 @@ namespace AcceptUtility
         }
         protected virtual void Process(Socket ClientSocket)
         {
-            throw new NotImplementedException();
+            
         }
 
         private bool CheckIsAllowedIP(Socket ClientSocket)
@@ -178,10 +178,11 @@ namespace AcceptUtility
                 return false;
             }
         }
-        protected virtual async Task<byte[]> RecvData()
+        protected virtual async Task RecvData()
         {
             while (!AcceptCancelToken.Token.IsCancellationRequested)
             {
+                // 리턴을 시키면 while문을 빠져나가게 된다. 어떻게 할것인가? 우선 리턴문은 없애자
                 Socket? RecvSocket = null;
                 try
                 {
@@ -191,20 +192,19 @@ namespace AcceptUtility
                     await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                     byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                     await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                    return DataBuffer;
-
-                    // 이 아래부터는 어떻게 할지 생각해보자
+                }
+                catch(SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    // 연결이 끊겼다 어떻게 할것인가? 복구? Core는 어떤 서버가 연결이 끊겼는지 모르는데?
+                    LogManager.GetSingletone.WriteLog(e.Message).Wait();
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                 {
-                    byte[] DataSizeBuffer = new byte[sizeof(int)];
-                    return DataSizeBuffer;
+                    // 단순 타임아웃이다. 어떻게 할것인가?
                 }
                 catch (Exception e)
                 {
                     LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                    byte[] DataSizeBuffer = new byte[sizeof(int)];
-                    return DataSizeBuffer;
                 }
                 finally
                 {
@@ -214,7 +214,6 @@ namespace AcceptUtility
                         RecvSocket.Close();
                 }
             }
-            return new byte[0];
         }
     }
 }

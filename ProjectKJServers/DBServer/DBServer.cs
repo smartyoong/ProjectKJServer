@@ -80,9 +80,9 @@ namespace DBServer
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
+            ServerStopButton.Enabled = false;
             await LogManager.GetSingletone.WriteLog("서버를 중지합니다.").ConfigureAwait(false);
             await SQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
-            ServerStopButton.Enabled = false;
             await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
             await LoginServerAcceptor.GetSingletone.Stop().ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("로그인 서버와의 연결을 중단했습니다.").ConfigureAwait(false);
