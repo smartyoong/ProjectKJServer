@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Media.Devices.Core;
+using Utility;
 
 namespace DBServer
 {
-    enum LoginPacketList
+    public enum LoginPacketList
     {
         LoginRequest = 0,
         RegistAccountRequest = 1,
@@ -26,4 +27,22 @@ namespace DBServer
 
     [Serializable]
     public record LoginResponsePacket(bool IsSuccess, int ErrorCode);
+
+    public class LoginServerMapper : IPackertMapper<LoginPacketList>
+    {
+        public void GetPacketClassByID(LoginPacketList ID)
+        {
+            switch (ID)
+            {
+                case LoginPacketList.LoginRequest:
+                    break;
+                case LoginPacketList.RegistAccountRequest:
+                    break;
+                case LoginPacketList.RegistAccountResponse:
+                    break;
+                case LoginPacketList.LoginResponse:
+                    break;
+            }
+        }
+    }
 }
