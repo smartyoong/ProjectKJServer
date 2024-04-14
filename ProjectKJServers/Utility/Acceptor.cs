@@ -181,7 +181,6 @@ namespace AcceptUtility
         }
         protected virtual async Task<byte[]> RecvData()
         {
-            // 리턴을 시키면 while문을 빠져나가게 된다. 어떻게 할것인가? 우선 리턴문은 없애자
             Socket? RecvSocket = null;
             try
             {
