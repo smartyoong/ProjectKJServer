@@ -17,32 +17,14 @@ namespace DBServer
     }
 
     [Serializable]
-    public record LoginRequestPacket(string AccountID, string Password);
+    public record struct LoginRequestPacket(string AccountID, string Password);
 
     [Serializable]
-    public record RegistAccountRequestPacket(string AccountID, string Password);
+    public record struct RegistAccountRequestPacket(string AccountID, string Password);
 
     [Serializable]
-    public record RegistAccountResponsePacket(bool IsSuccess, int ErrorCode);
+    public record struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode);
 
     [Serializable]
-    public record LoginResponsePacket(bool IsSuccess, int ErrorCode);
-
-    public class LoginServerMapper : IPackertMapper<LoginPacketList>
-    {
-        public void GetPacketClassByID(LoginPacketList ID)
-        {
-            switch (ID)
-            {
-                case LoginPacketList.LoginRequest:
-                    break;
-                case LoginPacketList.RegistAccountRequest:
-                    break;
-                case LoginPacketList.RegistAccountResponse:
-                    break;
-                case LoginPacketList.LoginResponse:
-                    break;
-            }
-        }
-    }
+    public record struct LoginResponsePacket(bool IsSuccess, int ErrorCode);
 }

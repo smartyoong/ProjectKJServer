@@ -6,10 +6,14 @@ using System.Threading.Tasks;
 using System.Net;
 using UIEventManager;
 using AcceptUtility;
+using Utility;
+using LogUtility;
+using System.Net.Sockets;
+using PacketUtility;
 
 namespace DBServer
 {
-    internal class LoginServerAcceptor : Acceptor, IDisposable
+    internal class LoginServerAcceptor : Acceptor, IDisposable, IPacketProcess
     {
         private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
         public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
@@ -73,6 +77,36 @@ namespace DBServer
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
             }, CheckCancelToken.Token);
+        }
+
+        public void GetRecvPacket()
+        {
+            Task.Run( async() =>
+            {
+                while(!CheckCancelToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        byte[] DataBuffer = await RecvData().ConfigureAwait(false);
+                    }
+                    catch (ArgumentException e)
+                    {
+                        // ID 매개변수 불일치
+                    }
+                    catch (ConnectionClosedException e)
+                    {
+                        // 연결종료됨 어캐할까?
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        // 가용가능한 소켓이 없음
+                    }
+                    catch (Exception e)
+                    {
+                        // 그외 에러
+                    }
+                }
+            });
         }
     }
 }
