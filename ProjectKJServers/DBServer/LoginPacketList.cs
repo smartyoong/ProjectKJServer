@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.Media.Devices.Core;
-using Utility;
+﻿using Utility;
 
 namespace DBServer
 {
@@ -17,14 +11,15 @@ namespace DBServer
     }
 
     [Serializable]
-    public record struct LoginRequestPacket(string AccountID, string Password);
+    public struct LoginRequestPacket(string AccountID, string Password);
 
     [Serializable]
-    public record struct RegistAccountRequestPacket(string AccountID, string Password);
+    public struct RegistAccountRequestPacket(string AccountID, string Password);
 
     [Serializable]
-    public record struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode);
+    public struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode);
 
     [Serializable]
-    public record struct LoginResponsePacket(bool IsSuccess, int ErrorCode);
+    public struct LoginResponsePacket(bool IsSuccess, int ErrorCode);
+
 }

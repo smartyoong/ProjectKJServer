@@ -188,7 +188,7 @@ namespace AcceptUtility
                 RecvSocket.ReceiveTimeout = 500;
                 byte[] DataSizeBuffer = new byte[sizeof(int)];
                 await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
+                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
                 await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 return DataBuffer;
             }
@@ -222,7 +222,6 @@ namespace AcceptUtility
             {
                 SendSocket = await ClientSocketList.GetAvailableSocket().ConfigureAwait(false);
                 SendSocket.SendTimeout = 500;
-                DataBuffer = PacketUtils.AddPacketHeader(DataBuffer);
                 return await SendSocket.SendAsync(DataBuffer,AcceptCancelToken.Token).ConfigureAwait(false);
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)

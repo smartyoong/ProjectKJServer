@@ -1,61 +1,96 @@
-﻿using System.Runtime.Serialization.Formatters.Binary;
+﻿using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 
 namespace PacketUtility
 {
     public static class PacketUtils
     {
-        public static int GetSizeFromPacket(byte[] Packet)
+        public static int GetSizeFromPacket(ref byte[] Packet)
         {
+            // 사이즈를 가져오는건 Acceptor 코어 내에서만 사용할거다
             return BitConverter.ToInt32(Packet, 0);
         }
 
-        public static byte[] AddPacketHeader(byte[] Original)
+        public static S? DeserializePacket<S>(ref Memory<byte> DataBuffer) where S : struct
         {
-            int PacketSize = Original.Length;
-            byte[] PacketSizeBuffer = BitConverter.GetBytes(PacketSize);
-            byte[] Packet = new byte[PacketSize + PacketSizeBuffer.Length];
-            Buffer.BlockCopy(PacketSizeBuffer, 0, Packet, 0, PacketSizeBuffer.Length);
-            Buffer.BlockCopy(Original, 0, Packet, PacketSizeBuffer.Length, PacketSize);
-            return Packet;
+            return JsonSerializer.Deserialize<S>(DataBuffer.Span.ToArray());
         }
 
-        public static T? DeserializePacket<T>(byte[] DataBuffer)
-        {
-            return JsonSerializer.Deserialize<T>(DataBuffer);
-        }
-
-        public static byte[] SerializePacket<T>(T Data)
+        public static byte[] SerializePacket<S>(S Data) where S : struct
         {
             return JsonSerializer.SerializeToUtf8Bytes(Data);
         }
 
-        public static byte[] MakePacket<E,T>(E ID, T Packet)
+        public static int IDToInt<E>(E ID) where E : Enum
         {
             if (!(ID is IConvertible))
             {
                 throw new ArgumentException("ID 값은 반드시 int와 호환되어야합니다.");
             }
-            var IDBuffer = BitConverter.GetBytes(Convert.ToInt32(ID));
-            var PacketBuffer = SerializePacket(Packet);
-            byte[] ReturnBuffer = new byte[IDBuffer.Length + PacketBuffer.Length];
-            Buffer.BlockCopy(IDBuffer, 0, ReturnBuffer, 0, IDBuffer.Length);
-            Buffer.BlockCopy(PacketBuffer, 0, ReturnBuffer, IDBuffer.Length, PacketBuffer.Length);
-            return AddPacketHeader(ReturnBuffer);
+            return Convert.ToInt32(ID);
         }
 
-        public static (E ID, T Packet) UnPackPacket<E, T>(byte[] Packet)
+        public static byte[] MakePacket<S>(int ID, S Packet) where S : struct
         {
-            int ID = BitConverter.ToInt32(Packet, 0);
+            // 사이즈를 구한다.
+            int PacketSize = Marshal.SizeOf(Packet);
+            int TotalSize = (PacketSize + (sizeof(int) * 2));
+
+            // 각 데이터를 직렬화한다.
+            var SizeBuffer = BitConverter.GetBytes(TotalSize);
+            var IDBuffer = BitConverter.GetBytes(ID);
+            var PacketBuffer = SerializePacket(Packet);
+
+            // 복사 비용을 줄이기 위해 Memory를 사용한다.
+            Memory<byte> ReturnMemory = new Memory<byte>(new byte[TotalSize]);
+            Span<byte> ReturnSpan = ReturnMemory.Span;
+
+
+            // Span을 이용해 Memory에 직접 참조하여 데이터를 복사한다.
+            int CurrentSpanIndex = 0;
+            for (int i = CurrentSpanIndex; i < SizeBuffer.Length; i++)
+            {
+                ReturnSpan[i] = SizeBuffer[i];
+            }
+
+            CurrentSpanIndex += SizeBuffer.Length;
+            for (int i = CurrentSpanIndex; i < IDBuffer.Length; i++)
+            {
+                ReturnSpan[i] = IDBuffer[i];
+            }
+
+            CurrentSpanIndex += IDBuffer.Length;
+            for (int i = CurrentSpanIndex; i < PacketBuffer.Length; i++)
+            {
+                ReturnSpan[i] = PacketBuffer[i];
+            }
+            return ReturnSpan.ToArray();
+        }
+
+        public static Memory<byte> ByteToMemory(ref byte[] Packet)
+        {
+            return Packet.AsMemory();
+        }
+
+        public static E GetIDFromPacket<E>(ref Memory<byte> Packet) where E : Enum
+        {
+            // ID를 가져온다.
+            int ID = BitConverter.ToInt32(Packet.Span);
+            // 검증한다.
             bool IsEnumDefined = Enum.IsDefined(typeof(E), ID);
             if (!IsEnumDefined)
             {
                 throw new ArgumentException("ID 값이 Enum에 정의되어 있지 않습니다.");
             }
-            var PacketBuffer = new byte[Packet.Length - sizeof(int)];
-            Buffer.BlockCopy(Packet, sizeof(int), PacketBuffer, 0, PacketBuffer.Length);
-            T Data;
-            return ((E)Enum.ToObject(typeof(E),ID), Data);
+            // 나머지 데이터만 남겨둔다
+            Packet = Packet.Slice(sizeof(int));
+            return (E)Enum.ToObject(typeof(E), ID);
+        }
+
+        public static S? GetPacketStruct<S>(ref Memory<byte> Packet) where S : struct
+        {
+            return DeserializePacket<S>(ref Packet);
         }
     }
 }

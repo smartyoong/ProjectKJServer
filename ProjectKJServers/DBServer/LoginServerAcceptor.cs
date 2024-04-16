@@ -13,7 +13,7 @@ using PacketUtility;
 
 namespace DBServer
 {
-    internal class LoginServerAcceptor : Acceptor, IDisposable, IPacketProcess
+    internal class LoginServerAcceptor : Acceptor, IDisposable
     {
         private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
         public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
