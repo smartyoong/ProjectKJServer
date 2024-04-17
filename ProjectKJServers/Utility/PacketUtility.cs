@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 
 namespace PacketUtility
@@ -48,6 +47,7 @@ namespace PacketUtility
 
 
             // Span을 이용해 Memory에 직접 참조하여 데이터를 복사한다.
+            // 만약 여기서 에러가 나온다면, 사이즈를 제대로 계산했는지 확인하길 바란다
             int CurrentSpanIndex = 0;
             for (int i = CurrentSpanIndex; i < SizeBuffer.Length; i++)
             {

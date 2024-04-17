@@ -92,18 +92,22 @@ namespace DBServer
                     catch (ArgumentException e)
                     {
                         // ID 매개변수 불일치
+                        LogManager.GetSingletone.WriteLog(e).Wait();
                     }
                     catch (ConnectionClosedException e)
                     {
                         // 연결종료됨 어캐할까?
+                        LogManager.GetSingletone.WriteLog(e).Wait();
                     }
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                     {
                         // 가용가능한 소켓이 없음
+                        LogManager.GetSingletone.WriteLog(e).Wait();
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (e is not OperationCanceledException)
                     {
                         // 그외 에러
+                        LogManager.GetSingletone.WriteLog(e).Wait();
                     }
                 }
             });
