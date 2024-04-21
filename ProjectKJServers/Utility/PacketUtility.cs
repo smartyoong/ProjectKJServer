@@ -30,7 +30,7 @@ namespace PacketUtility
             return Convert.ToInt32(ID);
         }
 
-        public static byte[] MakePacket<S>(int ID, S Packet) where S : struct
+        public static byte[] MakePacketFromStruct<S>(int ID, S Packet) where S : struct
         {
             // 사이즈를 구한다.
             int PacketSize = Marshal.SizeOf(Packet);
@@ -73,24 +73,24 @@ namespace PacketUtility
             return Packet.AsMemory();
         }
 
-        public static E GetIDFromPacket<E>(ref Memory<byte> Packet) where E : Enum
+        public static EResult GetIDFromPacket<EResult>(ref Memory<byte> Packet) where EResult : Enum
         {
             // ID를 가져온다.
             int ID = BitConverter.ToInt32(Packet.Span);
             // 검증한다.
-            bool IsEnumDefined = Enum.IsDefined(typeof(E), ID);
+            bool IsEnumDefined = Enum.IsDefined(typeof(EResult), ID);
             if (!IsEnumDefined)
             {
                 throw new ArgumentException("ID 값이 Enum에 정의되어 있지 않습니다.");
             }
             // 나머지 데이터만 남겨둔다
             Packet = Packet.Slice(sizeof(int));
-            return (E)Enum.ToObject(typeof(E), ID);
+            return (EResult)Enum.ToObject(typeof(EResult), ID);
         }
 
-        public static S? GetPacketStruct<S>(ref Memory<byte> Packet) where S : struct
+        public static SResult? GetPacketStruct<SResult>(ref Memory<byte> Packet) where SResult : struct
         {
-            return DeserializePacket<S>(ref Packet);
+            return DeserializePacket<SResult>(ref Packet);
         }
     }
 }

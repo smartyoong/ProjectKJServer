@@ -2,17 +2,12 @@
 
 namespace DBServer
 {
-    public enum LoginPacketList
+    public enum LoginPacketListID
     {
         LoginRequest = 0,
         LoginResponse = 1,
         RegistAccountRequest = 2,
         RegistAccountResponse = 3
-    }
-
-    public struct ErrorPacket(GeneralErrorCode ErrorCode)
-    {
-        public GeneralErrorCode ErrorCode { get; } = ErrorCode;
     }
 
     [Serializable]

@@ -12,5 +12,11 @@ namespace Utility
     public enum GeneralErrorCode
     {
         ERR_PACKET_IS_NOT_ASSIGNED = 0
+      , ERR_PACKET_IS_NULL = 1
+    }
+
+    public struct ErrorPacket(GeneralErrorCode ErrorCode)
+    {
+        public GeneralErrorCode ErrorCode { get; } = ErrorCode;
     }
 }

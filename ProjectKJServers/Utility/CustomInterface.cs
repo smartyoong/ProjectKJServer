@@ -21,8 +21,6 @@ namespace Utility
     {
         public dynamic MakePacketStruct(E ID, params dynamic[] PacketParams);
 
-        public Task ProcessPacket();
-
-        public bool IsErrorPacket(dynamic Packet);
+        public void PushToPacketPipeline(byte[] Packet);
     }
 }
