@@ -8,7 +8,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBServer", "DBServer\DBServ
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameServer", "GameServer\GameServer.csproj", "{95A9EF12-32F3-47B4-BDC6-AE046F69A9A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utility", "Utility\Utility.csproj", "{155BD1D8-1741-48ED-819F-19043983400B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreUtility", "Utility\CoreUtility.csproj", "{155BD1D8-1741-48ED-819F-19043983400B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

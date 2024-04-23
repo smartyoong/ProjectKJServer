@@ -14,13 +14,13 @@ namespace LoginServer
     /// UI EVENT와 DB서버 관련 패킷 Process의 매개자 역할을 하기 위함입니다.
     /// 즉, 핵심 기능들은 Connector 클래스에 존재하고 상속을 받아서, 명시적 표현 및 결합도 관련 로직을 담당합니다.
     /// </summary>
-    internal class DBServerConnector : Connector, IDisposable
+    internal class GameServerConnector : Connector, IDisposable
     {
         private bool IsAlreadyDisposed = false;
         /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
-        private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
+        private static readonly Lazy<GameServerConnector> Lazy = new Lazy<GameServerConnector>(() => new GameServerConnector());
 
-        public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
+        public static GameServerConnector GetSingletone { get { return Lazy.Value; } }
 
         private CancellationTokenSource CheckProcessToken;
 
@@ -29,7 +29,7 @@ namespace LoginServer
         /// DBServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private DBServerConnector() : base(Settings.Default.DBServerConnectCount)
+        private GameServerConnector() : base(Settings.Default.GameServerConnectCount)
         {
             CheckProcessToken = new CancellationTokenSource();
         }
@@ -40,7 +40,7 @@ namespace LoginServer
         /// </summary>
         public void Start()
         {
-            Start(new IPEndPoint(IPAddress.Parse(Settings.Default.DBServerIPAddress), Settings.Default.DBServerPort), "DB서버");
+            Start(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), "DB서버");
             ProcessCheck();
         }
 
@@ -63,7 +63,7 @@ namespace LoginServer
         /// 종료자입니다.
         /// 최후의 수단이며, 직접 사용은 절대하지 마세요.
         /// </summary>
-        ~DBServerConnector()
+        ~GameServerConnector()
         {
             Dispose(false);
         }

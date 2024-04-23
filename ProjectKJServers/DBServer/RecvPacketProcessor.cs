@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using Utility;
-using LogUtility;
+﻿using System.Text;
+using KYCLog;
 using System.Threading.Tasks.Dataflow;
-using PacketUtility;
+using KYCPacket;
+using KYCInterface;
+using KYCException;
 
 namespace DBServer
 {
-    internal class LoginPacketProcessor : IPacketProcessor<LoginPacketListID>
+    internal class RecvPacketProcessor : IPacketProcessor<DBPacketListID>
     {
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -29,7 +25,7 @@ namespace DBServer
         
 
 
-        LoginPacketProcessor()
+        RecvPacketProcessor()
         {
             ByteToMemoryBlock = new TransformBlock<byte[], Memory<byte>>(MakeByteToMemory, new ExecutionDataflowBlockOptions
             {
@@ -104,11 +100,11 @@ namespace DBServer
             }, CancelToken.Token);
         }
 
-        private bool IsErrorPacket(dynamic Packet)
+        private bool IsErrorPacket(dynamic Packet, string message)
         {
             if (Packet is ErrorPacket)
             {
-                ProcessGeneralErrorCode(Packet.ErrorCode, "LoginPacketProcessor 클래스에서 에러 발생");
+                ProcessGeneralErrorCode(Packet.ErrorCode, $"LoginPacketProcessor {message}에서 에러 발생");
                 return true;
             }
             return false;
@@ -192,7 +188,7 @@ namespace DBServer
 
         public void ProcessPacket(dynamic packet)
         {
-            if(IsErrorPacket(packet))
+            if(IsErrorPacket(packet, "ProcessPacket"))
                 return;
             switch(packet)
             {
@@ -210,9 +206,10 @@ namespace DBServer
 
         private void LoginRequest(LoginRequestPacket packet)
         {
-            // 로그인 요청 처리
-            // DB랑 연동시킬 방법을 생각하자
-            IsErrorPacket(packet);
+            if (IsErrorPacket(packet, "LoginRequest"))
+                return;
+            //SQLManager가 있었네! 이걸로 DB에 접근해서 처리하면 될듯
+            SQLManager.GetSingletone.
         }
     }
 }

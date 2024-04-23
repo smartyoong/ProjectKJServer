@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utility
+namespace KYCException
 {
 
     // 에러 코드 전용 패킷의 에러 코드는 반드시 Enum 값을 사용해야한다.

@@ -23,14 +23,14 @@ namespace DBServer
         private CancellationTokenSource CheckCancelToken;
 
 
-        private LoginServerAcceptor() : base(DBServerSettings.Default.LoginServerAcceptCount)
+        private LoginServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
         }
 
         public void Start()
         {
-            Init(IPAddress.Parse(DBServerSettings.Default.LoginServerIPAdress), DBServerSettings.Default.LoginServerAcceptPort);
+            Init(IPAddress.Parse(DBServerSettings.Default.GameServerIPAdress), DBServerSettings.Default.GameServerAcceptPort);
             Start("LoginServer");
             ProcessCheck();
         }

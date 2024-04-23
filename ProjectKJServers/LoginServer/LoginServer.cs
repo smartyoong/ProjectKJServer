@@ -34,26 +34,26 @@ namespace LoginServer
                     });
                 }
             );
-            UIEvent.GetSingletone.SubscribeDBServerStatusEvent(
+            UIEvent.GetSingletone.SubscribeSQLStatusEvent(
                 IsConnected =>
                 {
                     if (IsConnected)
                     {
-                        DBServerStatusTextBox.BackColor = Color.Blue;
+                        SQLStatusTextBox.BackColor = Color.Blue;
 
                     }
                     else
                     {
-                        DBServerStatusTextBox.BackColor = Color.Red;
+                        SQLStatusTextBox.BackColor = Color.Red;
                     }
                 }
             );
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
-            DBServerStatusTextBox.BackColor = Color.Red;
+            SQLStatusTextBox.BackColor = Color.Red;
             GameServerStatusTextBox.BackColor = Color.Red;
-            DBServerStatusTextBox.ReadOnly = true;
-            DBServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            SQLStatusTextBox.ReadOnly = true;
+            SQLStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             GameServerStatusTextBox.ReadOnly = true;
             GameServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             ServerStatusTextBox.ReadOnly = true;
@@ -67,13 +67,13 @@ namespace LoginServer
             await LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            DBServerConnector.GetSingletone.Start();
+            GameServerConnector.GetSingletone.Start();
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             await LogManager.GetSingletone.WriteLog("서버를 종료완료, 몇 초 대기후 프로그램을 종료합니다");
-            await DBServerConnector.GetSingletone.Stop();
+            await GameServerConnector.GetSingletone.Stop();
             await Task.Delay(5000);
             LogManager.GetSingletone.Close();
             Environment.Exit(0);

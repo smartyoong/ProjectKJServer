@@ -3,9 +3,9 @@ using PacketUtility;
 using SocketUtility;
 using System.Net;
 using System.Net.Sockets;
-using Utility;
+using KYCException;
 
-namespace AcceptUtility
+namespace KYCSocketCore
 {
     public class Acceptor : IDisposable
     {

@@ -38,36 +38,48 @@ namespace LoginServer.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2")]
-        public int DBServerConnectCount {
+        public int GameServerConnectCount {
             get {
-                return ((int)(this["DBServerConnectCount"]));
+                return ((int)(this["GameServerConnectCount"]));
             }
             set {
-                this["DBServerConnectCount"] = value;
+                this["GameServerConnectCount"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("12476")]
-        public int DBServerPort {
+        [global::System.Configuration.DefaultSettingValueAttribute("12477")]
+        public int GameServerPort {
             get {
-                return ((int)(this["DBServerPort"]));
+                return ((int)(this["GameServerPort"]));
             }
             set {
-                this["DBServerPort"] = value;
+                this["GameServerPort"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
-        public string DBServerIPAddress {
+        public string GameServerIPAddress {
             get {
-                return ((string)(this["DBServerIPAddress"]));
+                return ((string)(this["GameServerIPAddress"]));
             }
             set {
-                this["DBServerIPAddress"] = value;
+                this["GameServerIPAddress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("12475")]
+        public int ClientAcceptPort {
+            get {
+                return ((int)(this["ClientAcceptPort"]));
+            }
+            set {
+                this["ClientAcceptPort"] = value;
             }
         }
     }

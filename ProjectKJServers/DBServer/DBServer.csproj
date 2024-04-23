@@ -11,7 +11,7 @@
     <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Utility\Utility.csproj" />
+    <ProjectReference Include="..\Utility\CoreUtility.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="DBServerSettings.Designer.cs">

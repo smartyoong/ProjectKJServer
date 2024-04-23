@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Utility;
+using CoreUtility;
 using UIEventManager;
 
-namespace LogUtility
+namespace KYCLog
 {
     /// <summary>
     /// 로그관련 모든 기능을 담당하는 클래스입니다.

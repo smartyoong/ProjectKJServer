@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
+using KYCLog;
+using KYCUIEventManager;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using LogUtility;
-using UIEventManager;
 
-namespace DBServer
+
+namespace KYCSQL
 {
-    internal class SQLExecuter : IDisposable
+    public class SQLExecuter : IDisposable
     {
         private readonly string ConnectString;
         private CancellationTokenSource CancelSQL = new CancellationTokenSource();
@@ -102,7 +95,7 @@ namespace DBServer
             }
         }
 
-        public async Task<(int ErrorCode ,List<List<object>> ValueList)> ExecuteSqlSPGeResulttListAsync(string SPName ,params SqlParameter[] SQLParameters)
+        public async Task<(int ErrorCode, List<List<object>> ValueList)> ExecuteSqlSPGeResulttListAsync(string SPName, params SqlParameter[] SQLParameters)
         {
             List<List<object>> ResultList = new List<List<object>>();
             try
@@ -141,16 +134,16 @@ namespace DBServer
                     }
                 }
             }
-            catch(SqlException se) when (se.Number == -2)
+            catch (SqlException se) when (se.Number == -2)
             {
                 UIEvent.GetSingletone.UpdateDBServerStatus(false);
                 await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
                 return ((int)SP_ERROR.CONNECTION_ERROR, ResultList);
             }
-            catch(Exception e) when (e is not OperationCanceledException)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
-                return ((int)SP_ERROR.SQL_QUERY_ERROR,ResultList);
+                return ((int)SP_ERROR.SQL_QUERY_ERROR, ResultList);
             }
         }
 

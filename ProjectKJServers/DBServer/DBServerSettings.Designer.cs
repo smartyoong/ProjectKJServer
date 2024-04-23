@@ -37,121 +37,37 @@ namespace DBServer {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2")]
-        public int LoginServerAcceptCount {
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int GameServerAcceptCount {
             get {
-                return ((int)(this["LoginServerAcceptCount"]));
+                return ((int)(this["GameServerAcceptCount"]));
             }
             set {
-                this["LoginServerAcceptCount"] = value;
+                this["GameServerAcceptCount"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("12476")]
-        public int LoginServerAcceptPort {
+        public int GameServerAcceptPort {
             get {
-                return ((int)(this["LoginServerAcceptPort"]));
+                return ((int)(this["GameServerAcceptPort"]));
             }
             set {
-                this["LoginServerAcceptPort"] = value;
+                this["GameServerAcceptPort"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
-        public string LoginServerIPAdress {
+        public string GameServerIPAdress {
             get {
-                return ((string)(this["LoginServerIPAdress"]));
+                return ((string)(this["GameServerIPAdress"]));
             }
             set {
-                this["LoginServerIPAdress"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("SMARTYOONG\\SQLEXPRESS")]
-        public string SQLDataSoruce {
-            get {
-                return ((string)(this["SQLDataSoruce"]));
-            }
-            set {
-                this["SQLDataSoruce"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("AccountDB")]
-        public string SQLAccountDataBaseName {
-            get {
-                return ((string)(this["SQLAccountDataBaseName"]));
-            }
-            set {
-                this["SQLAccountDataBaseName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool SQLSecurity {
-            get {
-                return ((bool)(this["SQLSecurity"]));
-            }
-            set {
-                this["SQLSecurity"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
-        public int SQLPoolMinSize {
-            get {
-                return ((int)(this["SQLPoolMinSize"]));
-            }
-            set {
-                this["SQLPoolMinSize"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("150")]
-        public int SQLPoolMaxSize {
-            get {
-                return ((int)(this["SQLPoolMaxSize"]));
-            }
-            set {
-                this["SQLPoolMaxSize"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("GameDB")]
-        public string SQLGameDataBaseName {
-            get {
-                return ((string)(this["SQLGameDataBaseName"]));
-            }
-            set {
-                this["SQLGameDataBaseName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("60")]
-        public int SQLTimeOut {
-            get {
-                return ((int)(this["SQLTimeOut"]));
-            }
-            set {
-                this["SQLTimeOut"] = value;
+                this["GameServerIPAdress"] = value;
             }
         }
     }

@@ -6,8 +6,8 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using LogUtility;
-namespace SocketUtility
+using KYCLog;
+namespace KYCSocketCore
 {
     public class SocketManager : IDisposable, IEnumerable<Socket>
     {

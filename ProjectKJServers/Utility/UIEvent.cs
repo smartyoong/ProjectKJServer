@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
-namespace UIEventManager
+namespace KYCUIEventManager
 {
     /// <summary>
     /// UI관련 업데이트가 필요할때마다 중간에서 매개체 역할을 하는 클래스입니다.

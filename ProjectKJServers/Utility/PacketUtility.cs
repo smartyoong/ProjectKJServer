@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace PacketUtility
+namespace KYCPacket
 {
     public static class PacketUtils
     {

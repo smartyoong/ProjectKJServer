@@ -42,7 +42,6 @@
             // 
             LogListBox.FormattingEnabled = true;
             LogListBox.HorizontalScrollbar = true;
-            LogListBox.ItemHeight = 15;
             LogListBox.Location = new Point(12, 12);
             LogListBox.Name = "LogListBox";
             LogListBox.ScrollAlwaysVisible = true;
@@ -82,7 +81,7 @@
             DBServerStatusTextBox.ReadOnly = true;
             DBServerStatusTextBox.Size = new Size(163, 35);
             DBServerStatusTextBox.TabIndex = 3;
-            DBServerStatusTextBox.Text = "DBServer";
+            DBServerStatusTextBox.Text = "SQL";
             DBServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
             // GameServerStatusTextBox
@@ -151,7 +150,7 @@
         private ListBox LogListBox;
         private Button ServerStopButton;
         private Button ServerStartButton;
-        private TextBox DBServerStatusTextBox;
+        private TextBox SQLStatusTextBox;
         private TextBox GameServerStatusTextBox;
         private TextBox ServerStatusTextBox;
         private TextBox CurrentUserCountTextBox;

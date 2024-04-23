@@ -4,7 +4,7 @@ using System.Threading;
 using SocketUtility;
 using LogUtility;
 
-namespace ConnectUtility
+namespace KYCSocketCore
 {
     public class Connector : IDisposable
     {
