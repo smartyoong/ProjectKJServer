@@ -31,7 +31,7 @@
             LogListBox = new ListBox();
             ServerStopButton = new Button();
             ServerStartButton = new Button();
-            DBServerStatusTextBox = new TextBox();
+            SQLStatusTextBox = new TextBox();
             GameServerStatusTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
             CurrentUserCountTextBox = new TextBox();
@@ -75,14 +75,14 @@
             // 
             // DBServerStatusTextBox
             // 
-            DBServerStatusTextBox.Font = new Font("맑은 고딕", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            DBServerStatusTextBox.Location = new Point(625, 12);
-            DBServerStatusTextBox.Name = "DBServerStatusTextBox";
-            DBServerStatusTextBox.ReadOnly = true;
-            DBServerStatusTextBox.Size = new Size(163, 35);
-            DBServerStatusTextBox.TabIndex = 3;
-            DBServerStatusTextBox.Text = "SQL";
-            DBServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
+            SQLStatusTextBox.Font = new Font("맑은 고딕", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            SQLStatusTextBox.Location = new Point(625, 12);
+            SQLStatusTextBox.Name = "DBServerStatusTextBox";
+            SQLStatusTextBox.ReadOnly = true;
+            SQLStatusTextBox.Size = new Size(163, 35);
+            SQLStatusTextBox.TabIndex = 3;
+            SQLStatusTextBox.Text = "SQL";
+            SQLStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
             // GameServerStatusTextBox
             // 
@@ -135,7 +135,7 @@
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(GameServerStatusTextBox);
-            Controls.Add(DBServerStatusTextBox);
+            Controls.Add(SQLStatusTextBox);
             Controls.Add(ServerStartButton);
             Controls.Add(ServerStopButton);
             Controls.Add(LogListBox);

@@ -1,6 +1,6 @@
-﻿using LogUtility;
-using PacketUtility;
-using SocketUtility;
+﻿using KYCLog;
+using KYCPacket;
+using KYCSocketCore;
 using System.Net;
 using System.Net.Sockets;
 using KYCException;

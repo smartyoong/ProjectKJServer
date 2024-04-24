@@ -1,6 +1,6 @@
 ﻿using LoginServer.Properties;
-using UIEventManager;
-using LogUtility;
+using KYCUIEventManager;
+using KYCLog;
 
 namespace LoginServer
 {

@@ -1,8 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using SocketUtility;
-using LogUtility;
+using KYCLog;
 
 namespace KYCSocketCore
 {

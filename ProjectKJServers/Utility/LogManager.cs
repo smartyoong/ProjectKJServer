@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using CoreUtility;
-using UIEventManager;
+using KYCUIEventManager;
 
 namespace KYCLog
 {
@@ -20,7 +20,7 @@ namespace KYCLog
     public class LogManager : IDisposable
     {
         private bool IsAlreadyDisposed = false;
-        private static string LogFilePath = UtilitySettings.Default.LogDirectory;
+        private static string LogFilePath = CoreSettings.Default.LogDirectory;
         /// <value>StreamWriter는 내부적으로 버퍼링을 사용하기에 동기화 코드를 제거했습니다.</value>
         private readonly StreamWriter LogFile;
         private readonly Channel<string> LogChannel = Channel.CreateUnbounded<string>();

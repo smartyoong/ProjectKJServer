@@ -1,8 +1,7 @@
 ﻿using LoginServer.Properties;
 using System.Net;
-using System.Net.Sockets;
-using UIEventManager;
-using ConnectUtility;
+using KYCUIEventManager;
+using KYCSocketCore;
 
 namespace LoginServer
 {
