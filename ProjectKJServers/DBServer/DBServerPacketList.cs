@@ -10,4 +10,11 @@ namespace DBServer
     {
         REQUST_CHRACTER_INFO = 0
     }
+
+    struct RequestCharacterInfoPacket(int AccountID, int CharacterID)
+    {
+        public int AccountID = AccountID;
+        public int CharacterID = CharacterID;
+    }
+
 }

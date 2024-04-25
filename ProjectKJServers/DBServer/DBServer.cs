@@ -1,5 +1,6 @@
-using UIEventManager;
-using LogUtility;
+using KYCUIEventManager;
+using KYCLog;
+using KYCSQL;
 
 namespace DBServer
 {
@@ -73,7 +74,7 @@ namespace DBServer
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
             await LogManager.GetSingletone.WriteLog("서버를 가동합니다.").ConfigureAwait(false);
-            await SQLManager.GetSingletone.ConnectToSQL().ConfigureAwait(false);
+            await GameSQLManager.GetSingletone.ConnectToSQL().ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("로그인 서버의 연결의 대기합니다.").ConfigureAwait(false);
             GameServerAcceptor.GetSingletone.Start();
         }
@@ -82,7 +83,7 @@ namespace DBServer
         {
             ServerStopButton.Enabled = false;
             await LogManager.GetSingletone.WriteLog("서버를 중지합니다.").ConfigureAwait(false);
-            await SQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
+            await GameSQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
             await GameServerAcceptor.GetSingletone.Stop().ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("로그인 서버와의 연결을 중단했습니다.").ConfigureAwait(false);

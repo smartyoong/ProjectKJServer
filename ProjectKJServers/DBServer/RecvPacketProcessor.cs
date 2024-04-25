@@ -134,18 +134,12 @@ namespace DBServer
             return PacketUtils.ByteToMemory(ref data);
         }
 
-        public dynamic MakePacketStruct(LoginPacketListID ID, params dynamic[] PacketParams)
+        public dynamic MakePacketStruct(DBPacketListID ID, params dynamic[] PacketParams)
         {
             switch(ID)
             {
-                case LoginPacketListID.LoginRequest:
-                    return new LoginRequestPacket((string)PacketParams[0], (string)PacketParams[1]);
-                case LoginPacketListID.LoginResponse:
-                    return new LoginResponsePacket((bool)PacketParams[0], (int)PacketParams[1]);
-                case LoginPacketListID.RegistAccountRequest:
-                    return new RegistAccountRequestPacket((string)PacketParams[0], (string)PacketParams[1]);
-                case LoginPacketListID.RegistAccountResponse:
-                    return new RegistAccountResponsePacket((bool)PacketParams[0], (int)PacketParams[1]);
+                case DBPacketListID.REQUST_CHRACTER_INFO:  
+                    return new RequestCharacterInfoPacket(PacketParams[0], PacketParams[1]);
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -153,34 +147,16 @@ namespace DBServer
 
         private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref packet);
+           DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref packet);
 
             switch (ID)
             {
-                case LoginPacketListID.LoginRequest:
-                    LoginRequestPacket? loginRequestPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref packet);
-                    if (loginRequestPacket == null)
+                case DBPacketListID.REQUST_CHRACTER_INFO:
+                    RequestCharacterInfoPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<RequestCharacterInfoPacket>(ref packet);
+                    if (RequestCharInfoPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
-                        return loginRequestPacket;
-                case LoginPacketListID.LoginResponse:
-                    LoginResponsePacket? loginResponsePacket = PacketUtils.GetPacketStruct<LoginResponsePacket>(ref packet);
-                    if (loginResponsePacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return loginResponsePacket;
-                case LoginPacketListID.RegistAccountRequest:
-                    RegistAccountRequestPacket? registAccountRequestPacket = PacketUtils.GetPacketStruct<RegistAccountRequestPacket>(ref packet);
-                    if (registAccountRequestPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return registAccountRequestPacket;
-                case LoginPacketListID.RegistAccountResponse:
-                    RegistAccountResponsePacket? registAccountResponsePacket = PacketUtils.GetPacketStruct<RegistAccountResponsePacket>(ref packet);
-                    if (registAccountResponsePacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return registAccountResponsePacket;
+                        return RequestCharInfoPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -192,24 +168,17 @@ namespace DBServer
                 return;
             switch(packet)
             {
-                case LoginRequestPacket loginRequestPacket:
-                    LoginRequest(loginRequestPacket);
-                    break;
-                case LoginResponsePacket loginResponsePacket:
-                    break;
-                case RegistAccountRequestPacket registAccountRequestPacket:
-                    break;
-                case RegistAccountResponsePacket registAccountResponsePacket:
+                case RequestCharacterInfoPacket RequestPacket:
+                    RequestCharacterInfo(RequestPacket);
                     break;
             }
         }
 
-        private void LoginRequest(LoginRequestPacket packet)
+        private void RequestCharacterInfo(RequestCharacterInfoPacket packet)
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
             //SQLManager가 있었네! 이걸로 DB에 접근해서 처리하면 될듯
-            SQLManager.GetSingletone.
         }
     }
 }

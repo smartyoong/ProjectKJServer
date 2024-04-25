@@ -4,26 +4,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
-using UIEventManager;
-using AcceptUtility;
-using Utility;
-using LogUtility;
+using KYCUIEventManager;
+using KYCLog;
+using KYCSocketCore;
 using System.Net.Sockets;
-using PacketUtility;
+using KYCPacket;
+using KYCException;
 
 namespace DBServer
 {
-    internal class LoginServerAcceptor : Acceptor, IDisposable
+    internal class GameServerAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
-        public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
+        private static readonly Lazy<GameServerAcceptor> Lazy = new Lazy<GameServerAcceptor>(() => new GameServerAcceptor());
+        public static GameServerAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
         private CancellationTokenSource CheckCancelToken;
 
 
-        private LoginServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
+        private GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
         }
@@ -41,7 +41,7 @@ namespace DBServer
             Dispose();
         }
 
-        ~LoginServerAcceptor()
+        ~GameServerAcceptor()
         {
             Dispose(false);
         }
