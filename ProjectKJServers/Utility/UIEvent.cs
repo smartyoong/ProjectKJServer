@@ -16,6 +16,9 @@ namespace KYCUIEventManager
         /// <value> DB 서버 UI 갱신용 이벤트.</value>
         private event Action<bool>? DBServerEvent;
 
+        /// <value> Game 서버 UI 갱신용 이벤트.</value>
+        private event Action<bool>? GameServerEvent;
+
         /// <value> SQL 서버 UI 갱신용 이벤트.</value>
         private event Action<bool>? SQLEvent;
 
@@ -75,6 +78,16 @@ namespace KYCUIEventManager
             LoginServerEvent -= action;
         }
 
+        public void SubscribeGameServerStatusEvent(Action<bool> action)
+        {
+            GameServerEvent += action;
+        }
+
+        public void UnsubscribeGameServerStatusEvent(Action<bool> action)
+        {
+            GameServerEvent -= action;
+        }
+
         public void SubscribeUserCountEvent(Action<bool> action)
         {
             UserCountEvent += action;
@@ -117,8 +130,13 @@ namespace KYCUIEventManager
 
         public void UpdateDBServerStatus(bool IsConnected)
         {
-            // SQL서버와 연결 상태를 UI에 표시하기 위한 이벤트
+            // DB서버와 연결 상태를 UI에 표시하기 위한 이벤트
             DBServerEvent?.Invoke(IsConnected);
+        }
+        public void UpdateGameServerStatus(bool IsConnected)
+        {
+            // Game서버와 연결 상태를 UI에 표시하기 위한 이벤트
+            GameServerEvent?.Invoke(IsConnected);
         }
         public void UpdateSQLStatus(bool IsConnected)
         {

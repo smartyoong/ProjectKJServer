@@ -32,7 +32,6 @@
             CurrentUserCountTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
             GameServerStatusTextBox = new TextBox();
-            LoginServerStatusTextBox = new TextBox();
             ServerStartButton = new Button();
             ServerStopButton = new Button();
             LogListBox = new ListBox();
@@ -42,7 +41,7 @@
             // 
             UserCountLabel.AutoSize = true;
             UserCountLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
-            UserCountLabel.Location = new Point(625, 147);
+            UserCountLabel.Location = new Point(625, 106);
             UserCountLabel.Name = "UserCountLabel";
             UserCountLabel.Size = new Size(61, 13);
             UserCountLabel.TabIndex = 15;
@@ -51,7 +50,7 @@
             // CurrentUserCountTextBox
             // 
             CurrentUserCountTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            CurrentUserCountTextBox.Location = new Point(693, 144);
+            CurrentUserCountTextBox.Location = new Point(693, 103);
             CurrentUserCountTextBox.Name = "CurrentUserCountTextBox";
             CurrentUserCountTextBox.ReadOnly = true;
             CurrentUserCountTextBox.Size = new Size(95, 21);
@@ -61,7 +60,7 @@
             // ServerStatusTextBox
             // 
             ServerStatusTextBox.Font = new Font("맑은 고딕", 15.75F);
-            ServerStatusTextBox.Location = new Point(625, 103);
+            ServerStatusTextBox.Location = new Point(625, 62);
             ServerStatusTextBox.Name = "ServerStatusTextBox";
             ServerStatusTextBox.ReadOnly = true;
             ServerStatusTextBox.Size = new Size(163, 35);
@@ -72,24 +71,13 @@
             // GameServerStatusTextBox
             // 
             GameServerStatusTextBox.Font = new Font("맑은 고딕", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            GameServerStatusTextBox.Location = new Point(625, 62);
+            GameServerStatusTextBox.Location = new Point(625, 21);
             GameServerStatusTextBox.Name = "GameServerStatusTextBox";
             GameServerStatusTextBox.ReadOnly = true;
             GameServerStatusTextBox.Size = new Size(163, 35);
             GameServerStatusTextBox.TabIndex = 12;
             GameServerStatusTextBox.Text = "GameServer";
             GameServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
-            // 
-            // LoginServerStatusTextBox
-            // 
-            LoginServerStatusTextBox.Font = new Font("맑은 고딕", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            LoginServerStatusTextBox.Location = new Point(625, 21);
-            LoginServerStatusTextBox.Name = "LoginServerStatusTextBox";
-            LoginServerStatusTextBox.ReadOnly = true;
-            LoginServerStatusTextBox.Size = new Size(163, 35);
-            LoginServerStatusTextBox.TabIndex = 11;
-            LoginServerStatusTextBox.Text = "LoginServer";
-            LoginServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
             // ServerStartButton
             // 
@@ -135,7 +123,6 @@
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(GameServerStatusTextBox);
-            Controls.Add(LoginServerStatusTextBox);
             Controls.Add(ServerStartButton);
             Controls.Add(ServerStopButton);
             Controls.Add(LogListBox);
@@ -151,7 +138,6 @@
         private TextBox CurrentUserCountTextBox;
         private TextBox ServerStatusTextBox;
         private TextBox GameServerStatusTextBox;
-        private TextBox LoginServerStatusTextBox;
         private Button ServerStartButton;
         private Button ServerStopButton;
         private ListBox LogListBox;

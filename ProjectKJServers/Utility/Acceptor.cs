@@ -4,6 +4,8 @@ using KYCSocketCore;
 using System.Net;
 using System.Net.Sockets;
 using KYCException;
+using System.Linq.Expressions;
+using KYCUIEventManager;
 
 namespace KYCSocketCore
 {
@@ -22,6 +24,8 @@ namespace KYCSocketCore
         private IPAddress AllowSpecificIP = IPAddress.Any;
 
         private int MaxAcceptCount;
+
+        public const int MAX_ACCEPT_INFINITE = -1;
 
         protected Acceptor(int MaxAcceptCount)
         {
@@ -73,33 +77,54 @@ namespace KYCSocketCore
         {
             TryAcceptTaskList.Add(Task.Run(async () =>
             {
-                for (int i = 0; i < MaxAcceptCount; i++)
+                if (MaxAcceptCount == MAX_ACCEPT_INFINITE)
                 {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
-
-                    if (AcceptCancelToken.Token.IsCancellationRequested)
+                    await LogManager.GetSingletone.WriteLog($"{ServerName}의 연결을 대기합니다.").ConfigureAwait(false);
+                    while (!AcceptCancelToken.Token.IsCancellationRequested)
                     {
-                        LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
-                        break;
-                    }
-                    try
-                    {
-                        Socket ClientSocket = await ListenSocket.AcceptAsync();
-                        if (CheckIsAllowedIP(ClientSocket))
+                        try
                         {
+                            Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
                             ClientSocketList.AddSocket(ClientSocket);
-                            await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
+                            UIEvent.GetSingletone.IncreaseUserCount(true);
                         }
-                        else
+                        catch (Exception e) when (e is not OperationCanceledException)
                         {
-                            ClientSocket.Close();
-                            i--;
+                            LogManager.GetSingletone.WriteLog(e.Message).Wait();
                         }
                     }
-                    catch (Exception e) when (e is not OperationCanceledException)
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                }
+                else
+                {
+                    for (int i = 0; i < MaxAcceptCount; i++)
                     {
-                        i--;
-                        LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                        await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
+
+                        if (AcceptCancelToken.Token.IsCancellationRequested)
+                        {
+                            LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                            break;
+                        }
+                        try
+                        {
+                            Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
+                            if (CheckIsAllowedIP(ClientSocket))
+                            {
+                                ClientSocketList.AddSocket(ClientSocket);
+                                await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                ClientSocket.Close();
+                                i--;
+                            }
+                        }
+                        catch (Exception e) when (e is not OperationCanceledException)
+                        {
+                            i--;
+                            LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                        }
                     }
                 }
             }));
@@ -117,6 +142,16 @@ namespace KYCSocketCore
             if (ClientSocketList.GetCount() == 0 || ClientSocketList == null)
             {
                 return false;
+            }
+
+            // 무한으로 연결을 받는 서버라면 모든 소켓을 체크할 필요가 없다
+            if(MaxAcceptCount == MAX_ACCEPT_INFINITE)
+            {
+                // 사실 accept하는 소켓을 체크할 필요는 없다
+                // 대부분 True가 나오겠지만, 로컬 Port에 연결 안된 소켓은 에러가 발생한것이다
+                if (!ListenSocket.IsBound)
+                    return false;
+                return true; 
             }
 
             foreach (var Socket in ClientSocketList)

@@ -12,10 +12,7 @@ namespace DBServer
             LogManager.SetLogPath(DBServerSettings.Default.LogDirectory);
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
-            LoginServerStatusTextBox.BackColor = Color.Red;
             GameServerStatusTextBox.BackColor = Color.Red;
-            LoginServerStatusTextBox.ReadOnly = true;
-            LoginServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             GameServerStatusTextBox.ReadOnly = true;
             GameServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             ServerStatusTextBox.ReadOnly = true;
@@ -51,17 +48,17 @@ namespace DBServer
                 }));
             }
             );
-            UIEvent.GetSingletone.SubscribeLoginServerStatusEvent(IsConnected =>
+            UIEvent.GetSingletone.SubscribeGameServerStatusEvent(IsConnected =>
             {
                 ServerStatusTextBox.Invoke((() =>
                 {
                     if (IsConnected)
                     {
-                        LoginServerStatusTextBox.BackColor = Color.Blue;
+                        GameServerStatusTextBox.BackColor = Color.Blue;
                     }
                     else
                     {
-                        LoginServerStatusTextBox.BackColor = Color.Red;
+                        GameServerStatusTextBox.BackColor = Color.Red;
                     }
                 }));
             }
@@ -86,7 +83,7 @@ namespace DBServer
             await GameSQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
             await GameServerAcceptor.GetSingletone.Stop().ConfigureAwait(false);
-            await LogManager.GetSingletone.WriteLog("로그인 서버와의 연결을 중단했습니다.").ConfigureAwait(false);
+            await LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.").ConfigureAwait(false);
             await LogManager.GetSingletone.WriteLog("서버를 중지했습니다. 잠시후 종료됩니다.").ConfigureAwait(false);
             await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
             LogManager.GetSingletone.Close();

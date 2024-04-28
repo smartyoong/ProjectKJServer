@@ -82,5 +82,29 @@ namespace LoginServer.Properties {
                 this["ClientAcceptPort"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int ClientAcceptCount {
+            get {
+                return ((int)(this["ClientAcceptCount"]));
+            }
+            set {
+                this["ClientAcceptCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.0.0.0")]
+        public string ClientAcceptIPAdress {
+            get {
+                return ((string)(this["ClientAcceptIPAdress"]));
+            }
+            set {
+                this["ClientAcceptIPAdress"] = value;
+            }
+        }
     }
 }

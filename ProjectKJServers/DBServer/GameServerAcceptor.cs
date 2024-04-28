@@ -31,13 +31,13 @@ namespace DBServer
         public void Start()
         {
             Init(IPAddress.Parse(DBServerSettings.Default.GameServerIPAdress), DBServerSettings.Default.GameServerAcceptPort);
-            Start("LoginServer");
+            Start("Server");
             ProcessCheck();
         }
 
         public async Task Stop()
         {
-            await Stop("LoginServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            await Stop("GameServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
 
@@ -71,9 +71,9 @@ namespace DBServer
                while(!CheckCancelToken.IsCancellationRequested)
                 {
                      if(IsConnected())
-                        UIEvent.GetSingletone.UpdateLoginServerStatus(true);
+                        UIEvent.GetSingletone.UpdateGameServerStatus(true);
                      else
-                        UIEvent.GetSingletone.UpdateLoginServerStatus(false);
+                        UIEvent.GetSingletone.UpdateGameServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
             }, CheckCancelToken.Token);

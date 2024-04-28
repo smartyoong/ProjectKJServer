@@ -1,6 +1,7 @@
 ﻿using LoginServer.Properties;
 using KYCUIEventManager;
 using KYCLog;
+using KYCSQL;
 
 namespace LoginServer
 {
@@ -48,6 +49,34 @@ namespace LoginServer
                     }
                 }
             );
+            UIEvent.GetSingletone.SubscribeGameServerStatusEvent(
+                IsConnected =>
+                {
+                    if (IsConnected)
+                    {
+                        GameServerStatusTextBox.BackColor = Color.Blue;
+
+                    }
+                    else
+                    {
+                        GameServerStatusTextBox.BackColor = Color.Red;
+                    }
+                }
+            );
+            UIEvent.GetSingletone.SubscribeLoginServerStatusEvent(
+                IsConnected =>
+                {
+                    if (IsConnected)
+                    {
+                        ServerStatusTextBox.BackColor = Color.Blue;
+
+                    }
+                    else
+                    {
+                        ServerStatusTextBox.BackColor = Color.Red;
+                    }
+                }
+             );
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
             SQLStatusTextBox.BackColor = Color.Red;
@@ -67,13 +96,22 @@ namespace LoginServer
             await LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
+            await AccountSQLManager.GetSingletone.ConnectToSQL();
             GameServerConnector.GetSingletone.Start();
+            ClientAcceptor.GetSingletone.Start();
+            await LogManager.GetSingletone.WriteLog("서버를 시작완료");
+
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             await LogManager.GetSingletone.WriteLog("서버를 종료완료, 몇 초 대기후 프로그램을 종료합니다");
             await GameServerConnector.GetSingletone.Stop();
+            await Task.Delay(5000);
+            await LogManager.GetSingletone.WriteLog("게임 서버와 연결을 종료했습니다.");
+            await LogManager.GetSingletone.WriteLog("SQL 서버를 종료합니다.");
+            await AccountSQLManager.GetSingletone.StopSQL();
+            await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 종료됐습니다.");
             await Task.Delay(5000);
             LogManager.GetSingletone.Close();
             Environment.Exit(0);

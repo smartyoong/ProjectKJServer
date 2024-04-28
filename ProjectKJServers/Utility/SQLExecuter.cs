@@ -43,14 +43,14 @@ namespace KYCSQL
                 using (SqlConnection Connection = new SqlConnection(ConnectString))
                 {
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
-                    UIEvent.GetSingletone.UpdateDBServerStatus(true);
+                    UIEvent.GetSingletone.UpdateSQLStatus(true);
                     await LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.").ConfigureAwait(false);
                     return true;
                 }
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                UIEvent.GetSingletone.UpdateSQLStatus(false);
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
                 return false;
             }
@@ -84,7 +84,7 @@ namespace KYCSQL
             }
             catch (SqlException se) when (se.Number == -2)
             {
-                UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                UIEvent.GetSingletone.UpdateSQLStatus(false);
                 await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
                 return (int)SP_ERROR.CONNECTION_ERROR;
             }
@@ -136,7 +136,7 @@ namespace KYCSQL
             }
             catch (SqlException se) when (se.Number == -2)
             {
-                UIEvent.GetSingletone.UpdateDBServerStatus(false);
+                UIEvent.GetSingletone.UpdateSQLStatus(false);
                 await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
                 return ((int)SP_ERROR.CONNECTION_ERROR, ResultList);
             }
@@ -150,7 +150,7 @@ namespace KYCSQL
         public async Task Cancel()
         {
             CancelSQL.Cancel();
-            UIEvent.GetSingletone.UpdateDBServerStatus(false);
+            UIEvent.GetSingletone.UpdateSQLStatus(false);
             await Task.Delay(3000).ConfigureAwait(false);
             Dispose();
         }
