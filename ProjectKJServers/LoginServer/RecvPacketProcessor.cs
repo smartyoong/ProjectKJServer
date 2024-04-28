@@ -1,13 +1,16 @@
-﻿using System.Text;
-using KYCLog;
-using System.Threading.Tasks.Dataflow;
-using KYCPacket;
+﻿using KYCException;
 using KYCInterface;
-using KYCException;
+using KYCLog;
+using KYCPacket;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
-namespace DBServer
-{
-    internal class RecvPacketProcessor : IPacketProcessor<DBPacketListID>
+namespace LoginServer
+{   internal class RecvPacketProcessor : IPacketProcessor<LoginPacketListID>
     {
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -22,7 +25,7 @@ namespace DBServer
         private TransformBlock<byte[], Memory<byte>> ByteToMemoryBlock;
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
         private ActionBlock<dynamic> PacketProcessBlock;
-        
+
 
 
         public RecvPacketProcessor()
@@ -35,7 +38,7 @@ namespace DBServer
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
-            }) ;
+            });
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -47,7 +50,7 @@ namespace DBServer
                 CancellationToken = CancelToken.Token
             });
 
-            PacketProcessBlock = new ActionBlock<dynamic>(ProcessPacket,new ExecutionDataflowBlockOptions
+            PacketProcessBlock = new ActionBlock<dynamic>(ProcessPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
@@ -136,9 +139,9 @@ namespace DBServer
 
         public dynamic MakePacketStruct(DBPacketListID ID, params dynamic[] PacketParams)
         {
-            switch(ID)
+            switch (ID)
             {
-                case DBPacketListID.REQUST_CHRACTER_INFO:  
+                case DBPacketListID.REQUST_CHRACTER_INFO:
                     return new RequestCharacterInfoPacket(PacketParams[0], PacketParams[1]);
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
@@ -147,7 +150,7 @@ namespace DBServer
 
         private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-           DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref packet);
+            DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref packet);
 
             switch (ID)
             {
@@ -164,9 +167,9 @@ namespace DBServer
 
         public void ProcessPacket(dynamic packet)
         {
-            if(IsErrorPacket(packet, "ProcessPacket"))
+            if (IsErrorPacket(packet, "ProcessPacket"))
                 return;
-            switch(packet)
+            switch (packet)
             {
                 case RequestCharacterInfoPacket RequestPacket:
                     RequestCharacterInfo(RequestPacket);

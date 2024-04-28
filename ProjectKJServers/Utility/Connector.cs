@@ -1,7 +1,9 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using KYCException;
 using KYCLog;
+using KYCPacket;
 
 namespace KYCSocketCore
 {
@@ -173,6 +175,75 @@ namespace KYCSocketCore
             TryConnectTaskList = TryConnectTaskList.Except(RunningTasks).ToList();
             await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.").ConfigureAwait(false);
             await Task.WhenAll(RunningTasks).ConfigureAwait(false);
+        }
+
+        // Acceptor와 Send Recv는 동일 코드
+        protected virtual async Task<byte[]> RecvData()
+        {
+            Socket? RecvSocket = null;
+            try
+            {
+                RecvSocket = await ConnectSocketList.GetAvailableSocket().ConfigureAwait(false);
+                RecvSocket.ReceiveTimeout = 500;
+                byte[] DataSizeBuffer = new byte[sizeof(int)];
+                await RecvSocket.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
+                await RecvSocket.ReceiveAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+                return DataBuffer;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw new ConnectionClosedException("Recv를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+            {
+                throw new TimeoutException();
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw;
+            }
+            finally
+            {
+                if (RecvSocket != null && ConnectSocketList.CanReturnSocket())
+                    ConnectSocketList.ReturnSocket(RecvSocket);
+                else if (RecvSocket != null && !ConnectSocketList.CanReturnSocket())
+                    RecvSocket.Close();
+            }
+        }
+
+        protected virtual async Task<int> SendData(byte[] DataBuffer)
+        {
+            Socket? SendSocket = null;
+            try
+            {
+                SendSocket = await ConnectSocketList.GetAvailableSocket().ConfigureAwait(false);
+                SendSocket.SendTimeout = 500;
+                return await SendSocket.SendAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw new ConnectionClosedException("Send를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+            {
+                throw new TimeoutException();
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw;
+            }
+            finally
+            {
+                if (SendSocket != null && ConnectSocketList.CanReturnSocket())
+                    ConnectSocketList.ReturnSocket(SendSocket);
+                else if (SendSocket != null && !ConnectSocketList.CanReturnSocket())
+                    SendSocket.Close();
+            }
         }
     }
 }

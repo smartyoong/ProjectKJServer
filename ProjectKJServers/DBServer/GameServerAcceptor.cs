@@ -22,10 +22,13 @@ namespace DBServer
 
         private CancellationTokenSource CheckCancelToken;
 
+        private RecvPacketProcessor RecvProcessor;
+
 
         private GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
+            RecvProcessor = new RecvPacketProcessor();
         }
 
         public void Start()
@@ -33,6 +36,7 @@ namespace DBServer
             Init(IPAddress.Parse(DBServerSettings.Default.GameServerIPAdress), DBServerSettings.Default.GameServerAcceptPort);
             Start("Server");
             ProcessCheck();
+            GetRecvPacket();
         }
 
         public async Task Stop()
@@ -88,6 +92,9 @@ namespace DBServer
                     try
                     {
                         byte[] DataBuffer = await RecvData().ConfigureAwait(false);
+                        if (DataBuffer == null)
+                            continue;
+                        RecvProcessor.PushToPacketPipeline(DataBuffer);
                     }
                     catch (ArgumentException e)
                     {
