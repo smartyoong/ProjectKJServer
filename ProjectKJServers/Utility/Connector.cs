@@ -15,6 +15,7 @@ namespace KYCSocketCore
 
         protected private CancellationTokenSource ConnectCancelToken;
 
+        // 지울지 말지는 RecvData SendData까지 하고 나서 생각해보자
         private List<Task> TryConnectTaskList = new List<Task>();
 
 
@@ -55,7 +56,7 @@ namespace KYCSocketCore
         {
             if (ConnectCancelToken.Token.IsCancellationRequested)
                 return;
-            TryConnectTaskList.Add(TryConnect(IPAddr, ServerName));
+            Task.Run(async () => { await TryConnect(IPAddr, ServerName); });
 
         }
 
@@ -95,7 +96,7 @@ namespace KYCSocketCore
             for (; i < ConnectSocketList.GetCount(); i++)
             {
                 if (ConnectCancelToken.Token.IsCancellationRequested)
-                    return;
+                    break;
                 Socket? Sock = null;
                 try
                 {
@@ -111,7 +112,7 @@ namespace KYCSocketCore
                 catch (OperationCanceledException)
                 {
                     // 연결이 취소되었으므로 메서드를 종료합니다.
-                    return;
+                    break;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {

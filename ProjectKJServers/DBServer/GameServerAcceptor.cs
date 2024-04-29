@@ -82,7 +82,8 @@ namespace DBServer
                 }
             }, CheckCancelToken.Token);
         }
-
+        
+        // 이하 메서드는 추가 작업이 필요하며, 에러가 발생할 수 있다
         public void GetRecvPacket()
         {
             Task.Run( async() =>

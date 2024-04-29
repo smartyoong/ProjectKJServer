@@ -36,7 +36,6 @@ namespace LoginServer
             Init(IPAddress.Any, Settings.Default.ClientAcceptPort);
             Start("Client");
             ProcessCheck();
-            GetRecvPacket();
         }
 
         public async Task Stop()
@@ -81,111 +80,24 @@ namespace LoginServer
             }, CheckCancelToken.Token);
         }
 
-        public void GetRecvPacket()
+        // 클라이언트를 Accept할 때에는 아래의 함수를 재정의 해야한다
+        protected override async Task Process(Socket ClientSocket)
         {
-            Task.Run(async () =>
-            {
-                while (!CheckCancelToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        byte[] DataBuffer = await RecvData().ConfigureAwait(false);
-                        if (DataBuffer == null)
-                            continue;
-                        RecvProcessor.PushToPacketPipeline(DataBuffer);
-                    }
-                    catch (ArgumentException e)
-                    {
-                        // ID 매개변수 불일치
-                        LogManager.GetSingletone.WriteLog(e).Wait();
-                    }
-                    catch (ConnectionClosedException e)
-                    {
-                        // 연결종료됨 어캐할까?
-                        LogManager.GetSingletone.WriteLog(e).Wait();
-                    }
-                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
-                    {
-                        // 가용가능한 소켓이 없음
-                        LogManager.GetSingletone.WriteLog(e).Wait();
-                    }
-                    catch (Exception e) when (e is not OperationCanceledException)
-                    {
-                        // 그외 에러
-                        LogManager.GetSingletone.WriteLog(e).Wait();
-                    }
-                }
-            });
-        }
-
-
-        // 클라이언트를 Accept할 때에는 Recv랑 Send를 재정의 해야한다
-        protected override async Task<byte[]> RecvData()
-        {
-            Socket? RecvSocket = null;
             try
             {
-                RecvSocket = await ClientSocketList.GetAvailableSocket().ConfigureAwait(false);
-                RecvSocket.ReceiveTimeout = 500;
-                byte[] DataSizeBuffer = new byte[sizeof(int)];
-                await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
-                await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                return DataBuffer;
+                var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
+                RecvProcessor.PushToPacketPipeline(Data);
+                // 응답할 SendSocket을 어떻게할지 생각 해보자
             }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            catch (ConnectionClosedException e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                throw new ConnectionClosedException("Recv를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
+                LogManager.GetSingletone.WriteLog(e).Wait();
             }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
-                throw new TimeoutException();
-            }
-            catch (Exception e)
-            {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                throw;
-            }
-            finally
-            {
-                if (RecvSocket != null && ClientSocketList.CanReturnSocket())
-                    ClientSocketList.ReturnSocket(RecvSocket);
-                else if (RecvSocket != null && !ClientSocketList.CanReturnSocket())
-                    RecvSocket.Close();
+                LogManager.GetSingletone.WriteLog(e).Wait();
             }
         }
 
-        protected override async Task<int> SendData(byte[] DataBuffer)
-        {
-            Socket? SendSocket = null;
-            try
-            {
-                SendSocket = await ClientSocketList.GetAvailableSocket().ConfigureAwait(false);
-                SendSocket.SendTimeout = 500;
-                return await SendSocket.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-            }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
-            {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                throw new ConnectionClosedException("Send를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
-            }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
-            {
-                throw new TimeoutException();
-            }
-            catch (Exception e)
-            {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                throw;
-            }
-            finally
-            {
-                if (SendSocket != null && ClientSocketList.CanReturnSocket())
-                    ClientSocketList.ReturnSocket(SendSocket);
-                else if (SendSocket != null && !ClientSocketList.CanReturnSocket())
-                    SendSocket.Close();
-            }
-        }
     }
 }

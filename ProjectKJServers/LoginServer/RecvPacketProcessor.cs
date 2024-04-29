@@ -171,13 +171,13 @@ namespace LoginServer
                 return;
             switch (packet)
             {
-                case RequestCharacterInfoPacket RequestPacket:
-                    RequestCharacterInfo(RequestPacket);
+                case LoginRequestPacket RequestPacket:
+                    Func_LoginRequest(RequestPacket);
                     break;
             }
         }
 
-        private void RequestCharacterInfo(RequestCharacterInfoPacket packet)
+        private void Func_LoginRequest(LoginRequestPacket packet)
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;

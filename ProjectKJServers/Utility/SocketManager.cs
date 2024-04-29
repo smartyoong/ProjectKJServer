@@ -20,7 +20,9 @@ namespace KYCSocketCore
 
         public SocketManager(int MaxSocketCount, bool HasResponsibility)
         {
+
             MaximumSocketCount = MaxSocketCount;
+
             AvailableSocketSync = new SemaphoreSlim(MaxSocketCount);
             SocketManagerCancelToken = new CancellationTokenSource();
             if (HasResponsibility)

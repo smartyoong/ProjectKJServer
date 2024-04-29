@@ -17,7 +17,7 @@ namespace KYCSocketCore
 
         private CancellationTokenSource AcceptCancelToken;
 
-        private List<Task> TryAcceptTaskList = new List<Task>();
+        private List<Task> TotalTaskList = new List<Task>();
 
         private Socket ListenSocket;
 
@@ -27,10 +27,18 @@ namespace KYCSocketCore
 
         public const int MAX_ACCEPT_INFINITE = -1;
 
+
         protected Acceptor(int MaxAcceptCount)
         {
             AcceptCancelToken = new CancellationTokenSource();
-            ClientSocketList = new SocketManager(MaxAcceptCount, false);
+            if(MaxAcceptCount == MAX_ACCEPT_INFINITE)
+            {
+                ClientSocketList = new SocketManager(0, false);
+            }
+            else
+            {
+                ClientSocketList = new SocketManager(MaxAcceptCount, false);
+            }
             ListenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.MaxAcceptCount = MaxAcceptCount;
         }
@@ -75,59 +83,84 @@ namespace KYCSocketCore
 
         protected virtual void Start(string ServerName)
         {
-            TryAcceptTaskList.Add(Task.Run(async () =>
-            {
-                if (MaxAcceptCount == MAX_ACCEPT_INFINITE)
-                {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}의 연결을 대기합니다.").ConfigureAwait(false);
-                    while (!AcceptCancelToken.Token.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
-                            ClientSocketList.AddSocket(ClientSocket);
-                            UIEvent.GetSingletone.IncreaseUserCount(true);
-                        }
-                        catch (Exception e) when (e is not OperationCanceledException)
-                        {
-                            LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                        }
-                    }
-                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
-                }
-                else
-                {
-                    for (int i = 0; i < MaxAcceptCount; i++)
-                    {
-                        await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
+            Task.Run(async () =>{ await AcceptStart(ServerName);});
+        }
 
-                        if (AcceptCancelToken.Token.IsCancellationRequested)
-                        {
-                            LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
-                            break;
-                        }
-                        try
-                        {
-                            Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
-                            if (CheckIsAllowedIP(ClientSocket))
-                            {
-                                ClientSocketList.AddSocket(ClientSocket);
-                                await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                ClientSocket.Close();
-                                i--;
-                            }
-                        }
-                        catch (Exception e) when (e is not OperationCanceledException)
-                        {
-                            i--;
-                            LogManager.GetSingletone.WriteLog(e.Message).Wait();
-                        }
+        private async Task AcceptStart(string ServerName)
+        {
+            if (MaxAcceptCount == MAX_ACCEPT_INFINITE)
+            {
+                await InfiniteAccept(ServerName).ConfigureAwait(false);
+            }
+            else
+            {
+                await LimitedAccept(ServerName).ConfigureAwait(false);
+            }
+        }
+
+        private async Task InfiniteAccept(string ServerName)
+        {
+            await LogManager.GetSingletone.WriteLog($"{ServerName}의 무한정 연결을 대기합니다.").ConfigureAwait(false);
+            while (!AcceptCancelToken.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
+                    // 추후 자동으로 소켓을 전부 정리하기 위해 리스트에 추가
+                    ClientSocketList.AddSocket(ClientSocket);
+                    TotalTaskList.Add(Task.Run(() => Process(ClientSocket)));
+                    UIEvent.GetSingletone.IncreaseUserCount(true);
+                }
+                catch (OperationCanceledException)
+                {
+                    // 취소가 요청된것이므로 중단 시킨다
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    break;
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                }
+            }
+        }
+
+        private async Task LimitedAccept(string ServerName)
+        {
+            for (int i = 0; i < MaxAcceptCount; i++)
+            {
+                await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
+
+                if (AcceptCancelToken.Token.IsCancellationRequested)
+                {
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    break;
+                }
+                try
+                {
+                    Socket ClientSocket = await ListenSocket.AcceptAsync(AcceptCancelToken.Token);
+                    if (CheckIsAllowedIP(ClientSocket))
+                    {
+                        ClientSocketList.AddSocket(ClientSocket);
+                        await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        ClientSocket.Close();
+                        i--;
                     }
                 }
-            }));
+                catch (OperationCanceledException)
+                {
+                    // 취소가 요청된것이므로 중단 시킨다
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    break;
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    i--;
+                    LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                }
+            }
         }
 
         protected virtual async Task Stop(string ServerName, TimeSpan DelayTime)
@@ -181,14 +214,14 @@ namespace KYCSocketCore
 
         private async Task CleanUpAcceptTask(string ServerName)
         {
-            List<Task> RunningTasks = TryAcceptTaskList.Where(task => task.Status == TaskStatus.Running).ToList();
-            TryAcceptTaskList = TryAcceptTaskList.Except(RunningTasks).ToList();
+            List<Task> RunningTasks = TotalTaskList.Where(task => task.Status == TaskStatus.Running).ToList();
+            TotalTaskList = TotalTaskList.Except(RunningTasks).ToList();
             await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.").ConfigureAwait(false);
             await Task.WhenAll(RunningTasks).ConfigureAwait(false);
         }
-        protected virtual void Process(Socket ClientSocket)
+        protected virtual async Task Process(Socket ClientSocket)
         {
-
+            await Task.Yield();
         }
 
 
@@ -279,6 +312,57 @@ namespace KYCSocketCore
                     ClientSocketList.ReturnSocket(SendSocket);
                 else if (SendSocket != null && !ClientSocketList.CanReturnSocket())
                     SendSocket.Close();
+            }
+        }
+
+        protected virtual async Task<byte[]> RecvClientData(Socket ClientSock)
+        {
+            try
+            {
+                byte[] DataSizeBuffer = new byte[sizeof(int)];
+                await ClientSock.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
+                await ClientSock.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                return DataBuffer;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+            }
+            catch(OperationCanceledException)
+            {
+                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 취소되었습니다.");
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw;
+            }
+        }
+        protected virtual async Task<int> SendClientData(byte[] DataBuffer, Socket ClientSock)
+        {
+            try
+            {
+                return await ClientSock.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+            }
+            catch (OperationCanceledException)
+            {
+                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 취소되었습니다.");
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                throw;
             }
         }
     }
