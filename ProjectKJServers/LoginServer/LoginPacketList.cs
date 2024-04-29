@@ -3,10 +3,10 @@ namespace LoginServer
 {
     public enum LoginPacketListID
     {
-        LoginRequest = 0,
-        LoginResponse = 1,
-        RegistAccountRequest = 2,
-        RegistAccountResponse = 3
+        LOGIN_REQUEST = 0,
+        LOGIN_RESPONESE = 1,
+        REGIST_ACCOUNT_REQUEST = 2,
+        REGIST_ACCOUNT_RESPONESE = 3
     }
 
     [Serializable]

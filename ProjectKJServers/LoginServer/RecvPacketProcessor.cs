@@ -137,12 +137,12 @@ namespace LoginServer
             return PacketUtils.ByteToMemory(ref data);
         }
 
-        public dynamic MakePacketStruct(DBPacketListID ID, params dynamic[] PacketParams)
+        public dynamic MakePacketStruct(LoginPacketListID ID, params dynamic[] PacketParams)
         {
             switch (ID)
             {
-                case DBPacketListID.REQUST_CHRACTER_INFO:
-                    return new RequestCharacterInfoPacket(PacketParams[0], PacketParams[1]);
+                case LoginPacketListID.LOGIN_REQUEST:
+                    return new LoginRequestPacket(PacketParams[0], PacketParams[1]);
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -150,12 +150,12 @@ namespace LoginServer
 
         private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-            DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref packet);
+            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref packet);
 
             switch (ID)
             {
-                case DBPacketListID.REQUST_CHRACTER_INFO:
-                    RequestCharacterInfoPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<RequestCharacterInfoPacket>(ref packet);
+                case LoginPacketListID.LOGIN_REQUEST:
+                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref packet);
                     if (RequestCharInfoPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
