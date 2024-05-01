@@ -66,7 +66,8 @@ namespace KYCSocketCore
 
         public void ReturnSocket(Socket Socket)
         {
-            Socket.Disconnect(true);
+            if(Socket.Connected)
+                Socket.Disconnect(true);
             lock (AvailableSockets)
             {
                 AvailableSockets.Enqueue(Socket);

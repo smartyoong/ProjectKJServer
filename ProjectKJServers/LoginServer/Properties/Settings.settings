@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="LogDirectory" Type="System.String" Scope="User">
-      <Value Profile="(Default)">\LoginServerLog</Value>
+      <Value Profile="(Default)">D:\ProjectKJ\GameServer\ProjectKJServers\Log\LoginServerLog</Value>
     </Setting>
     <Setting Name="GameServerConnectCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>
