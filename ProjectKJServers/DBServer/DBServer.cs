@@ -1,6 +1,7 @@
 using KYCUIEventManager;
 using KYCLog;
 using KYCSQL;
+using KYCSocketCore;
 
 namespace DBServer
 {
@@ -66,28 +67,32 @@ namespace DBServer
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
         }
 
+        // UI와 작동하는 스레드이기 때문에 ConfigureAwait(false)를 사용하지 않습니다.
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            await LogManager.GetSingletone.WriteLog("서버를 가동합니다.").ConfigureAwait(false);
-            await GameSQLManager.GetSingletone.ConnectToSQL().ConfigureAwait(false);
-            await LogManager.GetSingletone.WriteLog("로그인 서버의 연결의 대기합니다.").ConfigureAwait(false);
+            await LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
+            await GameSQLManager.GetSingletone.ConnectToSQL();
+            await LogManager.GetSingletone.WriteLog("로그인 서버의 연결의 대기합니다.");
             GameServerAcceptor.GetSingletone.Start();
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             ServerStopButton.Enabled = false;
-            await LogManager.GetSingletone.WriteLog("서버를 중지합니다.").ConfigureAwait(false);
-            await GameSQLManager.GetSingletone.StopSQL().ConfigureAwait(false);
-            await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.").ConfigureAwait(false);
-            await GameServerAcceptor.GetSingletone.Stop().ConfigureAwait(false);
-            await LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.").ConfigureAwait(false);
-            await LogManager.GetSingletone.WriteLog("서버를 중지했습니다. 잠시후 종료됩니다.").ConfigureAwait(false);
-            await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            await LogManager.GetSingletone.WriteLog("서버를 중지합니다.");
+            await GameSQLManager.GetSingletone.StopSQL();
+            await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await GameServerAcceptor.GetSingletone.Stop();
+            await LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.");
+            await SocketManager.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
-            await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(2));
             Environment.Exit(0);
         }
     }

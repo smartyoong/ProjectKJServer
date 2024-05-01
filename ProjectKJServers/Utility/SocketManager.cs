@@ -7,96 +7,70 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using KYCLog;
+using CoreUtility;
 namespace KYCSocketCore
 {
-    public class SocketManager : IDisposable, IEnumerable<Socket>
+
+    public class SocketManager : IDisposable
     {
+        // 특별히 그룹화해서 관리가 필요한 소켓들을 묶기 위한 클래스 입니다.
+        // 모든 소켓의 Close 소켓 매니저가 진행하므로 걱정할 필요가 없습니다.
+        public class SocketGroup : IEnumerable<Socket>
+        {
+            public Queue<Socket> AvailableMemberSockets = new Queue<Socket>();
+            public SemaphoreSlim Sync = new SemaphoreSlim(1, CoreSettings.Default.MaxSocketCountPerGroup);
+            public IEnumerator<Socket> GetEnumerator()
+            {
+                return AvailableMemberSockets.GetEnumerator();
+            }
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+        }
+
         private Queue<Socket> AvailableSockets = new Queue<Socket>();
-        private SemaphoreSlim AvailableSocketSync;
         private CancellationTokenSource SocketManagerCancelToken;
         private bool IsAlreadyDisposed = false;
-        private int MaximumSocketCount;
-        private bool IsReadyToUse = false;
+        static Lazy<SocketManager> Instance = new Lazy<SocketManager>(() => new SocketManager());
+        private List<Socket> Sockets = new List<Socket>();
+        private List<SocketGroup> Groups = new List<SocketGroup>();
 
-        public SocketManager(int MaxSocketCount, bool HasResponsibility)
+        public static SocketManager GetSingletone { get { return Instance.Value; } }
+
+        private SocketManager()
         {
-
-            MaximumSocketCount = MaxSocketCount;
-
-            AvailableSocketSync = new SemaphoreSlim(MaxSocketCount);
             SocketManagerCancelToken = new CancellationTokenSource();
-            if (HasResponsibility)
+            for (int i = 0; i < CoreSettings.Default.ReadySocketCount; i++)
+            { 
+                var Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                AvailableSockets.Enqueue(Sock);
+                Sockets.Add(Sock);
+            }
+        }
+
+        public Socket BorrowSocket()
+        {
+            lock (AvailableSockets)
             {
-                for (int i = 0; i < MaxSocketCount; i++)
+                if (AvailableSockets.Count == 0)
                 {
-                    AvailableSockets.Enqueue(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
+                    var Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    Sockets.Add(Sock);
+                    return Sock;
                 }
-                IsReadyToUse = true;
-            }
-        }
-
-        public void AddSocket(Socket Socket)
-        {
-            if (AvailableSockets.Count >= MaximumSocketCount || IsReadyToUse)
-            {
-                throw new InvalidOperationException("소켓 매니저에 추가할 수 있는 소켓의 개수를 초과했습니다.");
-            }
-
-            lock (AvailableSockets)
-            {
-                AvailableSockets.Enqueue(Socket);
-            }
-
-            if (AvailableSockets.Count == MaximumSocketCount)
-            {
-                IsReadyToUse = true;
-            }
-        }
-
-        public async Task<Socket> GetAvailableSocket()
-        {
-            if (!IsReadyToUse)
-            {
-                throw new InvalidOperationException("소켓 매니저가 아직 사용할 준비가 되지 않았습니다.");
-            }
-
-            await AvailableSocketSync.WaitAsync(SocketManagerCancelToken.Token).ConfigureAwait(false);
-            lock (AvailableSockets)
-            {
-                return AvailableSockets.Dequeue();
+                else
+                    return AvailableSockets.Dequeue();
             }
         }
 
         public void ReturnSocket(Socket Socket)
         {
-            if (AvailableSockets.Count >= MaximumSocketCount)
-            {
-                throw new InvalidOperationException("반납하는 소켓의 갯수가 소켓 매니저의 최대치를 넘습니다.");
-            }
+            Socket.Disconnect(true);
             lock (AvailableSockets)
             {
                 AvailableSockets.Enqueue(Socket);
             }
-            AvailableSocketSync.Release();
-        }
-
-        public int GetCount()
-        {
-            return AvailableSockets.Count;
-        }
-
-        public IEnumerator<Socket> GetEnumerator()
-        {
-            return AvailableSockets.GetEnumerator();
-        }
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public bool CanReturnSocket()
-        {
-            return AvailableSockets.Count < MaximumSocketCount;
         }
 
         public void Dispose()
@@ -112,27 +86,118 @@ namespace KYCSocketCore
                 return;
             if (Disposing)
             {
-                AvailableSocketSync.Dispose();
+                foreach (var Group in Groups)
+                {
+                    Group.Sync.Dispose();
+                }
             }
             SocketManagerCancelToken.Dispose();
 
-            foreach (var Socket in AvailableSockets)
+            foreach (var Socket in Sockets)
             {
                 Socket.Close();
             }
             AvailableSockets.Clear();
+            Sockets.Clear();
+            Groups.Clear();
         }
+
         public async Task Cancel()
         {
             SocketManagerCancelToken.Cancel();
             LogManager.GetSingletone.WriteLog("소켓 매니저를 종료합니다.").Wait();
-            await Task.Delay(3000).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
 
         ~SocketManager()
         {
             Dispose(false);
+        }
+
+        public int MakeNewSocketGroup(Socket Sock)
+        {
+            var NewGroup = new SocketGroup();
+            NewGroup.AvailableMemberSockets.Enqueue(Sock);
+            Groups.Add(NewGroup);
+            return Groups.Count - 1;
+        }
+
+        public void RemoveGroup(int GroupID)
+        {
+            if (!IsAlreadyGroup(GroupID))
+            {
+                throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
+            }
+            Groups.RemoveAt(GroupID);
+        }
+
+        public bool IsAlreadyGroup(int GroupID)
+        {
+            if (GroupID < 0)
+                return false;
+            return Groups.Count > GroupID;
+        }
+
+        public SocketGroup GetSocketGroup(int GroupID)
+        {
+            if (!IsAlreadyGroup(GroupID))
+            {
+                throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
+            }
+
+            return Groups[GroupID];
+        }
+
+        public void AddSocketToGroup(int GroupID, Socket Sock)
+        {
+            if (!IsAlreadyGroup(GroupID))
+            {
+                throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
+            }
+
+            if (Groups[GroupID].AvailableMemberSockets.Count == CoreSettings.Default.MaxSocketCountPerGroup)
+            {
+                LogManager.GetSingletone.WriteLog($"{GroupID}번 그룹에 소켓을 추가할 수 없습니다. 그룹이 가득 찼습니다.").Wait();
+                return;
+            }
+            Groups[GroupID].AvailableMemberSockets.Enqueue(Sock);
+            Groups[GroupID].Sync.Release();
+        }
+
+        public void RemoveSocketFromGroup(int GroupID, Socket Sock)
+        {
+            if (!IsAlreadyGroup(GroupID))
+            {
+                throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
+            }
+            Groups[GroupID].AvailableMemberSockets = new Queue<Socket>(Groups[GroupID].AvailableMemberSockets.Where(x => x != Sock));
+        }
+
+
+        public async Task<Socket> GetAvailableSocketFromGroup(int GroupID)
+        {
+            if(!IsAlreadyGroup(GroupID))
+            {
+                throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
+            }
+            try
+            {
+                await Groups[GroupID].Sync.WaitAsync(TimeSpan.FromSeconds(3),SocketManagerCancelToken.Token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e).Wait();
+                throw;
+            }
+
+            return Groups[GroupID].AvailableMemberSockets.Dequeue();
+        }
+
+        public void ReturnSocketToGroup(int GroupID, Socket Sock)
+        {
+            Groups[GroupID].AvailableMemberSockets.Enqueue(Sock);
+            Groups[GroupID].Sync.Release();
         }
     }
 }

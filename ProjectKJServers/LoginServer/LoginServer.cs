@@ -1,7 +1,8 @@
-﻿using LoginServer.Properties;
-using KYCUIEventManager;
-using KYCLog;
+﻿using KYCLog;
+using KYCSocketCore;
 using KYCSQL;
+using KYCUIEventManager;
+using LoginServer.Properties;
 
 namespace LoginServer
 {
@@ -38,43 +39,52 @@ namespace LoginServer
             UIEvent.GetSingletone.SubscribeSQLStatusEvent(
                 IsConnected =>
                 {
-                    if (IsConnected)
-                    {
-                        SQLStatusTextBox.BackColor = Color.Blue;
-
-                    }
-                    else
-                    {
-                        SQLStatusTextBox.BackColor = Color.Red;
-                    }
+                    SQLStatusTextBox.Invoke(() =>
+                        {
+                            if (IsConnected)
+                            {
+                                SQLStatusTextBox.BackColor = Color.Blue;
+                            }
+                            else
+                            {
+                                SQLStatusTextBox.BackColor = Color.Red;
+                            }
+                        }
+                    );
                 }
             );
             UIEvent.GetSingletone.SubscribeGameServerStatusEvent(
                 IsConnected =>
                 {
-                    if (IsConnected)
+                    GameServerStatusTextBox.Invoke(() =>
                     {
-                        GameServerStatusTextBox.BackColor = Color.Blue;
+                        if (IsConnected)
+                        {
+                            GameServerStatusTextBox.BackColor = Color.Blue;
 
-                    }
-                    else
-                    {
-                        GameServerStatusTextBox.BackColor = Color.Red;
-                    }
+                        }
+                        else
+                        {
+                            GameServerStatusTextBox.BackColor = Color.Red;
+                        }
+                    });
                 }
             );
             UIEvent.GetSingletone.SubscribeLoginServerStatusEvent(
                 IsConnected =>
                 {
-                    if (IsConnected)
+                    ServerStatusTextBox.Invoke(() =>
                     {
-                        ServerStatusTextBox.BackColor = Color.Blue;
+                        if (IsConnected)
+                        {
+                            ServerStatusTextBox.BackColor = Color.Blue;
 
-                    }
-                    else
-                    {
-                        ServerStatusTextBox.BackColor = Color.Red;
-                    }
+                        }
+                        else
+                        {
+                            ServerStatusTextBox.BackColor = Color.Red;
+                        }
+                    });
                 }
              );
             ServerStopButton.Enabled = false;
@@ -91,6 +101,7 @@ namespace LoginServer
             CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
         }
 
+        // UI와 작동하는 스레드 이기때문에 ConfigureAwait(false)를 사용하지 않습니다.
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
             await LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
@@ -105,14 +116,21 @@ namespace LoginServer
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
-            await LogManager.GetSingletone.WriteLog("서버를 종료완료, 몇 초 대기후 프로그램을 종료합니다");
+            await LogManager.GetSingletone.WriteLog("접속한 유저들과 연결을 끊습니다");
+            await ClientAcceptor.GetSingletone.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await LogManager.GetSingletone.WriteLog("게임서버와 연결을 끊습니다");
             await GameServerConnector.GetSingletone.Stop();
-            await Task.Delay(5000);
+            await Task.Delay(TimeSpan.FromSeconds(2));
             await LogManager.GetSingletone.WriteLog("게임 서버와 연결을 종료했습니다.");
             await LogManager.GetSingletone.WriteLog("SQL 서버를 종료합니다.");
             await AccountSQLManager.GetSingletone.StopSQL();
             await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 종료됐습니다.");
-            await Task.Delay(5000);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await SocketManager.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             Environment.Exit(0);
         }

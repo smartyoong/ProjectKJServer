@@ -118,5 +118,29 @@ namespace CoreUtility {
                 this["SQLTimeOut"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int ReadySocketCount {
+            get {
+                return ((int)(this["ReadySocketCount"]));
+            }
+            set {
+                this["ReadySocketCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int MaxSocketCountPerGroup {
+            get {
+                return ((int)(this["MaxSocketCountPerGroup"]));
+            }
+            set {
+                this["MaxSocketCountPerGroup"] = value;
+            }
+        }
     }
 }

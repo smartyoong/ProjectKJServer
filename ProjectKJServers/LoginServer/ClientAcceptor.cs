@@ -40,6 +40,7 @@ namespace LoginServer
 
         public async Task Stop()
         {
+            UIEvent.GetSingletone.UpdateLoginServerStatus(false);
             await Stop("Client", TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
