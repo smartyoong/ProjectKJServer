@@ -250,6 +250,7 @@ namespace KYCSocketCore
                 await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
                 await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
                 return DataBuffer;
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
@@ -274,7 +275,9 @@ namespace KYCSocketCore
             {
                 Socket SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
                 SendSocket.SendTimeout = 500;
-                return await SendSocket.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                int SendSize = await SendSocket.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, SendSocket);
+                return SendSize;
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {

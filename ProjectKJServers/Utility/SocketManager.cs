@@ -17,7 +17,8 @@ namespace KYCSocketCore
         // 모든 소켓의 Close 소켓 매니저가 진행하므로 걱정할 필요가 없습니다.
         public class SocketGroup : IEnumerable<Socket>
         {
-            public Queue<Socket> AvailableMemberSockets = new Queue<Socket>();
+            // 가장 최근에 사용한 소켓은 페이징 아웃되지 않을 가능성이 높기에 스택을 사용한다
+            public Stack<Socket> AvailableMemberSockets = new Stack<Socket>();
             public SemaphoreSlim Sync = new SemaphoreSlim(1, CoreSettings.Default.MaxSocketCountPerGroup);
             public IEnumerator<Socket> GetEnumerator()
             {
@@ -29,7 +30,8 @@ namespace KYCSocketCore
             }
         }
 
-        private Queue<Socket> AvailableSockets = new Queue<Socket>();
+        // 가장 최근에 사용한 소켓은 페이징 아웃되지 않을 가능성이 높기에 스택을 사용한다
+        private Stack<Socket> AvailableSockets = new Stack<Socket>();
         private CancellationTokenSource SocketManagerCancelToken;
         private bool IsAlreadyDisposed = false;
         static Lazy<SocketManager> Instance = new Lazy<SocketManager>(() => new SocketManager());
@@ -44,7 +46,7 @@ namespace KYCSocketCore
             for (int i = 0; i < CoreSettings.Default.ReadySocketCount; i++)
             { 
                 var Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                AvailableSockets.Enqueue(Sock);
+                AvailableSockets.Push(Sock);
                 Sockets.Add(Sock);
             }
         }
@@ -60,7 +62,7 @@ namespace KYCSocketCore
                     return Sock;
                 }
                 else
-                    return AvailableSockets.Dequeue();
+                    return AvailableSockets.Pop();
             }
         }
 
@@ -70,7 +72,7 @@ namespace KYCSocketCore
                 Socket.Disconnect(true);
             lock (AvailableSockets)
             {
-                AvailableSockets.Enqueue(Socket);
+                AvailableSockets.Push(Socket);
             }
         }
 
@@ -119,7 +121,7 @@ namespace KYCSocketCore
         public int MakeNewSocketGroup(Socket Sock)
         {
             var NewGroup = new SocketGroup();
-            NewGroup.AvailableMemberSockets.Enqueue(Sock);
+            NewGroup.AvailableMemberSockets.Push(Sock);
             Groups.Add(NewGroup);
             return Groups.Count - 1;
         }
@@ -162,7 +164,7 @@ namespace KYCSocketCore
                 LogManager.GetSingletone.WriteLog($"{GroupID}번 그룹에 소켓을 추가할 수 없습니다. 그룹이 가득 찼습니다.").Wait();
                 return;
             }
-            Groups[GroupID].AvailableMemberSockets.Enqueue(Sock);
+            Groups[GroupID].AvailableMemberSockets.Push(Sock);
             Groups[GroupID].Sync.Release();
         }
 
@@ -172,7 +174,7 @@ namespace KYCSocketCore
             {
                 throw new IndexOutOfRangeException($"GetAvailableSocketFromGroup {GroupID}번 그룹이 존재하지 않습니다.");
             }
-            Groups[GroupID].AvailableMemberSockets = new Queue<Socket>(Groups[GroupID].AvailableMemberSockets.Where(x => x != Sock));
+            Groups[GroupID].AvailableMemberSockets = new Stack<Socket>(Groups[GroupID].AvailableMemberSockets.Where(x => x != Sock));
         }
 
 
@@ -192,12 +194,12 @@ namespace KYCSocketCore
                 throw;
             }
 
-            return Groups[GroupID].AvailableMemberSockets.Dequeue();
+            return Groups[GroupID].AvailableMemberSockets.Pop();
         }
 
         public void ReturnSocketToGroup(int GroupID, Socket Sock)
         {
-            Groups[GroupID].AvailableMemberSockets.Enqueue(Sock);
+            Groups[GroupID].AvailableMemberSockets.Push(Sock);
             Groups[GroupID].Sync.Release();
         }
     }
