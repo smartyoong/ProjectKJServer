@@ -25,18 +25,6 @@ namespace LoginServer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\\LoginServerLog")]
-        public string LogDirectory {
-            get {
-                return ((string)(this["LogDirectory"]));
-            }
-            set {
-                this["LogDirectory"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int GameServerConnectCount {
             get {
@@ -104,6 +92,18 @@ namespace LoginServer.Properties {
             }
             set {
                 this["ClientAcceptIPAdress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\\LoginServerLog")]
+        public string LogDirectory {
+            get {
+                return ((string)(this["LogDirectory"]));
+            }
+            set {
+                this["LogDirectory"] = value;
             }
         }
     }

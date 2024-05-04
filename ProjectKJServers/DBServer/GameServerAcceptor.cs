@@ -22,13 +22,13 @@ namespace DBServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private RecvPacketProcessor RecvProcessor;
+        private GameServerRecvPacketPipeline RecvProcessor;
 
 
         private GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
-            RecvProcessor = new RecvPacketProcessor();
+            RecvProcessor = new GameServerRecvPacketPipeline();
         }
 
         public void Start()
@@ -65,8 +65,8 @@ namespace DBServer
 
             }
             CheckCancelToken.Dispose();
-            base.Dispose(Disposing);
             IsAlreadyDisposed = true;
+            base.Dispose(Disposing);
         }
 
         private void ProcessCheck()

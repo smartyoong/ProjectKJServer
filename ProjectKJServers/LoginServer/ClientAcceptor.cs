@@ -24,7 +24,7 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private RecvPacketProcessor RecvProcessor = new RecvPacketProcessor();
+        private ClientRecvPacketProcessor RecvProcessor = new ClientRecvPacketProcessor();
 
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount)
         {
@@ -40,8 +40,8 @@ namespace LoginServer
 
         public async Task Stop()
         {
-            UIEvent.GetSingletone.UpdateLoginServerStatus(false);
             await Stop("Client", TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            CheckCancelToken.Cancel();
             Dispose();
         }
 
@@ -62,9 +62,10 @@ namespace LoginServer
                 return;
             if (Disposing)
             {
-                base.Dispose();
+               
             }
             IsAlreadyDisposed = true;
+            base.Dispose(Disposing);
         }
 
         private void ProcessCheck()
@@ -78,6 +79,8 @@ namespace LoginServer
                         UIEvent.GetSingletone.UpdateLoginServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
+                // 프로세스 체크가 종료되었다면 끊겼다고 한다 (주로 서버 종료시 발생)
+                UIEvent.GetSingletone.UpdateLoginServerStatus(false);
             }, CheckCancelToken.Token);
         }
 

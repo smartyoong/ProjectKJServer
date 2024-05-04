@@ -2,9 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="LoginServer.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="LogDirectory" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\ProjectKJ\GameServer\ProjectKJServers\Log\LoginServerLog</Value>
-    </Setting>
     <Setting Name="GameServerConnectCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>
     </Setting>
@@ -22,6 +19,9 @@
     </Setting>
     <Setting Name="ClientAcceptIPAdress" Type="System.String" Scope="User">
       <Value Profile="(Default)">0.0.0.0</Value>
+    </Setting>
+    <Setting Name="LogDirectory" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\LoginServerLog</Value>
     </Setting>
   </Settings>
 </SettingsFile>
