@@ -2,6 +2,7 @@
 using KYCLog;
 using KYCUIEventManager;
 using System.Data.SqlClient;
+using KYCException;
 
 
 namespace KYCSQL
@@ -92,6 +93,45 @@ namespace KYCSQL
             {
                 await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
                 return (int)SP_ERROR.SQL_QUERY_ERROR;
+            }
+        }
+
+        // OutPut Parameter가 하나인 경우에 사용합니다. 반드시 마지막 매개변수가 OutPut Parameter여야 합니다.
+        public async Task<(int,dynamic)> ExecuteSqlSPWithOneOutPutParamAsync(string SPName, params SqlParameter[] SqlParameters)
+        {
+            try
+            {
+                using (SqlConnection Connection = new SqlConnection(ConnectString))
+                {
+                    await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
+                    using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
+                    {
+                        SQLCommand.CommandTimeout = SQLTimeout;
+                        SQLCommand.CommandType = CommandType.StoredProcedure;
+
+                        SQLCommand.Parameters.AddRange(SqlParameters);
+
+                        SqlParameter ReturnParameter = SQLCommand.Parameters.Add("@ReturnVal", SqlDbType.Int);
+                        ReturnParameter.Direction = ParameterDirection.ReturnValue;
+
+
+                        await SQLCommand.ExecuteNonQueryAsync(CancelSQL.Token).ConfigureAwait(false);
+
+                        // 반환 값을 얻습니다.
+                        return ((int)ReturnParameter.Value, SQLCommand.Parameters[SQLCommand.Parameters.Count-1].Value);
+                    }
+                }
+            }
+            catch (SqlException se) when (se.Number == -2)
+            {
+                UIEvent.GetSingletone.UpdateSQLStatus(false);
+                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                return ((int)SP_ERROR.CONNECTION_ERROR,"");
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
+                return ((int)SP_ERROR.SQL_QUERY_ERROR,"");
             }
         }
 

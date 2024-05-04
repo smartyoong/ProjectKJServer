@@ -49,18 +49,6 @@ namespace CoreUtility {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("AccountDB")]
-        public string SQLAccountDataBaseName {
-            get {
-                return ((string)(this["SQLAccountDataBaseName"]));
-            }
-            set {
-                this["SQLAccountDataBaseName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool SQLSecurity {
             get {

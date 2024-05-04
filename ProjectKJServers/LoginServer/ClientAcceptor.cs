@@ -24,7 +24,7 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private ClientRecvPacketProcessor RecvProcessor = new ClientRecvPacketProcessor();
+        private ClientRecvPacketPipeline RecvProcessor = new ClientRecvPacketPipeline();
 
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount)
         {

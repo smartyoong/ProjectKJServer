@@ -11,7 +11,7 @@ using System.Threading.Tasks.Dataflow;
 using System.Net.Sockets;
 
 namespace LoginServer
-{   internal class ClientRecvPacketProcessor
+{   internal class ClientRecvPacketPipeline
     {
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -29,7 +29,7 @@ namespace LoginServer
 
 
 
-        public ClientRecvPacketProcessor()
+        public ClientRecvPacketPipeline()
         {
             ByteToMemoryBlock = new TransformBlock<(byte[], Socket), (Memory<byte>, Socket)>(MakeByteToMemory, new ExecutionDataflowBlockOptions
             {
@@ -183,7 +183,7 @@ namespace LoginServer
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
-            //SQLManager가 있었네! 이걸로 DB에 접근해서 처리하면 될듯
+            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, Sock);
         }
     }
 }

@@ -1,12 +1,11 @@
-﻿
-namespace KYCSQL
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LoginServer
 {
-    enum SP_ERROR
-    {
-        CONNECTION_ERROR = -1,
-        SQL_QUERY_ERROR = -2,
-        NONE = 0
-    }
     enum LOGIN_SP
     {
         SP_INVALID = 0,
