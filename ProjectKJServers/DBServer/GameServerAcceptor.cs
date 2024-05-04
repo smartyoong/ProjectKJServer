@@ -10,6 +10,7 @@ using KYCSocketCore;
 using System.Net.Sockets;
 using KYCPacket;
 using KYCException;
+using Windows.Security.DataProtection;
 
 namespace DBServer
 {
@@ -34,7 +35,7 @@ namespace DBServer
         public void Start()
         {
             Init(IPAddress.Parse(DBServerSettings.Default.GameServerIPAdress), DBServerSettings.Default.GameServerAcceptPort);
-            Start("Server");
+            Start("GameServer");
             ProcessCheck();
             GetRecvPacket();
         }
@@ -90,6 +91,8 @@ namespace DBServer
             {
                 while(!CheckCancelToken.IsCancellationRequested)
                 {
+                    if (!IsAccepted)
+                        return;
                     try
                     {
                         byte[] DataBuffer = await RecvData().ConfigureAwait(false);
@@ -97,20 +100,21 @@ namespace DBServer
                             continue;
                         RecvProcessor.PushToPacketPipeline(DataBuffer);
                     }
-                    catch (ArgumentException e)
-                    {
-                        // ID 매개변수 불일치
-                        LogManager.GetSingletone.WriteLog(e).Wait();
-                    }
                     catch (ConnectionClosedException e)
                     {
-                        // 연결종료됨 어캐할까?
+                        // 연결종료됨 다시 연결을 받아오도록 지시
                         LogManager.GetSingletone.WriteLog(e).Wait();
+                        LogManager.GetSingletone.WriteLog("GameServer와 연결이 끊겼습니다").Wait();
+                        // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
+                        PrepareToReAccept("GameServer");
+                        Start("GameServer");
                     }
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                     {
-                        // 가용가능한 소켓이 없음
+                        // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
                         LogManager.GetSingletone.WriteLog(e).Wait();
+                        LogManager.GetSingletone.WriteLog("GameServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.").Wait();
+                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                     }
                     catch (Exception e) when (e is not OperationCanceledException)
                     {

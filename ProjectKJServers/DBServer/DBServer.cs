@@ -74,7 +74,7 @@ namespace DBServer
             ServerStopButton.Enabled = true;
             await LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
             await GameSQLManager.GetSingletone.ConnectToSQL();
-            await LogManager.GetSingletone.WriteLog("로그인 서버의 연결의 대기합니다.");
+            await LogManager.GetSingletone.WriteLog("게임 서버의 연결의 대기합니다.");
             GameServerAcceptor.GetSingletone.Start();
         }
 
