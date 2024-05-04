@@ -7,7 +7,7 @@ using KYCException;
 
 namespace DBServer
 {
-    internal class RecvPacketProcessor : IPacketProcessor<DBPacketListID>
+    internal class RecvPacketProcessor
     {
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions

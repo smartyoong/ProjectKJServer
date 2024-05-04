@@ -87,7 +87,7 @@ namespace LoginServer
             try
             {
                 var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
-                RecvProcessor.PushToPacketPipeline(Data);
+                RecvProcessor.PushToPacketPipeline(Data,ClientSocket);
                 // 응답할 SendSocket을 어떻게할지 생각 해보자
             }
             catch (ConnectionClosedException e)

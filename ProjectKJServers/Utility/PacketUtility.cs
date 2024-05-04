@@ -62,31 +62,32 @@ namespace KYCPacket
             return ReturnSpan.ToArray();
         }
 
-        //public static Memory<byte> ByteToMemory(ref byte[] Packet)
-        //{
-        //    return Packet.AsMemory();
-        //}
+        public static Memory<byte> ByteToMemory(ref byte[] Packet)
+        {
+            return Packet.AsMemory();
+        }
 
-        //public static EResult GetIDFromPacket<EResult>(ref Memory<byte> Packet) where EResult : Enum
-        //{
-        //    // ID를 가져온다.
-        //    int ID = BitConverter.ToInt32(Packet.Span);
-        //    // 검증한다.
-        //    bool IsEnumDefined = Enum.IsDefined(typeof(EResult), ID);
-        //    if (!IsEnumDefined)
-        //    {
-        //        throw new ArgumentException("ID 값이 Enum에 정의되어 있지 않습니다.");
-        //    }
-        //    // 나머지 데이터만 남겨둔다
-        //    Packet = Packet.Slice(sizeof(int));
-        //    return (EResult)Enum.ToObject(typeof(EResult), ID);
-        //}
+        public static EResult GetIDFromPacket<EResult>(ref Memory<byte> Packet) where EResult : Enum
+        {
+            // ID를 가져온다.
+            int ID = BitConverter.ToInt32(Packet.Span);
+            // 검증한다.
+            bool IsEnumDefined = Enum.IsDefined(typeof(EResult), ID);
+            if (!IsEnumDefined)
+            {
+                throw new ArgumentException("ID 값이 Enum에 정의되어 있지 않습니다.");
+            }
+            // 나머지 데이터만 남겨둔다
+            Packet = Packet.Slice(sizeof(int));
+            return (EResult)Enum.ToObject(typeof(EResult), ID);
+        }
 
-        //public static SResult? GetPacketStruct<SResult>(ref Memory<byte> Packet) where SResult : struct
-        //{
-        //    return DeserializePacket<SResult>(ref Packet);
-        //}
+        public static SResult? GetPacketStruct<SResult>(ref Memory<byte> Packet) where SResult : struct
+        {
+            return DeserializePacket<SResult>(ref Packet);
+        }
 
+        // 거의 쓸일이 있으려나
         public static (EResult, SResult) GetPacket<EResult,SResult>(ref byte[] Data) where EResult : Enum, IConvertible where SResult : struct
         {
             // Memory로 변환한다.

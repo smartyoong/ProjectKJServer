@@ -8,9 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using System.Net.Sockets;
 
 namespace LoginServer
-{   internal class RecvPacketProcessor : IPacketProcessor<LoginPacketListID>
+{   internal class RecvPacketProcessor
     {
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -22,15 +23,15 @@ namespace LoginServer
             NameFormat = "this.NameFormat",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<byte[], Memory<byte>> ByteToMemoryBlock;
-        private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
-        private ActionBlock<dynamic> PacketProcessBlock;
+        private TransformBlock<(byte[], Socket), (Memory<byte>, Socket)> ByteToMemoryBlock;
+        private TransformBlock<(Memory<byte>, Socket), (dynamic, Socket)> MemoryToPacketBlock;
+        private ActionBlock<(dynamic, Socket)> PacketProcessBlock;
 
 
 
         public RecvPacketProcessor()
         {
-            ByteToMemoryBlock = new TransformBlock<byte[], Memory<byte>>(MakeByteToMemory, new ExecutionDataflowBlockOptions
+            ByteToMemoryBlock = new TransformBlock<(byte[], Socket), (Memory<byte>, Socket)>(MakeByteToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -40,7 +41,7 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
+            MemoryToPacketBlock = new TransformBlock<(Memory<byte>,Socket), (dynamic,Socket)>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -50,7 +51,7 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            PacketProcessBlock = new ActionBlock<dynamic>(ProcessPacket, new ExecutionDataflowBlockOptions
+            PacketProcessBlock = new ActionBlock<(dynamic,Socket)>(ProcessPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
@@ -65,9 +66,9 @@ namespace LoginServer
             ProcessBlock();
         }
 
-        public void PushToPacketPipeline(byte[] Packet)
+        public void PushToPacketPipeline(byte[] packet, Socket socket)
         {
-            ByteToMemoryBlock.Post(Packet);
+            ByteToMemoryBlock.Post((packet, socket));
         }
 
         public void Cancel()
@@ -132,11 +133,7 @@ namespace LoginServer
             }
         }
 
-        private Memory<byte> MakeByteToMemory(byte[] data)
-        {
-            return PacketUtils.ByteToMemory(ref data);
-        }
-
+        // 이거 이제 필요 없을 수 있음 삭제 고려해볼것
         public dynamic MakePacketStruct(LoginPacketListID ID, params dynamic[] PacketParams)
         {
             switch (ID)
@@ -148,36 +145,41 @@ namespace LoginServer
             }
         }
 
-        private dynamic MakeMemoryToPacket(Memory<byte> packet)
+        private (Memory<byte>data, Socket Sock) MakeByteToMemory((byte[] data, Socket Sock) Packet)
         {
-            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref packet);
+            return (PacketUtils.ByteToMemory(ref Packet.data), Packet.Sock);
+        }
+
+        private (dynamic PacketStruct, Socket Sock) MakeMemoryToPacket((Memory<byte> packet, Socket Sock) Packet)
+        {
+            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Packet.packet);
 
             switch (ID)
             {
                 case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref packet);
+                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Packet.packet);
                     if (RequestCharInfoPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
+                        return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.Sock);
                     else
-                        return RequestCharInfoPacket;
+                        return (RequestCharInfoPacket, Packet.Sock);
                 default:
-                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+                    return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.Sock);
             }
         }
 
-        public void ProcessPacket(dynamic packet)
+        public void ProcessPacket((dynamic packet,Socket Sock) Packet)
         {
-            if (IsErrorPacket(packet, "ProcessPacket"))
+            if (IsErrorPacket(Packet.packet, "ProcessPacket"))
                 return;
-            switch (packet)
+            switch (Packet.packet)
             {
                 case LoginRequestPacket RequestPacket:
-                    Func_LoginRequest(RequestPacket);
+                    Func_LoginRequest(RequestPacket, Packet.Sock);
                     break;
             }
         }
 
-        private void Func_LoginRequest(LoginRequestPacket packet)
+        private void Func_LoginRequest(LoginRequestPacket packet, Socket Sock)
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
