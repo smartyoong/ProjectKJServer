@@ -23,7 +23,6 @@ namespace LoginServer
             NameFormat = "this.NameFormat",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<(byte[], Socket), (Memory<byte>, Socket)> ByteToMemoryBlock;
         private TransformBlock<(Memory<byte>, Socket), (dynamic, Socket)> MemoryToPacketBlock;
         private ActionBlock<(dynamic, Socket)> PacketProcessBlock;
 
@@ -31,15 +30,6 @@ namespace LoginServer
 
         public ClientRecvPacketPipeline()
         {
-            ByteToMemoryBlock = new TransformBlock<(byte[], Socket), (Memory<byte>, Socket)>(MakeByteToMemory, new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = 10,
-                MaxDegreeOfParallelism = 5,
-                NameFormat = "LoginPacketProcessor.ByteToMemoryBlock",
-                EnsureOrdered = false,
-                SingleProducerConstrained = false,
-                CancellationToken = CancelToken.Token
-            });
 
             MemoryToPacketBlock = new TransformBlock<(Memory<byte>,Socket), (dynamic,Socket)>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -61,20 +51,18 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            ByteToMemoryBlock.LinkTo(MemoryToPacketBlock, new DataflowLinkOptions { PropagateCompletion = true });
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
         }
 
-        public void PushToPacketPipeline(byte[] packet, Socket socket)
+        public void PushToPacketPipeline(Memory<byte> packet, Socket socket)
         {
-            ByteToMemoryBlock.Post((packet, socket));
+            MemoryToPacketBlock.Post((packet, socket));
         }
 
         public void Cancel()
         {
             CancelToken.Cancel();
-            ByteToMemoryBlock.Complete();
             MemoryToPacketBlock.Complete();
             PacketProcessBlock.Complete();
         }
@@ -88,7 +76,6 @@ namespace LoginServer
                 {
                     try
                     {
-                        await ByteToMemoryBlock.Completion;
                         await MemoryToPacketBlock.Completion;
                         await PacketProcessBlock.Completion;
                     }
@@ -143,11 +130,6 @@ namespace LoginServer
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
-        }
-
-        private (Memory<byte>data, Socket Sock) MakeByteToMemory((byte[] data, Socket Sock) Packet)
-        {
-            return (PacketUtils.ByteToMemory(ref Packet.data), Packet.Sock);
         }
 
         private (dynamic PacketStruct, Socket Sock) MakeMemoryToPacket((Memory<byte> packet, Socket Sock) Packet)

@@ -254,16 +254,17 @@ namespace KYCSocketCore
                 return false;
             }
         }
-        protected virtual async Task<byte[]> RecvData()
+        protected virtual async Task<Memory<byte>> RecvData()
         {
             Socket? RecvSocket = null;
             try
             {
+                // 나중에 메세지 버퍼 크기를 대략적으로 조사한 후에 고정 패킷을 사용하는걸 고려해봐야할듯
                 RecvSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
                 RecvSocket.ReceiveTimeout = 500;
-                byte[] DataSizeBuffer = new byte[sizeof(int)];
+                Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
                 await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
+                Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                 await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
                 return DataBuffer;
@@ -297,7 +298,7 @@ namespace KYCSocketCore
             }
         }
 
-        protected virtual async Task<int> SendData(byte[] DataBuffer)
+        protected virtual async Task<int> SendData(Memory<byte> DataBuffer)
         {
             Socket? SendSocket = null;
             try
@@ -335,13 +336,14 @@ namespace KYCSocketCore
             }
         }
 
-        protected virtual async Task<byte[]> RecvClientData(Socket ClientSock)
+        protected virtual async Task<Memory<byte>> RecvClientData(Socket ClientSock)
         {
             try
             {
-                byte[] DataSizeBuffer = new byte[sizeof(int)];
+                // 추후 고정패킷으로 길이를 바꿔서 Recveive를 2번하는것을 막아보자
+                Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
                 await ClientSock.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
-                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
+                Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                 await ClientSock.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 return DataBuffer;
             }
@@ -364,7 +366,7 @@ namespace KYCSocketCore
                 throw;
             }
         }
-        protected virtual async Task<int> SendClientData(byte[] DataBuffer, Socket ClientSock)
+        protected virtual async Task<int> SendClientData(Memory<byte> DataBuffer, Socket ClientSock)
         {
             try
             {

@@ -114,12 +114,12 @@ namespace LoginServer
         }
 
         // 이하 메서드 부터 개선 및 작업 필요
-        public int SendPacket(byte[] Data)
+        public int SendPacket(Memory<byte> Data)
         {
             int SendBytes = SendData(Data).Result;
             return SendBytes;
         }
-        public byte[] RecvPacket()
+        public Memory<byte> RecvPacket()
         {
             return RecvData().Result;
         }

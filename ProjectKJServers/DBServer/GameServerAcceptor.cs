@@ -95,9 +95,7 @@ namespace DBServer
                         return;
                     try
                     {
-                        byte[] DataBuffer = await RecvData().ConfigureAwait(false);
-                        if (DataBuffer == null)
-                            continue;
+                        var DataBuffer = await RecvData().ConfigureAwait(false);
                         RecvProcessor.PushToPacketPipeline(DataBuffer);
                     }
                     catch (ConnectionClosedException e)

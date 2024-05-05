@@ -19,7 +19,6 @@ namespace DBServer
             NameFormat = "this.NameFormat",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<byte[], Memory<byte>> ByteToMemoryBlock;
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
         private ActionBlock<dynamic> PacketProcessBlock;
         
@@ -27,15 +26,6 @@ namespace DBServer
 
         public GameServerRecvPacketPipeline()
         {
-            ByteToMemoryBlock = new TransformBlock<byte[], Memory<byte>>(MakeByteToMemory, new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = 10,
-                MaxDegreeOfParallelism = 5,
-                NameFormat = "LoginPacketProcessor.ByteToMemoryBlock",
-                EnsureOrdered = false,
-                SingleProducerConstrained = false,
-                CancellationToken = CancelToken.Token
-            }) ;
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -57,20 +47,18 @@ namespace DBServer
                 CancellationToken = CancelToken.Token
             });
 
-            ByteToMemoryBlock.LinkTo(MemoryToPacketBlock, new DataflowLinkOptions { PropagateCompletion = true });
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
         }
 
-        public void PushToPacketPipeline(byte[] Packet)
+        public void PushToPacketPipeline(Memory<byte> Packet)
         {
-            ByteToMemoryBlock.Post(Packet);
+            MemoryToPacketBlock.Post(Packet);
         }
 
         public void Cancel()
         {
             CancelToken.Cancel();
-            ByteToMemoryBlock.Complete();
             MemoryToPacketBlock.Complete();
             PacketProcessBlock.Complete();
         }
@@ -84,7 +72,6 @@ namespace DBServer
                 {
                     try
                     {
-                        await ByteToMemoryBlock.Completion;
                         await MemoryToPacketBlock.Completion;
                         await PacketProcessBlock.Completion;
                     }
@@ -127,11 +114,6 @@ namespace DBServer
                     LogManager.GetSingletone.WriteLog(ErrorLog.ToString()).Wait();
                     break;
             }
-        }
-
-        private Memory<byte> MakeByteToMemory(byte[] data)
-        {
-            return PacketUtils.ByteToMemory(ref data);
         }
 
         public dynamic MakePacketStruct(DBPacketListID ID, params dynamic[] PacketParams)

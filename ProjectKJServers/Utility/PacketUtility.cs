@@ -1,70 +1,47 @@
-﻿using System.Globalization;
+﻿using System.Buffers.Binary;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 
 namespace KYCPacket
 {
     public static class PacketUtils
     {
-        public static int GetSizeFromPacket(ref byte[] Packet)
+        public static int GetSizeFromPacket(Memory<byte> Packet)
         {
             // 사이즈를 가져오는건 Acceptor 코어 내에서만 사용할거다
-            return BitConverter.ToInt32(Packet, 0);
+            return BinaryPrimitives.ReadInt32LittleEndian(Packet.Span);
         }
 
         public static S? DeserializePacket<S>(ref Memory<byte> DataBuffer) where S : struct
         {
-            return JsonSerializer.Deserialize<S>(DataBuffer.Span.ToArray());
+            return JsonSerializer.Deserialize<S>(DataBuffer.Span.ToArray(), new JsonSerializerOptions { WriteIndented = true });
         }
 
-        public static byte[] SerializePacket<S>(S Data) where S : struct
+        public static Memory<byte> SerializePacket<S>(S Data) where S : struct
         {
-            return JsonSerializer.SerializeToUtf8Bytes(Data);
+            return JsonSerializer.SerializeToUtf8Bytes(Data, new JsonSerializerOptions { WriteIndented = true }).AsMemory();
         }
 
-        public static byte[] MakePacket<E,S>(E ID, S Packet) where S : struct where E : Enum, IConvertible
+        public static Memory<byte> MakePacket<E,S>(E ID, S Packet) where S : struct where E : Enum, IConvertible
         {
+            using var ms = new MemoryStream();
+            using var writer = new BinaryWriter(ms);
+
             // 사이즈를 구한다.
-            int PacketSize = Marshal.SizeOf(Packet);
+            var MemoryPacket = SerializePacket(Packet);
+            int PacketSize = MemoryPacket.Length;
             int TotalSize = (PacketSize + (sizeof(int) * 2));
 
             // 각 데이터를 직렬화한다.
-            var SizeBuffer = BitConverter.GetBytes(TotalSize);
-            var IDBuffer = BitConverter.GetBytes(ID.ToInt32(CultureInfo.CurrentCulture));
-            var PacketBuffer = SerializePacket(Packet);
+            writer.Write(TotalSize);
+            writer.Write(ID.ToInt32(CultureInfo.CurrentCulture));
+            writer.Write(MemoryPacket.Span);
 
-            // 복사 비용을 줄이기 위해 Memory를 사용한다.
-            Memory<byte> ReturnMemory = new Memory<byte>(new byte[TotalSize]);
-            Span<byte> ReturnSpan = ReturnMemory.Span;
-
-
-            // Span을 이용해 Memory에 직접 참조하여 데이터를 복사한다.
-            // 만약 여기서 에러가 나온다면, 사이즈를 제대로 계산했는지 확인하길 바란다
-            int CurrentSpanIndex = 0;
-            for (int i = CurrentSpanIndex; i < SizeBuffer.Length; i++)
-            {
-                ReturnSpan[i] = SizeBuffer[i];
-            }
-
-            CurrentSpanIndex += SizeBuffer.Length;
-            for (int i = CurrentSpanIndex; i < IDBuffer.Length; i++)
-            {
-                ReturnSpan[i] = IDBuffer[i];
-            }
-
-            CurrentSpanIndex += IDBuffer.Length;
-            for (int i = CurrentSpanIndex; i < PacketBuffer.Length; i++)
-            {
-                ReturnSpan[i] = PacketBuffer[i];
-            }
-            return ReturnSpan.ToArray();
-        }
-
-        public static Memory<byte> ByteToMemory(ref byte[] Packet)
-        {
-            return Packet.AsMemory();
+            return new Memory<byte>(ms.GetBuffer(), 0, (int)ms.Length);
         }
 
         public static EResult GetIDFromPacket<EResult>(ref Memory<byte> Packet) where EResult : Enum
@@ -88,10 +65,8 @@ namespace KYCPacket
         }
 
         // 거의 쓸일이 있으려나
-        public static (EResult, SResult) GetPacket<EResult,SResult>(ref byte[] Data) where EResult : Enum, IConvertible where SResult : struct
+        public static (EResult, SResult) GetPacket<EResult,SResult>(ref Memory<byte> MemoryData) where EResult : Enum, IConvertible where SResult : struct
         {
-            // Memory로 변환한다.
-            Memory<byte> MemoryData = Data.AsMemory();
             // ID를 가져온다.
             int IDValue = BitConverter.ToInt32(MemoryData.Span);
             // 검증한다.

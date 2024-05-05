@@ -179,16 +179,16 @@ namespace KYCSocketCore
         }
 
         // Acceptor와 Send Recv는 동일 코드
-        protected virtual async Task<byte[]> RecvData()
+        protected virtual async Task<Memory<byte>> RecvData()
         {
             Socket? RecvSocket = null;
             try
             {
                 RecvSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
                 RecvSocket.ReceiveTimeout = 500;
-                byte[] DataSizeBuffer = new byte[sizeof(int)];
+                Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
                 await RecvSocket.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
-                byte[] DataBuffer = new byte[PacketUtils.GetSizeFromPacket(ref DataSizeBuffer)];
+                Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                 await RecvSocket.ReceiveAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
                 return DataBuffer;
@@ -221,7 +221,7 @@ namespace KYCSocketCore
             }
         }
 
-        protected virtual async Task<int> SendData(byte[] DataBuffer)
+        protected virtual async Task<int> SendData(Memory<byte> DataBuffer)
         {
             Socket? SendSocket = null;
             try
