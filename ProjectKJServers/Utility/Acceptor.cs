@@ -254,6 +254,10 @@ namespace KYCSocketCore
                 return false;
             }
         }
+        //클라 Recv Send랑 분리하자 서버간 연결은 소켓 그룹으로 관리할 것이다
+        //클라는 개개인의 Socket이 있어야 하지만, 서버는 그룹단위 소켓 풀로 관리할 것이기 때문에
+        //소켓을 굳이 매개변수로 줄 필요가 없다. 또한 클라에게 Send 및 서버에게 동시에 Send하는 경우에도
+        //2개의 Send가 필요하기에 한가지의 PipeLine으로 Send를 할 수 없다. 어
         protected virtual async Task<Memory<byte>> RecvData()
         {
             Socket? RecvSocket = null;

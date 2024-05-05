@@ -23,7 +23,7 @@ namespace LoginServer
             MaxDegreeOfParallelism = 10,
             TaskScheduler = TaskScheduler.Default,
             EnsureOrdered = false,
-            NameFormat = "this.NameFormat",
+            NameFormat = "ClientRecvPipeLine",
             SingleProducerConstrained = false,
         };
         private TransformBlock<(Memory<byte>, Socket), (dynamic, Socket)> MemoryToPacketBlock;
@@ -39,7 +39,7 @@ namespace LoginServer
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
-                NameFormat = "LoginPacketProcessor.MemoryToPacketBlock",
+                NameFormat = "ClientRecvPipeLine.MemoryToPacketBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -49,7 +49,7 @@ namespace LoginServer
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
-                NameFormat = "LoginPacketProcessor.PacketProcessBlock",
+                NameFormat = "ClientRecvPipeLine.PacketProcessBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -122,18 +122,6 @@ namespace LoginServer
                     ErrorLog.Append(Message);
                     LogManager.GetSingletone.WriteLog(ErrorLog.ToString());
                     break;
-            }
-        }
-
-        // 이거 이제 필요 없을 수 있음 삭제 고려해볼것
-        public dynamic MakePacketStruct(LoginPacketListID ID, params dynamic[] PacketParams)
-        {
-            switch (ID)
-            {
-                case LoginPacketListID.LOGIN_REQUEST:
-                    return new LoginRequestPacket(PacketParams[0], PacketParams[1]);
-                default:
-                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
         }
 

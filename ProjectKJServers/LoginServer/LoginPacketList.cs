@@ -18,6 +18,13 @@ namespace LoginServer
     }
 
     [Serializable]
+    public struct LoginResponsePacket(bool IsSuccess, int ErrorCode)
+    {
+        public readonly bool IsSuccess { get; } = IsSuccess;
+        public readonly int ErrorCode { get; } = ErrorCode;
+    }
+
+    [Serializable]
     public struct RegistAccountRequestPacket(string AccountID, string Password)
     {
         public readonly string AccountID { get; } = AccountID;
@@ -26,13 +33,6 @@ namespace LoginServer
 
     [Serializable]
     public struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode)
-    {
-        public readonly bool IsSuccess { get; } = IsSuccess;
-        public readonly int ErrorCode { get; } = ErrorCode;
-    }
-
-    [Serializable]
-    public struct LoginResponsePacket(bool IsSuccess, int ErrorCode)
     {
         public readonly bool IsSuccess { get; } = IsSuccess;
         public readonly int ErrorCode { get; } = ErrorCode;

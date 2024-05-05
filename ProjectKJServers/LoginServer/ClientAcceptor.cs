@@ -102,5 +102,10 @@ namespace LoginServer
             }
         }
 
+        public async Task<int> Send(Socket ClientSocket, Memory<byte> Data)
+        {
+            return await SendClientData(Data, ClientSocket).ConfigureAwait(false);
+        }
+
     }
 }

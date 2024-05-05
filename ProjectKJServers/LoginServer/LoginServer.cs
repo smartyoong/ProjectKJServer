@@ -119,6 +119,12 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("접속한 유저들과 연결을 끊습니다");
             await ClientAcceptor.GetSingletone.Stop();
             await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("유저들의 수신 패킷 파이프라인을 종료합니다");
+            ClientRecvPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("유저들의 송신 패킷 파이프라인을 종료합니다");
+            ClientSendPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임서버와 연결을 끊습니다");
             await GameServerConnector.GetSingletone.Stop();
             await Task.Delay(TimeSpan.FromSeconds(2));
