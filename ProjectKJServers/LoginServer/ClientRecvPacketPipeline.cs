@@ -13,6 +13,9 @@ using System.Net.Sockets;
 namespace LoginServer
 {   internal class ClientRecvPacketPipeline
     {
+        private static readonly Lazy<ClientRecvPacketPipeline> instance = new Lazy<ClientRecvPacketPipeline>(() => new ClientRecvPacketPipeline());
+        public static ClientRecvPacketPipeline GetSingletone => instance.Value;
+
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -28,7 +31,8 @@ namespace LoginServer
 
 
 
-        public ClientRecvPacketPipeline()
+
+        private ClientRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<(Memory<byte>,Socket), (dynamic,Socket)>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
@@ -53,6 +57,7 @@ namespace LoginServer
 
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
+            LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline 생성 완료");
         }
 
         public void PushToPacketPipeline(Memory<byte> packet, Socket socket)
@@ -81,11 +86,11 @@ namespace LoginServer
                     }
                     catch (AggregateException e)
                     {
-                        LogManager.GetSingletone.WriteLog(e.Flatten()).Wait();
+                        LogManager.GetSingletone.WriteLog(e.Flatten());
                     }
                     catch (Exception e) when (e is not OperationCanceledException)
                     {
-                        LogManager.GetSingletone.WriteLog(e).Wait();
+                        LogManager.GetSingletone.WriteLog(e);
                     }
                 }
             }, CancelToken.Token);
@@ -110,12 +115,12 @@ namespace LoginServer
                 case GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED:
                     ErrorLog.Append("Error: Packet is not assigned ");
                     ErrorLog.Append(Message);
-                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString()).Wait();
+                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString());
                     break;
                 case GeneralErrorCode.ERR_PACKET_IS_NULL:
                     ErrorLog.Append("Error: Packet is null ");
                     ErrorLog.Append(Message);
-                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString()).Wait();
+                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString());
                     break;
             }
         }

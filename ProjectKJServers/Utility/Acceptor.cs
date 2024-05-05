@@ -77,7 +77,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
             }
         }
 
@@ -100,7 +100,7 @@ namespace KYCSocketCore
 
         private async Task InfiniteAccept(string ServerName)
         {
-            await LogManager.GetSingletone.WriteLog($"{ServerName}의 무한정 연결을 대기합니다.").ConfigureAwait(false);
+            LogManager.GetSingletone.WriteLog($"{ServerName}의 무한정 연결을 대기합니다.");
             while (!AcceptCancelToken.Token.IsCancellationRequested)
             {
                 try
@@ -114,12 +114,12 @@ namespace KYCSocketCore
                 catch (OperationCanceledException)
                 {
                     // 취소가 요청된것이므로 중단 시킨다
-                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.");
                     break;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
-                    LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                    LogManager.GetSingletone.WriteLog(e.Message);
                 }
             }
         }
@@ -128,11 +128,11 @@ namespace KYCSocketCore
         {
             for (int i = 0; i < MaxAcceptCount; i++)
             {
-                await LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.").ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog($"{ServerName}의 {i + 1}번째 연결을 대기합니다.");
 
                 if (AcceptCancelToken.Token.IsCancellationRequested)
                 {
-                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.");
                     break;
                 }
                 try
@@ -141,7 +141,7 @@ namespace KYCSocketCore
                     await ListenSocket.AcceptAsync(ClientSocket, AcceptCancelToken.Token).ConfigureAwait(false);
                     if (CheckIsAllowedIP(ClientSocket))
                     {
-                        await LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.").ConfigureAwait(false);
+                        LogManager.GetSingletone.WriteLog($"{ServerName}랑 {i + 1}개 연결되었습니다.");
 
                         if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
                         {
@@ -162,13 +162,13 @@ namespace KYCSocketCore
                 catch (OperationCanceledException)
                 {
                     // 취소가 요청된것이므로 중단 시킨다
-                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.").Wait();
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 취소되었습니다.");
                     break;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
                     i--;
-                    LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                    LogManager.GetSingletone.WriteLog(e);
                 }
             }
         }
@@ -206,7 +206,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 return false;
             }
             return true;
@@ -223,7 +223,7 @@ namespace KYCSocketCore
         {
             List<Task> RunningTasks = TotalTaskList.Where(task => task.Status == TaskStatus.Running).ToList();
             TotalTaskList = TotalTaskList.Except(RunningTasks).ToList();
-            await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.").ConfigureAwait(false);
+            LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.");
             await Task.WhenAll(RunningTasks).ConfigureAwait(false);
         }
         protected virtual async Task Process(Socket ClientSocket)
@@ -271,7 +271,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 //연결이 끊겼다. 재사용 가능한 소켓으로 반납시킨후 재사용 가능하도록 준비한다
                 // 끊겼다는 에러는 소켓을 받아왔지만, 해당 소켓이 ReceiveAsync중에 끊긴 것이다. 그룹에서는 제거된다.
                 if(RecvSocket != null)
@@ -293,7 +293,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 throw;
             }
         }
@@ -311,7 +311,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 if (SendSocket != null)
                     SocketManager.GetSingletone.ReturnSocket(SendSocket);
                 IsAccepted = false;
@@ -331,7 +331,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 throw;
             }
         }
@@ -349,7 +349,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
                 throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
@@ -362,7 +362,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 throw;
             }
         }
@@ -374,7 +374,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
                 throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
@@ -386,7 +386,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 throw;
             }
         }
@@ -395,7 +395,7 @@ namespace KYCSocketCore
         {
             CancelAccept(TimeSpan.FromSeconds(1)).Wait();
             AcceptCancelToken = new CancellationTokenSource();
-            LogManager.GetSingletone.WriteLog($"{ServerName} Accept를 재시작합니다.").Wait();
+            LogManager.GetSingletone.WriteLog($"{ServerName} Accept를 재시작합니다.");
         }
     }
 }

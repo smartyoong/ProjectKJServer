@@ -77,11 +77,11 @@ namespace DBServer
                     }
                     catch (AggregateException e)
                     {
-                        LogManager.GetSingletone.WriteLog(e.Flatten()).Wait();
+                        LogManager.GetSingletone.WriteLog(e.Flatten());
                     }
                     catch (Exception e) when (e is not OperationCanceledException)
                     {
-                        LogManager.GetSingletone.WriteLog(e).Wait();
+                        LogManager.GetSingletone.WriteLog(e);
                     }
                 }
             }, CancelToken.Token);
@@ -106,12 +106,12 @@ namespace DBServer
                 case GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED:
                     ErrorLog.Append("Error: Packet is not assigned ");
                     ErrorLog.Append(Message);
-                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString()).Wait();
+                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString());
                     break;
                 case GeneralErrorCode.ERR_PACKET_IS_NULL:
                     ErrorLog.Append("Error: Packet is null ");
                     ErrorLog.Append(Message);
-                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString()).Wait();
+                    LogManager.GetSingletone.WriteLog(ErrorLog.ToString());
                     break;
             }
         }

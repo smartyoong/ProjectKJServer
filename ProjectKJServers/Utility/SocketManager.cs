@@ -108,7 +108,7 @@ namespace KYCSocketCore
         public async Task Cancel()
         {
             SocketManagerCancelToken.Cancel();
-            LogManager.GetSingletone.WriteLog("소켓 매니저를 종료합니다.").Wait();
+            LogManager.GetSingletone.WriteLog("소켓 매니저를 종료합니다.");
             await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
@@ -161,7 +161,7 @@ namespace KYCSocketCore
 
             if (Groups[GroupID].AvailableMemberSockets.Count == CoreSettings.Default.MaxSocketCountPerGroup)
             {
-                LogManager.GetSingletone.WriteLog($"{GroupID}번 그룹에 소켓을 추가할 수 없습니다. 그룹이 가득 찼습니다.").Wait();
+                LogManager.GetSingletone.WriteLog($"{GroupID}번 그룹에 소켓을 추가할 수 없습니다. 그룹이 가득 찼습니다.");
                 return;
             }
             Groups[GroupID].AvailableMemberSockets.Push(Sock);
@@ -190,7 +190,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 throw;
             }
 

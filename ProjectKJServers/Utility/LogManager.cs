@@ -180,12 +180,12 @@ namespace KYCLog
         /// 취소 프로토콜을 지원합니다. 취소가 요청되면 예외가 발생합니다.
         /// 또한 LogTask에서 예외가 발생하면 메시지박스로 출력합니다.
         /// </exception>
-        public async Task WriteLog(string Log)
+        public void WriteLog(string Log)
         {
             if(IsAlreadyDisposed)
                 return;
 
-            await PushLogAsync(Log).ConfigureAwait(false);
+            PushLog(Log);
         }
 
 
@@ -205,14 +205,14 @@ namespace KYCLog
         /// 또한 LogTask에서 예외가 발생하면 메시지박스로 출력합니다.
         /// </exception>
         /// <see cref="LogManager.WriteLog(string)"/>
-        public async Task WriteLog(Exception ex)
+        public void WriteLog(Exception ex)
         {
             if(IsAlreadyDisposed)
                 return;
 
             LogStringBuilder.Append("[EXCEPTION] : ")
             .Append(ex.Message);
-            await WriteLog(LogStringBuilder.ToString());
+            WriteLog(LogStringBuilder.ToString());
             LogStringBuilder.Clear();
             if(ex.StackTrace != null)
             {
@@ -220,7 +220,7 @@ namespace KYCLog
                 {
                     LogStringBuilder.Append("[EXCEPTION] StackTrace :")
                     .Append(StackTrace);
-                    await WriteLog(LogStringBuilder.ToString());
+                    WriteLog(LogStringBuilder.ToString());
                     LogStringBuilder.Clear();
                 }
             }
@@ -228,35 +228,35 @@ namespace KYCLog
             {
                 LogStringBuilder.Append("[EXCEPTION] HelpLink :")
                 .Append(ex.HelpLink);
-                await WriteLog(LogStringBuilder.ToString());
+                WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.Source != null)
             {
                 LogStringBuilder.Append("[EXCEPTION] Source :")
                 .Append(ex.Source);
-                await WriteLog(LogStringBuilder.ToString());
+                WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.TargetSite != null)
             {
                 LogStringBuilder.Append("[EXCEPTION] TargetSite :")
                 .Append(ex.TargetSite);
-                await WriteLog(LogStringBuilder.ToString());
+                WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.Data != null)
             {
                 LogStringBuilder.Append("[EXCEPTION] Data :")
                 .Append(ex.Data);
-                await WriteLog(LogStringBuilder.ToString());
+                WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
             if(ex.InnerException != null)
             {
                 LogStringBuilder.Append("[EXCEPTION] InnerException :")
                 .Append(ex.InnerException);
-                await WriteLog(LogStringBuilder.ToString());
+                WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
                 if(ex.InnerException.StackTrace != null)
                 {
@@ -264,7 +264,7 @@ namespace KYCLog
                     {
                         LogStringBuilder.Append("[EXCEPTION] InnerStackTrace :")
                         .Append(InnerStackTrace);
-                        await WriteLog(LogStringBuilder.ToString());
+                        WriteLog(LogStringBuilder.ToString());
                         LogStringBuilder.Clear();
                     }
                 }
@@ -272,12 +272,16 @@ namespace KYCLog
         }
         /// <summary>
         /// 비동기 큐에 로그를 넣는 메서드입니다.
+        /// TryWrite를 사용해서 백그라운드 메서드에서 Wait같은 불필요 대기를 줄입니다
         /// </summary>
-        private async Task PushLogAsync(string Log)
+        private void PushLog(string Log)
         {
             try
             {
-                await LogChannel.Writer.WriteAsync(Log, LogCancellationTokenSource.Token).ConfigureAwait(false);
+                if(!LogChannel.Writer.TryWrite(Log))
+                {
+                    UIEvent.GetSingletone.ShowMessageBoxLogError($"PushLogAsync : LogChannel.Writer.TryWrite 실패 {Log}");
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

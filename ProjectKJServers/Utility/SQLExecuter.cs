@@ -24,7 +24,7 @@ namespace KYCSQL
         {
             while (!CancelSQL.Token.IsCancellationRequested)
             {
-                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 시도합니다.").ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 시도합니다.");
 
                 if (await ConnectCheckAsync().ConfigureAwait(false))
                 {
@@ -45,14 +45,14 @@ namespace KYCSQL
                 {
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     UIEvent.GetSingletone.UpdateSQLStatus(true);
-                    await LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.").ConfigureAwait(false);
+                    LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.");
                     return true;
                 }
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 UIEvent.GetSingletone.UpdateSQLStatus(false);
-                await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog(e);
                 return false;
             }
         }
@@ -86,12 +86,12 @@ namespace KYCSQL
             catch (SqlException se) when (se.Number == -2)
             {
                 UIEvent.GetSingletone.UpdateSQLStatus(false);
-                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.");
                 return (int)SP_ERROR.CONNECTION_ERROR;
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog(e);
                 return (int)SP_ERROR.SQL_QUERY_ERROR;
             }
         }
@@ -125,12 +125,12 @@ namespace KYCSQL
             catch (SqlException se) when (se.Number == -2)
             {
                 UIEvent.GetSingletone.UpdateSQLStatus(false);
-                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.");
                 return ((int)SP_ERROR.CONNECTION_ERROR,"");
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog(e);
                 return ((int)SP_ERROR.SQL_QUERY_ERROR,"");
             }
         }
@@ -177,12 +177,12 @@ namespace KYCSQL
             catch (SqlException se) when (se.Number == -2)
             {
                 UIEvent.GetSingletone.UpdateSQLStatus(false);
-                await LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.").ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 끊어졌습니다.");
                 return ((int)SP_ERROR.CONNECTION_ERROR, ResultList);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                await LogManager.GetSingletone.WriteLog(e.Message).ConfigureAwait(false);
+                LogManager.GetSingletone.WriteLog(e);
                 return ((int)SP_ERROR.SQL_QUERY_ERROR, ResultList);
             }
         }

@@ -100,7 +100,7 @@ namespace KYCSocketCore
                 try
                 {
                     await Sock.ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
-                    await LogManager.GetSingletone.WriteLog($"{i + 1}번째 객체가 {ServerName}와 연결에 성공하였습니다.").ConfigureAwait(false);
+                    LogManager.GetSingletone.WriteLog($"{i + 1}번째 객체가 {ServerName}와 연결에 성공하였습니다.");
 
                     if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
                     {
@@ -113,7 +113,7 @@ namespace KYCSocketCore
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
                 {
-                    await LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i + 1}번째 객체 시도중").ConfigureAwait(false);
+                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결에 실패하였습니다. {i + 1}번째 객체 시도중");
                     SocketManager.GetSingletone.ReturnSocket(Sock);
                     i--;
                 }
@@ -124,7 +124,7 @@ namespace KYCSocketCore
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
-                    await LogManager.GetSingletone.WriteLog(e).ConfigureAwait(false);
+                    LogManager.GetSingletone.WriteLog(e);
                 }
             }
         }
@@ -157,7 +157,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e).Wait();
+                LogManager.GetSingletone.WriteLog(e);
                 return false;
             }
             return true;
@@ -174,7 +174,7 @@ namespace KYCSocketCore
         {
             List<Task> RunningTasks = TryConnectTaskList.Where(task => task.Status == TaskStatus.Running).ToList();
             TryConnectTaskList = TryConnectTaskList.Except(RunningTasks).ToList();
-            await LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.").ConfigureAwait(false);
+            LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.");
             await Task.WhenAll(RunningTasks).ConfigureAwait(false);
         }
 
@@ -195,7 +195,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e.Message);
                 //연결이 끊겼다. 재사용 가능한 소켓으로 반납시킨후 재사용 가능하도록 준비한다
                 // 끊겼다는 에러는 소켓을 받아왔지만, 해당 소켓이 ReceiveAsync중에 끊긴 것이다. 그룹에서는 제거된다.
                 if (RecvSocket != null)
@@ -216,7 +216,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e.Message);
                 throw;
             }
         }
@@ -234,7 +234,7 @@ namespace KYCSocketCore
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e.Message);
                 if (SendSocket != null)
                     SocketManager.GetSingletone.ReturnSocket(SendSocket);
                 throw new ConnectionClosedException("Send를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
@@ -252,7 +252,7 @@ namespace KYCSocketCore
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.Message).Wait();
+                LogManager.GetSingletone.WriteLog(e.Message);
                 throw;
             }
         }
@@ -261,7 +261,7 @@ namespace KYCSocketCore
         {
             CancelConnect(TimeSpan.FromSeconds(3)).Wait();
             ConnectCancelToken = new CancellationTokenSource();
-            LogManager.GetSingletone.WriteLog($"{ServerName} Accept를 재시작합니다.").Wait();
+            LogManager.GetSingletone.WriteLog($"{ServerName} Accept를 재시작합니다.");
         }
     }
 }

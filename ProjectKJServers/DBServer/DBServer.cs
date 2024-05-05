@@ -72,24 +72,24 @@ namespace DBServer
         {
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            await LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
+            LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
             await GameSQLManager.GetSingletone.ConnectToSQL();
-            await LogManager.GetSingletone.WriteLog("게임 서버의 연결의 대기합니다.");
+            LogManager.GetSingletone.WriteLog("게임 서버의 연결의 대기합니다.");
             GameServerAcceptor.GetSingletone.Start();
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             ServerStopButton.Enabled = false;
-            await LogManager.GetSingletone.WriteLog("서버를 중지합니다.");
+            LogManager.GetSingletone.WriteLog("서버를 중지합니다.");
             await GameSQLManager.GetSingletone.StopSQL();
-            await LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.");
+            LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             await GameServerAcceptor.GetSingletone.Stop();
-            await LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.");
+            LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.");
             await SocketManager.GetSingletone.Cancel();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            await LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
+            LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));

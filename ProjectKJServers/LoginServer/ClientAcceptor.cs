@@ -24,7 +24,6 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private ClientRecvPacketPipeline RecvProcessor = new ClientRecvPacketPipeline();
 
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount)
         {
@@ -90,16 +89,16 @@ namespace LoginServer
             try
             {
                 var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
-                RecvProcessor.PushToPacketPipeline(Data,ClientSocket);
+                ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data,ClientSocket);
                 // 응답할 SendSocket을 어떻게할지 생각 해보자
             }
             catch (ConnectionClosedException e)
             {
-                LogManager.GetSingletone.WriteLog(e).Wait();
+                LogManager.GetSingletone.WriteLog(e);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                LogManager.GetSingletone.WriteLog(e).Wait();
+                LogManager.GetSingletone.WriteLog(e);
             }
         }
 

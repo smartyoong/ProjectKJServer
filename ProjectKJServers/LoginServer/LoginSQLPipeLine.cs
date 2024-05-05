@@ -23,6 +23,7 @@ namespace LoginServer
         private Channel<(LOGIN_SP ID, SqlParameter[] parameters, Socket Sock)> SQLChannel = Channel.CreateUnbounded<(LOGIN_SP ID, SqlParameter[], Socket)>();
 
         private CancellationTokenSource SQLCancelToken = new CancellationTokenSource();
+      
 
         private AccountSQLManager()
         {
@@ -61,7 +62,7 @@ namespace LoginServer
                         {
                             case LOGIN_SP.SP_LOGIN:
                                 // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
-                                await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync("SP_Login", item.parameters).ConfigureAwait(false);
+                                await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
                                 item.Sock.Send(new byte[0]);
                                 break;
                             default:
@@ -71,11 +72,11 @@ namespace LoginServer
                 }
                 catch(OperationCanceledException)
                 {
-                    LogManager.GetSingletone.WriteLog("SQL 작업이 중단되었습니다.").Wait();
+                    LogManager.GetSingletone.WriteLog("SQL 작업이 중단되었습니다.");
                 }
                 catch (Exception e)
                 {
-                    LogManager.GetSingletone.WriteLog(e).Wait();
+                    LogManager.GetSingletone.WriteLog(e);
                 }
             }
         }
