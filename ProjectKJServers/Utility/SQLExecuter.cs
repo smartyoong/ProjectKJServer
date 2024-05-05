@@ -118,7 +118,7 @@ namespace KYCSQL
                         await SQLCommand.ExecuteNonQueryAsync(CancelSQL.Token).ConfigureAwait(false);
 
                         // 반환 값을 얻습니다.
-                        return ((int)ReturnParameter.Value, SQLCommand.Parameters[SQLCommand.Parameters.Count-1].Value);
+                        return ((int)ReturnParameter.Value, SQLCommand.Parameters[SQLCommand.Parameters.Count-2].Value);
                     }
                 }
             }

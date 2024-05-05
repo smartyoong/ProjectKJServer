@@ -1,9 +1,11 @@
-﻿using System.Buffers.Binary;
+﻿using KYCLog;
+using System.Buffers.Binary;
 using System.Globalization;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using System.Text.Json;
 
 namespace KYCPacket
@@ -18,12 +20,12 @@ namespace KYCPacket
 
         public static S? DeserializePacket<S>(ref Memory<byte> DataBuffer) where S : struct
         {
-            return JsonSerializer.Deserialize<S>(DataBuffer.Span.ToArray(), new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Deserialize<S>(DataBuffer.Span);
         }
 
         public static Memory<byte> SerializePacket<S>(S Data) where S : struct
         {
-            return JsonSerializer.SerializeToUtf8Bytes(Data, new JsonSerializerOptions { WriteIndented = true }).AsMemory();
+            return JsonSerializer.SerializeToUtf8Bytes(Data).AsMemory();
         }
 
         public static Memory<byte> MakePacket<E,S>(E ID, S Packet) where S : struct where E : Enum, IConvertible
@@ -34,7 +36,8 @@ namespace KYCPacket
             // 사이즈를 구한다.
             var MemoryPacket = SerializePacket(Packet);
             int PacketSize = MemoryPacket.Length;
-            int TotalSize = (PacketSize + (sizeof(int) * 2));
+            // 아이씨 여기서 사이즈 잘못 보내가지고 뒤에 0000만큼 더 가서 바이트 로그 찍으면서 디버깅했네;;;
+            int TotalSize = (PacketSize + sizeof(int));
 
             // 각 데이터를 직렬화한다.
             writer.Write(TotalSize);

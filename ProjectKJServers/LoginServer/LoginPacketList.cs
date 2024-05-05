@@ -13,28 +13,28 @@ namespace LoginServer
     [Serializable]
     public struct LoginRequestPacket(string AccountID, string Password)
     {
-        public readonly string AccountID { get; } = AccountID;
-        public readonly string Password { get; } = Password;
+        public string AccountID { get; set; } = AccountID;
+        public string Password { get; set; } = Password;
     }
 
     [Serializable]
-    public struct LoginResponsePacket(bool IsSuccess, int ErrorCode)
+    public struct LoginResponsePacket(string NickName, int ErrorCode)
     {
-        public readonly bool IsSuccess { get; } = IsSuccess;
-        public readonly int ErrorCode { get; } = ErrorCode;
+        public string NickName { get; set; } = NickName;
+        public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
     public struct RegistAccountRequestPacket(string AccountID, string Password)
     {
-        public readonly string AccountID { get; } = AccountID;
-        public readonly string Password { get; } = Password;
+        public string AccountID { get; set; } = AccountID;
+        public string Password { get; set; } = Password;
     }
 
     [Serializable]
     public struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode)
     {
-        public readonly bool IsSuccess { get; } = IsSuccess;
-        public readonly int ErrorCode { get; } = ErrorCode;
+        public bool IsSuccess { get; set; } = IsSuccess;
+        public int ErrorCode { get; set; } = ErrorCode;
     }
 }

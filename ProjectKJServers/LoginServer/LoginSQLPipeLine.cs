@@ -62,8 +62,9 @@ namespace LoginServer
                         {
                             case LOGIN_SP.SP_LOGIN:
                                 // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
-                                await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
-                                item.Sock.Send(new byte[0]);
+                                (int ReturnValue, dynamic NickName) Item = await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
+                                LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, Item.ReturnValue);
+                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.Sock);
                                 break;
                             default:
                                 break;
