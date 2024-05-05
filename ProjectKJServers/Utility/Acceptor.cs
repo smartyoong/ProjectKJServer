@@ -356,6 +356,7 @@ namespace KYCSocketCore
                 LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
+                UIEvent.GetSingletone.IncreaseUserCount(false);
                 throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
             }
             // 연결 취소는 곧 서버 종료이므로 재사용 준비를 할 필요가 없다
@@ -381,6 +382,7 @@ namespace KYCSocketCore
                 LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
+                UIEvent.GetSingletone.IncreaseUserCount(false);
                 throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
             }
             catch (OperationCanceledException)

@@ -12,6 +12,7 @@ namespace LoginServer
     /// </summary>
     public partial class LoginServer : Form
     {
+        private int CurrentUserCount = 0;
         /// <summary>
         /// LoginServer 생성자입니다.
         /// 모든 LoginServer의 클래스의 초기화 작업을 진행합니다.
@@ -87,6 +88,24 @@ namespace LoginServer
                     });
                 }
              );
+            UIEvent.GetSingletone.SubscribeUserCountEvent(
+                IsIncrease =>
+                {
+                    ServerStatusTextBox.Invoke(() =>
+                    {
+                        if (IsIncrease)
+                        {
+                            CurrentUserCount++;
+                            CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
+                        }
+                        else
+                        {
+                            CurrentUserCount--;
+                            CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
+                        }
+                    });
+                }
+             );
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
             SQLStatusTextBox.BackColor = Color.Red;
@@ -99,6 +118,7 @@ namespace LoginServer
             ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             CurrentUserCountTextBox.ReadOnly = true;
             CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
+            CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
         }
 
         // UI와 작동하는 스레드 이기때문에 ConfigureAwait(false)를 사용하지 않습니다.
