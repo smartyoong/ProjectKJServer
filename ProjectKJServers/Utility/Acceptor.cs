@@ -267,9 +267,24 @@ namespace KYCSocketCore
                 RecvSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
                 RecvSocket.ReceiveTimeout = 500;
                 Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
-                await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                int RecvSize = await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                if(RecvSize <= 0)
+                {
+                    if (RecvSocket != null)
+                        SocketManager.GetSingletone.ReturnSocket(RecvSocket);
+                    IsAccepted = false;
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
+                }
+
                 Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
-                await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                RecvSize = await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                if (RecvSize <= 0)
+                {
+                    if (RecvSocket != null)
+                        SocketManager.GetSingletone.ReturnSocket(RecvSocket);
+                    IsAccepted = false;
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
+                }
                 SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
                 return DataBuffer;
             }
@@ -311,7 +326,15 @@ namespace KYCSocketCore
                 SendSocket.SendTimeout = 500;
                 int SendSize = await SendSocket.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, SendSocket);
-                return SendSize;
+                if(SendSize > 0)
+                    return SendSize;
+                else
+                {
+                    if (SendSocket != null)
+                        SocketManager.GetSingletone.ReturnSocket(SendSocket);
+                    IsAccepted = false;
+                    return -1;
+                }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
@@ -346,14 +369,29 @@ namespace KYCSocketCore
             {
                 // 추후 고정패킷으로 길이를 바꿔서 Recveive를 2번하는것을 막아보자
                 Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
-                await ClientSock.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+
+                int RecvSize = await ClientSock.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                if (RecvSize <= 0)
+                {
+                    var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
+                    UIEvent.GetSingletone.IncreaseUserCount(false);
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                }
+
                 Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
-                await ClientSock.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                RecvSize = await ClientSock.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                if (RecvSize <= 0)
+                {
+                    var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
+                    UIEvent.GetSingletone.IncreaseUserCount(false);
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                }
                 return DataBuffer;
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
                 UIEvent.GetSingletone.IncreaseUserCount(false);
@@ -365,6 +403,10 @@ namespace KYCSocketCore
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 취소되었습니다.");
             }
+            catch(ConnectionClosedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
                 LogManager.GetSingletone.WriteLog(e);
@@ -375,11 +417,18 @@ namespace KYCSocketCore
         {
             try
             {
-                return await ClientSock.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                int SendSize = await ClientSock.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
+                if (SendSize > 0)
+                    return SendSize;
+                else
+                {
+                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
+                    UIEvent.GetSingletone.IncreaseUserCount(false);
+                    return -1;
+                }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                LogManager.GetSingletone.WriteLog(e);
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
                 SocketManager.GetSingletone.ReturnSocket(ClientSock);
                 UIEvent.GetSingletone.IncreaseUserCount(false);

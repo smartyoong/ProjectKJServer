@@ -238,13 +238,6 @@ namespace KYCLog
                 WriteLog(LogStringBuilder.ToString());
                 LogStringBuilder.Clear();
             }
-            if(ex.TargetSite != null)
-            {
-                LogStringBuilder.Append("[EXCEPTION] TargetSite :")
-                .Append(ex.TargetSite);
-                WriteLog(LogStringBuilder.ToString());
-                LogStringBuilder.Clear();
-            }
             if(ex.Data != null)
             {
                 LogStringBuilder.Append("[EXCEPTION] Data :")

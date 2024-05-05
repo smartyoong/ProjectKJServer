@@ -92,15 +92,16 @@ namespace LoginServer
                 {
                     var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
                     ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, ClientSocket);
-                    // 응답할 SendSocket을 어떻게할지 생각 해보자
                 }
                 catch (ConnectionClosedException e)
                 {
-                    LogManager.GetSingletone.WriteLog(e);
+                    LogManager.GetSingletone.WriteLog(e.Message);
+                    break;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
                     LogManager.GetSingletone.WriteLog(e);
+                    break;
                 }
             }
         }
