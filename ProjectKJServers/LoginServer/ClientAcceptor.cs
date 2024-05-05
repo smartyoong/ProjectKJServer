@@ -86,19 +86,22 @@ namespace LoginServer
         // 클라이언트를 Accept할 때에는 아래의 함수를 재정의 해야한다
         protected override async Task Process(Socket ClientSocket)
         {
-            try
+            while(!CheckCancelToken.IsCancellationRequested)
             {
-                var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
-                ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data,ClientSocket);
-                // 응답할 SendSocket을 어떻게할지 생각 해보자
-            }
-            catch (ConnectionClosedException e)
-            {
-                LogManager.GetSingletone.WriteLog(e);
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                LogManager.GetSingletone.WriteLog(e);
+                try
+                {
+                    var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
+                    ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, ClientSocket);
+                    // 응답할 SendSocket을 어떻게할지 생각 해보자
+                }
+                catch (ConnectionClosedException e)
+                {
+                    LogManager.GetSingletone.WriteLog(e);
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    LogManager.GetSingletone.WriteLog(e);
+                }
             }
         }
 
