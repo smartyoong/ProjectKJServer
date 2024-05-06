@@ -1,4 +1,5 @@
 ﻿using DBServer;
+using KYCUIEventManager;
 
 namespace KYCSQL
 {
@@ -20,11 +21,13 @@ namespace KYCSQL
         public async Task ConnectToSQL()
         {
             await SQLWorker.TryConnect().ConfigureAwait(false);
+            UIEvent.GetSingletone.UpdateDBServerStatus(true);
         }
 
         public async Task StopSQL()
         {
             await SQLWorker.Cancel().ConfigureAwait(false);
+            UIEvent.GetSingletone.UpdateDBServerStatus(false);
         }
     }
 }
