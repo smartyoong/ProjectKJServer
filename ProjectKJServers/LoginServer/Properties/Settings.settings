@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="GameServerConnectCount" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">2</Value>
+      <Value Profile="(Default)">4</Value>
     </Setting>
     <Setting Name="GameServerPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">12477</Value>

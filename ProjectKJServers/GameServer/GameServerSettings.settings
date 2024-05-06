@@ -1,0 +1,42 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GameServer" GeneratedClassName="GameServerSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="LoginServerAcceptCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">4</Value>
+    </Setting>
+    <Setting Name="LoginServerAcceptPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">12477</Value>
+    </Setting>
+    <Setting Name="LoginServerIPAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">127.0.0.1</Value>
+    </Setting>
+    <Setting Name="LogDirectory" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\GameServerLog</Value>
+    </Setting>
+    <Setting Name="DBServerConnectCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="DBServerConnectPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">12476</Value>
+    </Setting>
+    <Setting Name="DBServerIPAdress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">127.0.0.1</Value>
+    </Setting>
+    <Setting Name="ClientAcceptPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">12474</Value>
+    </Setting>
+    <Setting Name="ClientAcceptCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">-1</Value>
+    </Setting>
+    <Setting Name="ClientAcceptIPAdress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">0.0.0.0</Value>
+    </Setting>
+    <Setting Name="ReadySocketCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="MaxSocketCountPerGroup" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

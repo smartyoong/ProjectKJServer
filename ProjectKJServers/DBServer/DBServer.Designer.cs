@@ -28,34 +28,12 @@
         /// </summary>
         private void InitializeComponent()
         {
-            UserCountLabel = new Label();
-            CurrentUserCountTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
             GameServerStatusTextBox = new TextBox();
             ServerStartButton = new Button();
             ServerStopButton = new Button();
             LogListBox = new ListBox();
             SuspendLayout();
-            // 
-            // UserCountLabel
-            // 
-            UserCountLabel.AutoSize = true;
-            UserCountLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
-            UserCountLabel.Location = new Point(625, 106);
-            UserCountLabel.Name = "UserCountLabel";
-            UserCountLabel.Size = new Size(61, 13);
-            UserCountLabel.TabIndex = 15;
-            UserCountLabel.Text = "동접자 수 :";
-            // 
-            // CurrentUserCountTextBox
-            // 
-            CurrentUserCountTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            CurrentUserCountTextBox.Location = new Point(693, 103);
-            CurrentUserCountTextBox.Name = "CurrentUserCountTextBox";
-            CurrentUserCountTextBox.ReadOnly = true;
-            CurrentUserCountTextBox.Size = new Size(95, 21);
-            CurrentUserCountTextBox.TabIndex = 14;
-            CurrentUserCountTextBox.TextAlign = HorizontalAlignment.Center;
             // 
             // ServerStatusTextBox
             // 
@@ -119,8 +97,6 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(UserCountLabel);
-            Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(GameServerStatusTextBox);
             Controls.Add(ServerStartButton);
@@ -133,9 +109,6 @@
         }
 
         #endregion
-
-        private Label UserCountLabel;
-        private TextBox CurrentUserCountTextBox;
         private TextBox ServerStatusTextBox;
         private TextBox GameServerStatusTextBox;
         private Button ServerStartButton;

@@ -8,16 +8,16 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LoginServer.Properties {
+namespace GameServer {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.9.0.0")]
-    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+    internal sealed partial class GameServerSettings : global::System.Configuration.ApplicationSettingsBase {
         
-        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
+        private static GameServerSettings defaultInstance = ((GameServerSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new GameServerSettings())));
         
-        public static Settings Default {
+        public static GameServerSettings Default {
             get {
                 return defaultInstance;
             }
@@ -26,42 +26,90 @@ namespace LoginServer.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("4")]
-        public int GameServerConnectCount {
+        public int LoginServerAcceptCount {
             get {
-                return ((int)(this["GameServerConnectCount"]));
+                return ((int)(this["LoginServerAcceptCount"]));
             }
             set {
-                this["GameServerConnectCount"] = value;
+                this["LoginServerAcceptCount"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("12477")]
-        public int GameServerPort {
+        public int LoginServerAcceptPort {
             get {
-                return ((int)(this["GameServerPort"]));
+                return ((int)(this["LoginServerAcceptPort"]));
             }
             set {
-                this["GameServerPort"] = value;
+                this["LoginServerAcceptPort"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
-        public string GameServerIPAddress {
+        public string LoginServerIPAddress {
             get {
-                return ((string)(this["GameServerIPAddress"]));
+                return ((string)(this["LoginServerIPAddress"]));
             }
             set {
-                this["GameServerIPAddress"] = value;
+                this["LoginServerIPAddress"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("12475")]
+        [global::System.Configuration.DefaultSettingValueAttribute("\\GameServerLog")]
+        public string LogDirectory {
+            get {
+                return ((string)(this["LogDirectory"]));
+            }
+            set {
+                this["LogDirectory"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int DBServerConnectCount {
+            get {
+                return ((int)(this["DBServerConnectCount"]));
+            }
+            set {
+                this["DBServerConnectCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("12476")]
+        public int DBServerConnectPort {
+            get {
+                return ((int)(this["DBServerConnectPort"]));
+            }
+            set {
+                this["DBServerConnectPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
+        public string DBServerIPAdress {
+            get {
+                return ((string)(this["DBServerIPAdress"]));
+            }
+            set {
+                this["DBServerIPAdress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("12474")]
         public int ClientAcceptPort {
             get {
                 return ((int)(this["ClientAcceptPort"]));
@@ -97,79 +145,7 @@ namespace LoginServer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\\LoginServerLog")]
-        public string LogDirectory {
-            get {
-                return ((string)(this["LogDirectory"]));
-            }
-            set {
-                this["LogDirectory"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("AccountDB")]
-        public string SQLAccountDataBaseName {
-            get {
-                return ((string)(this["SQLAccountDataBaseName"]));
-            }
-            set {
-                this["SQLAccountDataBaseName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool SQLSecurity {
-            get {
-                return ((bool)(this["SQLSecurity"]));
-            }
-            set {
-                this["SQLSecurity"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
-        public int SQLPoolMinSize {
-            get {
-                return ((int)(this["SQLPoolMinSize"]));
-            }
-            set {
-                this["SQLPoolMinSize"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("150")]
-        public int SQLPoolMaxSize {
-            get {
-                return ((int)(this["SQLPoolMaxSize"]));
-            }
-            set {
-                this["SQLPoolMaxSize"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("60")]
-        public int SQLTimeOut {
-            get {
-                return ((int)(this["SQLTimeOut"]));
-            }
-            set {
-                this["SQLTimeOut"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
         public int ReadySocketCount {
             get {
                 return ((int)(this["ReadySocketCount"]));
@@ -188,18 +164,6 @@ namespace LoginServer.Properties {
             }
             set {
                 this["MaxSocketCountPerGroup"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("SMARTYOONG\\SQLEXPRESS")]
-        public string SQLDataSoruce {
-            get {
-                return ((string)(this["SQLDataSoruce"]));
-            }
-            set {
-                this["SQLDataSoruce"] = value;
             }
         }
     }

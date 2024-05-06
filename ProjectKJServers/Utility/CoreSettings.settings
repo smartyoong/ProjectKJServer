@@ -5,28 +5,10 @@
     <Setting Name="LogDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">\Log</Value>
     </Setting>
-    <Setting Name="SQLDataSoruce" Type="System.String" Scope="User">
-      <Value Profile="(Default)">SMARTYOONG\SQLEXPRESS</Value>
-    </Setting>
-    <Setting Name="SQLSecurity" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">True</Value>
-    </Setting>
-    <Setting Name="SQLPoolMinSize" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">10</Value>
-    </Setting>
-    <Setting Name="SQLPoolMaxSize" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">150</Value>
-    </Setting>
-    <Setting Name="SQLGameDataBaseName" Type="System.String" Scope="User">
-      <Value Profile="(Default)">GameDB</Value>
-    </Setting>
-    <Setting Name="SQLTimeOut" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">60</Value>
-    </Setting>
-    <Setting Name="ReadySocketCount" Type="System.Int32" Scope="User">
+    <Setting Name="MaxSocketCountPerGroup" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">30</Value>
     </Setting>
-    <Setting Name="MaxSocketCountPerGroup" Type="System.Int32" Scope="User">
+    <Setting Name="ReadySocketCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">30</Value>
     </Setting>
   </Settings>

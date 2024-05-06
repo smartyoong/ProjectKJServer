@@ -6,4 +6,20 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Utility\CoreUtility.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="GameServerSettings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GameServerSettings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="GameServerSettings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>GameServerSettings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
 </Project>

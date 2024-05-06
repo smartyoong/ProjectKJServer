@@ -1,4 +1,4 @@
-﻿using CoreUtility;
+﻿using DBServer;
 
 namespace KYCSQL
 {
@@ -13,8 +13,8 @@ namespace KYCSQL
 
         private GameSQLManager()
         {
-            SQLWorker = new SQLExecuter(CoreSettings.Default.SQLDataSoruce, CoreSettings.Default.SQLGameDataBaseName,
-                CoreSettings.Default.SQLSecurity, CoreSettings.Default.SQLPoolMinSize, CoreSettings.Default.SQLPoolMaxSize, CoreSettings.Default.SQLTimeOut);
+            SQLWorker = new SQLExecuter(DBServerSettings.Default.SQLDataSoruce, DBServerSettings.Default.SQLGameDataBaseName,
+                DBServerSettings.Default.SQLSecurity, DBServerSettings.Default.SQLPoolMinSize, DBServerSettings.Default.SQLPoolMaxSize, DBServerSettings.Default.SQLTimeOut);
         }
 
         public async Task ConnectToSQL()

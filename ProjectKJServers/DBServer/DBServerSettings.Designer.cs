@@ -70,5 +70,101 @@ namespace DBServer {
                 this["GameServerIPAdress"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("GameDB")]
+        public string SQLGameDataBaseName {
+            get {
+                return ((string)(this["SQLGameDataBaseName"]));
+            }
+            set {
+                this["SQLGameDataBaseName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SQLSecurity {
+            get {
+                return ((bool)(this["SQLSecurity"]));
+            }
+            set {
+                this["SQLSecurity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int SQLPoolMinSize {
+            get {
+                return ((int)(this["SQLPoolMinSize"]));
+            }
+            set {
+                this["SQLPoolMinSize"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("150")]
+        public int SQLPoolMaxSize {
+            get {
+                return ((int)(this["SQLPoolMaxSize"]));
+            }
+            set {
+                this["SQLPoolMaxSize"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
+        public int SQLTimeOut {
+            get {
+                return ((int)(this["SQLTimeOut"]));
+            }
+            set {
+                this["SQLTimeOut"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int ReadySocketCount {
+            get {
+                return ((int)(this["ReadySocketCount"]));
+            }
+            set {
+                this["ReadySocketCount"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int MaxSocketCountPerGroup {
+            get {
+                return ((int)(this["MaxSocketCountPerGroup"]));
+            }
+            set {
+                this["MaxSocketCountPerGroup"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("SMARTYOONG\\SQLEXPRESS")]
+        public string SQLDataSoruce {
+            get {
+                return ((string)(this["SQLDataSoruce"]));
+            }
+            set {
+                this["SQLDataSoruce"] = value;
+            }
+        }
     }
 }
