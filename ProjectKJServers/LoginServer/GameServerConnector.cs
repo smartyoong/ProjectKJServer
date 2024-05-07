@@ -2,6 +2,9 @@
 using System.Net;
 using KYCUIEventManager;
 using KYCSocketCore;
+using KYCException;
+using KYCLog;
+using System.Net.Sockets;
 
 namespace LoginServer
 {
@@ -23,6 +26,8 @@ namespace LoginServer
 
         private CancellationTokenSource CheckProcessToken;
 
+        private TaskCompletionSource<bool>? ServerReadeyEvent;
+
 
         /// <summary>
         /// GameServer 클래스의 생성자입니다.
@@ -37,10 +42,13 @@ namespace LoginServer
         /// Game서버와의 연결을 시도합니다.
         /// 모든 소켓이 연결에 성공하면 DB서버와 연결되었다는 이벤트를 발생시킵니다.
         /// </summary>
-        public void Start()
+        public void Start(TaskCompletionSource<bool>? ServerEvent)
         {
             Start(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), "Game서버");
             ProcessCheck();
+            // Recv하는거 추가해야함
+            ServerReadeyEvent = ServerEvent;
+            GetRecvPacket();
         }
 
         /// <summary>
@@ -105,7 +113,14 @@ namespace LoginServer
                 while (!CheckProcessToken.IsCancellationRequested)
                 {
                     if (IsConnected())
+                    {
                         UIEvent.GetSingletone.UpdateGameServerStatus(true);
+                        if(ServerReadeyEvent != null)
+                        {
+                            ServerReadeyEvent.SetResult(true);
+                            ServerReadeyEvent = null;
+                        }
+                    }
                     else
                         UIEvent.GetSingletone.UpdateGameServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
@@ -113,15 +128,44 @@ namespace LoginServer
             }, CheckProcessToken.Token);
         }
 
-        // 이하 메서드 부터 개선 및 작업 필요
-        public int SendPacket(Memory<byte> Data)
+        public void GetRecvPacket()
         {
-            int SendBytes = SendData(Data).Result;
-            return SendBytes;
+            Task.Run(async () =>
+            {
+                while (!CheckProcessToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var DataBuffer = await RecvData().ConfigureAwait(false);
+                        // 파이프라인에 추가하는거 작업해야함
+                    }
+                    catch (ConnectionClosedException e)
+                    {
+                        // 연결종료됨 다시 연결을 받아오도록 지시
+                        LogManager.GetSingletone.WriteLog(e);
+                        LogManager.GetSingletone.WriteLog("GameServer와 연결이 끊겼습니다");
+                        // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
+                        PrepareToReConnect("GameServer");
+                        Start(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), "GameServer");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
+                        LogManager.GetSingletone.WriteLog(e);
+                        LogManager.GetSingletone.WriteLog("LoginServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
+                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        // 그외 에러
+                        LogManager.GetSingletone.WriteLog(e);
+                    }
+                }
+            });
         }
-        public Memory<byte> RecvPacket()
+        public async Task<int> Send(Memory<byte> Data)
         {
-            return RecvData().Result;
+            return await SendData(Data).ConfigureAwait(false);
         }
     }
 }

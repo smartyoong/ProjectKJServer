@@ -17,6 +17,8 @@ namespace LoginServer
     {
         private SQLExecuter SQLWorker;
 
+        private TaskCompletionSource<bool>? SQLReadyEvent;
+
         private static readonly Lazy<AccountSQLManager> instance = new Lazy<AccountSQLManager>(() => new AccountSQLManager());
         public static AccountSQLManager GetSingletone => instance.Value;
 
@@ -32,9 +34,15 @@ namespace LoginServer
             StartSQLProcess();
         }
 
-        public async Task ConnectToSQL()
+        public async Task ConnectToSQL(TaskCompletionSource<bool> SQLEvent)
         {
+            SQLReadyEvent = SQLEvent;
             await SQLWorker.TryConnect().ConfigureAwait(false);
+            if (SQLReadyEvent != null) 
+            {
+                SQLReadyEvent.TrySetResult(true);
+                SQLReadyEvent = null;
+            }
         }
 
         public async Task StopSQL()

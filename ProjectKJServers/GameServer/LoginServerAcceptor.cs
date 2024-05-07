@@ -12,12 +12,12 @@ using KYCPacket;
 using KYCException;
 using Windows.Security.DataProtection;
 
-namespace DBServer
+namespace GameServer
 {
-    internal class GameServerAcceptor : Acceptor, IDisposable
+    internal class LoginServerAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<GameServerAcceptor> Lazy = new Lazy<GameServerAcceptor>(() => new GameServerAcceptor());
-        public static GameServerAcceptor GetSingletone { get { return Lazy.Value; } }
+        private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
+        public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
@@ -25,15 +25,17 @@ namespace DBServer
 
         TaskCompletionSource<bool>? ServerReadeyEvent;
 
-        private GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount)
+        // 추후 파이프 라인 추가하자
+
+        private LoginServerAcceptor() : base(GameServerSettings.Default.LoginServerAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
         }
 
         public void Start(TaskCompletionSource<bool> ServerEvent)
         {
-            Init(IPAddress.Parse(DBServerSettings.Default.GameServerIPAdress), DBServerSettings.Default.GameServerAcceptPort);
-            Start("GameServer");
+            Init(IPAddress.Parse(GameServerSettings.Default.LoginServerIPAddress), GameServerSettings.Default.LoginServerAcceptPort);
+            Start("LoginServer");
             ProcessCheck();
             GetRecvPacket();
             ServerReadeyEvent = ServerEvent;
@@ -41,11 +43,11 @@ namespace DBServer
 
         public async Task Stop()
         {
-            await Stop("GameServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            await Stop("LoginServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
 
-        ~GameServerAcceptor()
+        ~LoginServerAcceptor()
         {
             Dispose(false);
         }
@@ -76,8 +78,7 @@ namespace DBServer
                 {
                      if(IsConnected())
                     {
-                        UIEvent.GetSingletone.UpdateGameServerStatus(true);
-                        // 준비가 되었음을 표시
+                        UIEvent.GetSingletone.UpdateLoginServerStatus(true);
                         if (ServerReadeyEvent != null)
                         {
                             ServerReadeyEvent.SetResult(true);
@@ -85,13 +86,12 @@ namespace DBServer
                         }
                     }
                      else
-                        UIEvent.GetSingletone.UpdateGameServerStatus(false);
+                        UIEvent.GetSingletone.UpdateLoginServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
             }, CheckCancelToken.Token);
         }
         
-        // 이하 메서드는 추가 작업이 필요하며, 에러가 발생할 수 있다
         public void GetRecvPacket()
         {
             Task.Run( async() =>
@@ -101,22 +101,22 @@ namespace DBServer
                     try
                     {
                         var DataBuffer = await RecvData().ConfigureAwait(false);
-                        GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(DataBuffer);
+                        // 파이프라인에 추가하는거 작업해야함
                     }
                     catch (ConnectionClosedException e)
                     {
                         // 연결종료됨 다시 연결을 받아오도록 지시
                         LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("GameServer와 연결이 끊겼습니다");
+                        LogManager.GetSingletone.WriteLog("LoginServer와 연결이 끊겼습니다");
                         // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
-                        PrepareToReAccept("GameServer");
-                        Start("GameServer");
+                        PrepareToReAccept("LoginServer");
+                        Start("LoginServer");
                     }
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                     {
                         // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
                         LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("GameServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
+                        LogManager.GetSingletone.WriteLog("LoginServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
                         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                     }
                     catch (Exception e) when (e is not OperationCanceledException)

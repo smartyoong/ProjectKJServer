@@ -7,6 +7,8 @@ namespace DBServer
 {
     public partial class DBServer : Form
     {
+        private TaskCompletionSource<bool> GameServerReadyEvent = new TaskCompletionSource<bool>();
+        private TaskCompletionSource<bool> SQLReadyEvent = new TaskCompletionSource<bool>();
         public DBServer()
         {
             InitializeComponent();
@@ -71,16 +73,20 @@ namespace DBServer
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
             LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
-            await GameSQLManager.GetSingletone.ConnectToSQL();
+            await GameSQLPipeLine.GetSingletone.ConnectToSQL(SQLReadyEvent);
+            await SQLReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.");
             LogManager.GetSingletone.WriteLog("게임 서버의 연결의 대기합니다.");
-            GameServerAcceptor.GetSingletone.Start();
+            GameServerAcceptor.GetSingletone.Start(GameServerReadyEvent);
+            await GameServerReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("게임 서버와 연결되었습니다.");
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             ServerStopButton.Enabled = false;
             LogManager.GetSingletone.WriteLog("서버를 중지합니다.");
-            await GameSQLManager.GetSingletone.StopSQL();
+            await GameSQLPipeLine.GetSingletone.StopSQL();
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             await GameServerAcceptor.GetSingletone.Stop();

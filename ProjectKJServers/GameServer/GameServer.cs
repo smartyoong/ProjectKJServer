@@ -1,4 +1,5 @@
 using KYCLog;
+using KYCSocketCore;
 using KYCUIEventManager;
 
 namespace GameServer
@@ -6,6 +7,8 @@ namespace GameServer
     public partial class GameServer : Form
     {
         private int CurrentUserCount = 0;
+        private TaskCompletionSource<bool> LoginServerReadyEvent = new TaskCompletionSource<bool>();
+        private TaskCompletionSource<bool> DBServerReadyEvent = new TaskCompletionSource<bool>();
         public GameServer()
         {
             InitializeComponent();
@@ -105,16 +108,27 @@ namespace GameServer
             CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
         }
 
-        private void ServerStartButton_Click(object sender, EventArgs e)
+        private async void ServerStartButton_Click(object sender, EventArgs e)
         {
             LogManager.GetSingletone.WriteLog("게임 서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
+            LogManager.GetSingletone.WriteLog("로그인 서버의 연결을 대기합니다.");
+            LoginServerAcceptor.GetSingletone.Start(LoginServerReadyEvent);
+            await LoginServerReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("로그인 서버와 연결되었습니다.");
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
-            LogManager.GetSingletone.WriteLog("잠시후 게임 서버를 종료합니다.");
+            LogManager.GetSingletone.WriteLog("로그인 서버와 연결을 중단합니다.");
+            await LoginServerAcceptor.GetSingletone.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("연결중인 모든 소켓을 중단합니다.");
+            await SocketManager.GetSingletone.Cancel();
+            LogManager.GetSingletone.WriteLog("잠시후 로그 매니저를 종료하고 게임 서버를 종료합니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));
             Environment.Exit(0);
         }

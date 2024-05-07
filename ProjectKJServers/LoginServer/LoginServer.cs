@@ -13,6 +13,8 @@ namespace LoginServer
     public partial class LoginServer : Form
     {
         private int CurrentUserCount = 0;
+        private TaskCompletionSource<bool> GameServerReadyEvent = new TaskCompletionSource<bool>();
+        private TaskCompletionSource<bool> SQLReadyEvent = new TaskCompletionSource<bool>();
         /// <summary>
         /// LoginServer 생성자입니다.
         /// 모든 LoginServer의 클래스의 초기화 작업을 진행합니다.
@@ -127,8 +129,12 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            await AccountSQLManager.GetSingletone.ConnectToSQL();
-            GameServerConnector.GetSingletone.Start();
+            await AccountSQLManager.GetSingletone.ConnectToSQL(SQLReadyEvent);
+            await SQLReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 완료됐습니다.");
+            GameServerConnector.GetSingletone.Start(GameServerReadyEvent);
+            await GameServerReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("게임 서버와 연결이 완료됐습니다.");
             ClientAcceptor.GetSingletone.Start();
             LogManager.GetSingletone.WriteLog("서버를 시작완료");
 
