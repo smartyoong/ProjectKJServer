@@ -22,7 +22,7 @@ namespace LoginServer
         private static readonly Lazy<AccountSQLManager> instance = new Lazy<AccountSQLManager>(() => new AccountSQLManager());
         public static AccountSQLManager GetSingletone => instance.Value;
 
-        private Channel<(LOGIN_SP ID, SqlParameter[] parameters, Socket Sock)> SQLChannel = Channel.CreateUnbounded<(LOGIN_SP ID, SqlParameter[], Socket)>();
+        private Channel<(LOGIN_SP ID, SqlParameter[] parameters, int ClientID)> SQLChannel = Channel.CreateUnbounded<(LOGIN_SP ID, SqlParameter[], int)>();
 
         private CancellationTokenSource SQLCancelToken = new CancellationTokenSource();
       
@@ -72,7 +72,7 @@ namespace LoginServer
                                 // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
                                 (int ReturnValue, dynamic NickName) Item = await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
                                 LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, Item.ReturnValue);
-                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.Sock);
+                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.ClientID);
                                 break;
                             default:
                                 break;
@@ -90,7 +90,7 @@ namespace LoginServer
             }
         }
 
-        public void SP_LOGIN_REQUEST(string AccountID, string AccountPW, Socket Sock)
+        public void SP_LOGIN_REQUEST(string AccountID, string AccountPW, int ClientID)
         {
             SqlParameter[] parameters =
             [
@@ -98,7 +98,7 @@ namespace LoginServer
                 new SqlParameter("@PW", SqlDbType.VarChar, 50) { Value = AccountPW },
                 new SqlParameter("@NickName", SqlDbType.NVarChar, 16) { Direction = ParameterDirection.Output }
             ];
-            SQLChannel.Writer.TryWrite((LOGIN_SP.SP_LOGIN, parameters, Sock));
+            SQLChannel.Writer.TryWrite((LOGIN_SP.SP_LOGIN, parameters, ClientID));
         }
 
     }

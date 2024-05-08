@@ -270,7 +270,7 @@ namespace KYCSocketCore
                 if (SendSocket != null)
                     SocketManager.GetSingletone.ReturnSocket(SendSocket);
                 ServerConnected.Reset();
-                throw new ConnectionClosedException("Send를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
+                throw new ConnectionClosedException($"Send를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
             {

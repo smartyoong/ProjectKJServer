@@ -1,12 +1,11 @@
-﻿using LoginServer.Properties;
-using System.Net;
+﻿using System.Net;
 using KYCUIEventManager;
 using KYCSocketCore;
 using KYCException;
 using KYCLog;
 using System.Net.Sockets;
 
-namespace LoginServer
+namespace GameServer
 {
 
     /// <summary>
@@ -16,13 +15,13 @@ namespace LoginServer
     /// UI EVENT와 DB서버 관련 패킷 Process의 매개자 역할을 하기 위함입니다.
     /// 즉, 핵심 기능들은 Connector 클래스에 존재하고 상속을 받아서, 명시적 표현 및 결합도 관련 로직을 담당합니다.
     /// </summary>
-    internal class GameServerConnector : Connector, IDisposable
+    internal class DBServerConnector : Connector, IDisposable
     {
         private bool IsAlreadyDisposed = false;
         /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
-        private static readonly Lazy<GameServerConnector> Lazy = new Lazy<GameServerConnector>(() => new GameServerConnector());
+        private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
 
-        public static GameServerConnector GetSingletone { get { return Lazy.Value; } }
+        public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
 
         private CancellationTokenSource CheckProcessToken;
 
@@ -33,7 +32,7 @@ namespace LoginServer
         /// GameServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private GameServerConnector() : base(Settings.Default.GameServerConnectCount)
+        private DBServerConnector() : base(Settings.Default.GameServerConnectCount)
         {
             CheckProcessToken = new CancellationTokenSource();
         }
@@ -70,7 +69,7 @@ namespace LoginServer
         /// 종료자입니다.
         /// 최후의 수단이며, 직접 사용은 절대하지 마세요.
         /// </summary>
-        ~GameServerConnector()
+        ~DBServerConnector()
         {
             Dispose(false);
         }
@@ -137,7 +136,7 @@ namespace LoginServer
                     try
                     {
                         var DataBuffer = await RecvData().ConfigureAwait(false);
-                        GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(DataBuffer);
+                        // 파이프라인에 추가하는거 작업해야함
                     }
                     catch (ConnectionClosedException e)
                     {

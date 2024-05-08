@@ -27,6 +27,8 @@ namespace LoginServer
         public LoginServer()
         {
             InitializeComponent();
+            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             LogManager.SetLogPath(Settings.Default.LogDirectory);
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
             UIEvent.GetSingletone.SubscribeLogEvent(
@@ -123,6 +125,17 @@ namespace LoginServer
             CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
         }
 
+        // MiddleWare 패턴 같이 처리안된 모든 에러를 처리
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show((e.ExceptionObject as Exception)?.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            MessageBox.Show(e.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         // UI와 작동하는 스레드 이기때문에 ConfigureAwait(false)를 사용하지 않습니다.
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
@@ -164,7 +177,7 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
-            Environment.Exit(0);
+            Application.Exit();
         }
     }
 }

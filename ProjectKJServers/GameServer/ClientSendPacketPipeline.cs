@@ -24,12 +24,12 @@ namespace LoginServer
             NameFormat = "ClientSendPipeLine",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
-        private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
+        private TransformBlock<(LoginPacketListID ID,dynamic Packet, Socket Sock), (Memory<byte>, Socket)> PacketToMemoryBlock;
+        private ActionBlock<(Memory<byte>, Socket)> MemorySendBlock;
 
         private ClientSendPacketPipeline()
         {
-            PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
+            PacketToMemoryBlock = new TransformBlock<(LoginPacketListID ID ,dynamic Packet, Socket Sock), (Memory<byte>, Socket)>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -39,7 +39,7 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            MemorySendBlock = new ActionBlock<ClientSendMemoryPipeLineWrapper>(SendMemory, new ExecutionDataflowBlockOptions
+            MemorySendBlock = new ActionBlock<(Memory<byte>, Socket)>(SendMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
@@ -53,9 +53,9 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("ClientSendPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(LoginPacketListID ID ,dynamic packet, int ClientID)
+        public void PushToPacketPipeline(LoginPacketListID ID ,dynamic packet, Socket socket)
         {
-            PacketToMemoryBlock.Post(new ClientSendPacketPipeLineWrapper<LoginPacketListID>(ID,packet,ClientID));
+            PacketToMemoryBlock.Post((ID, packet, socket));
         }
 
         public void Cancel()
@@ -63,23 +63,28 @@ namespace LoginServer
             CancelToken.Cancel();
         }
 
-        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> packet)
+        private (Memory<byte>, Socket) MakePacketToMemory((LoginPacketListID ID,dynamic Packet, Socket Sock) packet)
         {
            switch(packet.ID)
             {
                 case LoginPacketListID.LOGIN_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.ClientID);
+                    return (PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.Sock);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
-                    return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);
+                    return (new byte[0], packet.Sock);
             }
         }
 
-        private async Task SendMemory(ClientSendMemoryPipeLineWrapper packet)
+        private async Task SendMemory((Memory<byte> data, Socket Sock) packet)
         {
-            if (packet.MemoryData.IsEmpty)
+            if (packet.data.IsEmpty)
                 return;
-            await ClientAcceptor.GetSingletone.Send(ClientAcceptor.GetSingletone.GetClientSocket(packet.ClientID)!, packet.MemoryData).ConfigureAwait(false);
+            int SendBytes = await ClientAcceptor.GetSingletone.Send(packet.Sock, packet.data).ConfigureAwait(false);
+            if(SendBytes <=0)
+            {
+                LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 데이터를 보내는데 실패했습니다.");
+            }
+
         }
     }
 }

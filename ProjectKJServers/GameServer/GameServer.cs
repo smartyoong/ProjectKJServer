@@ -12,6 +12,8 @@ namespace GameServer
         public GameServer()
         {
             InitializeComponent();
+            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             LogManager.SetLogPath(GameServerSettings.Default.LogDirectory);
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
             UIEvent.GetSingletone.SubscribeLogEvent(
@@ -108,6 +110,16 @@ namespace GameServer
             CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
         }
 
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show((e.ExceptionObject as Exception)?.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            MessageBox.Show(e.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
             LogManager.GetSingletone.WriteLog("게임 서버를 시작합니다.");
@@ -130,7 +142,7 @@ namespace GameServer
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            Environment.Exit(0);
+            Application.Exit();
         }
     }
 }

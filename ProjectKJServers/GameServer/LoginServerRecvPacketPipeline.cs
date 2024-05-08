@@ -11,10 +11,10 @@ using System.Threading.Tasks.Dataflow;
 using System.Net.Sockets;
 
 namespace LoginServer
-{   internal class ClientRecvPacketPipeline
+{   internal class LoginServerRecvPacketPipeline
     {
-        private static readonly Lazy<ClientRecvPacketPipeline> instance = new Lazy<ClientRecvPacketPipeline>(() => new ClientRecvPacketPipeline());
-        public static ClientRecvPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<LoginServerRecvPacketPipeline> instance = new Lazy<LoginServerRecvPacketPipeline>(() => new LoginServerRecvPacketPipeline());
+        public static LoginServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -26,16 +26,16 @@ namespace LoginServer
             NameFormat = "ClientRecvPipeLine",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper> MemoryToPacketBlock;
-        private ActionBlock<ClientRecvPacketPipeLineWrapper> PacketProcessBlock;
+        private TransformBlock<(Memory<byte>, Socket), (dynamic, Socket)> MemoryToPacketBlock;
+        private ActionBlock<(dynamic, Socket)> PacketProcessBlock;
 
 
 
 
-        private ClientRecvPacketPipeline()
+        private LoginServerRecvPacketPipeline()
         {
 
-            MemoryToPacketBlock = new TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
+            MemoryToPacketBlock = new TransformBlock<(Memory<byte>,Socket), (dynamic,Socket)>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -45,7 +45,7 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            PacketProcessBlock = new ActionBlock<ClientRecvPacketPipeLineWrapper>(ProcessPacket, new ExecutionDataflowBlockOptions
+            PacketProcessBlock = new ActionBlock<(dynamic,Socket)>(ProcessPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
@@ -62,8 +62,7 @@ namespace LoginServer
 
         public void PushToPacketPipeline(Memory<byte> packet, Socket socket)
         {
-
-            MemoryToPacketBlock.Post(new ClientRecvMemoryPipeLineWrapper(packet,ClientAcceptor.GetSingletone.GetClientID(socket)));
+            MemoryToPacketBlock.Post((packet, socket));
         }
 
         public void Cancel()
@@ -126,41 +125,40 @@ namespace LoginServer
             }
         }
 
-        private ClientRecvPacketPipeLineWrapper MakeMemoryToPacket(ClientRecvMemoryPipeLineWrapper Packet)
+        private (dynamic PacketStruct, Socket Sock) MakeMemoryToPacket((Memory<byte> packet, Socket Sock) Packet)
         {
-            var Data = Packet.MemoryData;
-            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Data);
+            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Packet.packet);
 
             switch (ID)
             {
                 case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
+                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Packet.packet);
                     if (RequestCharInfoPacket == null)
-                        return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
+                        return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.Sock);
                     else
-                        return new ClientRecvPacketPipeLineWrapper(RequestCharInfoPacket, Packet.ClientID);
+                        return (RequestCharInfoPacket, Packet.Sock);
                 default:
-                    return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
+                    return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.Sock);
             }
         }
 
-        public void ProcessPacket(ClientRecvPacketPipeLineWrapper Packet)
+        public void ProcessPacket((dynamic packet,Socket Sock) Packet)
         {
-            if (IsErrorPacket(Packet.Packet, "ProcessPacket"))
+            if (IsErrorPacket(Packet.packet, "ProcessPacket"))
                 return;
-            switch (Packet.Packet)
+            switch (Packet.packet)
             {
                 case LoginRequestPacket RequestPacket:
-                    Func_LoginRequest(RequestPacket, Packet.ClientID);
+                    Func_LoginRequest(RequestPacket, Packet.Sock);
                     break;
             }
         }
 
-        private void Func_LoginRequest(LoginRequestPacket packet, int ClientID)
+        private void Func_LoginRequest(LoginRequestPacket packet, Socket Sock)
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
+            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, Sock);
         }
     }
 }

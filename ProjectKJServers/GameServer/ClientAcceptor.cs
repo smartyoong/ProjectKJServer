@@ -11,9 +11,8 @@ using KYCLog;
 using KYCPacket;
 using KYCSocketCore;
 using KYCUIEventManager;
-using LoginServer.Properties;
 
-namespace LoginServer
+namespace GameServer
 {
     internal class ClientAcceptor : Acceptor, IDisposable
     {
@@ -25,14 +24,14 @@ namespace LoginServer
         private CancellationTokenSource CheckCancelToken;
 
 
-        private ClientAcceptor() : base(Settings.Default.ClientAcceptCount)
+        private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount)
         {
             CheckCancelToken = new CancellationTokenSource();
         }
 
         public void Start()
         {
-            Init(IPAddress.Any, Settings.Default.ClientAcceptPort);
+            Init(IPAddress.Any, GameServerSettings.Default.ClientAcceptPort);
             Start("Client");
             ProcessCheck();
         }
@@ -93,8 +92,9 @@ namespace LoginServer
                     var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
                     ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, ClientSocket);
                 }
-                catch (ConnectionClosedException)
+                catch (ConnectionClosedException e)
                 {
+                    LogManager.GetSingletone.WriteLog(e.Message);
                     break;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
@@ -107,19 +107,7 @@ namespace LoginServer
 
         public async Task<int> Send(Socket ClientSocket, Memory<byte> Data)
         {
-            try
-            {
-                return await SendClientData(Data, ClientSocket).ConfigureAwait(false);
-            }
-            catch (ConnectionClosedException)
-            {
-                return -1;
-            }
-            catch (Exception e)
-            {
-                LogManager.GetSingletone.WriteLog(e);
-                return -1;
-            }
+            return await SendClientData(Data, ClientSocket).ConfigureAwait(false);
         }
 
     }

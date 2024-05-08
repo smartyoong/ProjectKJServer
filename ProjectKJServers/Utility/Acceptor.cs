@@ -2,6 +2,7 @@
 using KYCLog;
 using KYCPacket;
 using KYCUIEventManager;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
@@ -27,11 +28,21 @@ namespace KYCSocketCore
 
         private int CurrentGroupID = -1;
 
+        // 클라이언트 소켓을 관리하기 위한 변수 속도를 위해 메모리를 희생
+
+        private ConcurrentDictionary<int, Socket> ClientSocks;
+
+        private ConcurrentDictionary<Socket, int> KeyValuePairs;
+
+        private int CurrentClientID = 0;
+
 
         protected Acceptor(int MaxAcceptCount)
         {
             AcceptCancelToken = new CancellationTokenSource();
             this.MaxAcceptCount = MaxAcceptCount;
+            ClientSocks = new ConcurrentDictionary<int, Socket>();
+            KeyValuePairs = new ConcurrentDictionary<Socket, int>();
             ListenSocket = SocketManager.GetSingletone.BorrowSocket();
         }
 
@@ -99,6 +110,7 @@ namespace KYCSocketCore
                     await ListenSocket.AcceptAsync(ClientSocket, AcceptCancelToken.Token).ConfigureAwait(false);
                     ServerAccepted.Set();
                     // 클라의 경우 await로 Accept를 받고 시작하기에 문제가 없다.
+                    LogOn(ClientSocket);
                     TotalTaskList.Add(Task.Run(() => Process(ClientSocket)));
                     UIEvent.GetSingletone.IncreaseUserCount(true);
                 }
@@ -248,6 +260,51 @@ namespace KYCSocketCore
                 return false;
             }
         }
+
+        private void LogOn(Socket ClientSock)
+        {
+            if (!ClientSocks.TryAdd(CurrentClientID, ClientSock))
+                return;
+            if (!KeyValuePairs.TryAdd(ClientSock, CurrentClientID))
+            {
+                ClientSocks.TryRemove(CurrentClientID, out _);
+                return;
+            }
+            Interlocked.Increment(ref CurrentClientID);
+            var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+            UIEvent.GetSingletone.IncreaseUserCount(true);
+            LogManager.GetSingletone.WriteLog($"새로운 클라이언트 {Addr}이 연결되었습니다.");
+        }
+
+        private void LogOut(Socket ClientSock)
+        {
+            var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+            if (KeyValuePairs.TryRemove(ClientSock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
+                }
+            }
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결이 끊겼습니다.");
+            SocketManager.GetSingletone.ReturnSocket(ClientSock);
+        }
+
+        public int GetClientID(Socket ClientSock)
+        {
+            if (KeyValuePairs.TryGetValue(ClientSock, out int ClientID))
+                return ClientID;
+            return -1;
+        }
+
+        public Socket? GetClientSocket(int ClientID)
+        {
+            if (ClientSocks.TryGetValue(ClientID, out Socket? ClientSock))
+                return ClientSock;
+            return null;
+        }
+
         //클라 Recv Send랑 분리하자 서버간 연결은 소켓 그룹으로 관리할 것이다
         //클라는 개개인의 Socket이 있어야 하지만, 서버는 그룹단위 소켓 풀로 관리할 것이기 때문에
         //소켓을 굳이 매개변수로 줄 필요가 없다. 또한 클라에게 Send 및 서버에게 동시에 Send하는 경우에도
@@ -369,29 +426,23 @@ namespace KYCSocketCore
                 int RecvSize = await ClientSock.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 if (RecvSize <= 0)
                 {
-                    var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
-                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
-                    UIEvent.GetSingletone.IncreaseUserCount(false);
-                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                    LogOut(ClientSock);
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
                 }
 
                 Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                 RecvSize = await ClientSock.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 if (RecvSize <= 0)
                 {
-                    var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
-                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
-                    UIEvent.GetSingletone.IncreaseUserCount(false);
-                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                    LogOut(ClientSock);
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
                 }
                 return DataBuffer;
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
-                SocketManager.GetSingletone.ReturnSocket(ClientSock);
-                UIEvent.GetSingletone.IncreaseUserCount(false);
-                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                LogOut(ClientSock);
+                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
             }
             // 연결 취소는 곧 서버 종료이므로 재사용 준비를 할 필요가 없다
             catch (OperationCanceledException)
@@ -415,25 +466,24 @@ namespace KYCSocketCore
             {
                 int SendSize = await ClientSock.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 if (SendSize > 0)
+                {
                     return SendSize;
+                }
                 else
                 {
-                    SocketManager.GetSingletone.ReturnSocket(ClientSock);
-                    UIEvent.GetSingletone.IncreaseUserCount(false);
-                    return -1;
+                    LogOut(ClientSock);
+                    return SendSize;
                 }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
-                var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
-                SocketManager.GetSingletone.ReturnSocket(ClientSock);
-                UIEvent.GetSingletone.IncreaseUserCount(false);
-                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 종료되었습니다.");
+                LogOut(ClientSock);
+                throw new ConnectionClosedException($"Send를 시도하던 중에 클라이언트 소켓이 종료되었습니다.");
             }
             catch (OperationCanceledException)
             {
                 var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
-                throw new ConnectionClosedException($"Recv를 시도하던 중에 클라이언트 소켓 {Addr}이 취소되었습니다.");
+                throw new ConnectionClosedException($"Send를 시도하던 중에 클라이언트 소켓 {Addr}이 취소되었습니다.");
             }
             catch (Exception e)
             {

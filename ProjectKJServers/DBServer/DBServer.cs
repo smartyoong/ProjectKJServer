@@ -12,6 +12,8 @@ namespace DBServer
         public DBServer()
         {
             InitializeComponent();
+            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             LogManager.SetLogPath(DBServerSettings.Default.LogDirectory);
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
@@ -67,6 +69,16 @@ namespace DBServer
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
         }
 
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show((e.ExceptionObject as Exception)?.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            MessageBox.Show(e.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         // UI와 작동하는 스레드이기 때문에 ConfigureAwait(false)를 사용하지 않습니다.
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
@@ -97,7 +109,7 @@ namespace DBServer
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            Environment.Exit(0);
+            Application.Exit();
         }
     }
 }
