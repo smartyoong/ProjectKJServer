@@ -1,5 +1,9 @@
 ﻿using DBServer;
+using KYCLog;
 using KYCUIEventManager;
+using System.Data;
+using System.Data.SqlClient;
+using System.Threading.Channels;
 
 namespace KYCSQL
 {
@@ -10,7 +14,11 @@ namespace KYCSQL
         private static readonly Lazy<GameSQLPipeLine> instance = new Lazy<GameSQLPipeLine>(() => new GameSQLPipeLine());
         public static GameSQLPipeLine GetSingletone => instance.Value;
 
-        private TaskCompletionSource<bool>? ServerReadeyEvent;
+        private Channel<(DB_SP ID, SqlParameter[] parameters)> SQLChannel = Channel.CreateUnbounded<(DB_SP ID, SqlParameter[])>();
+
+        private CancellationTokenSource SQLCancelToken = new CancellationTokenSource();
+
+        private TaskCompletionSource<bool>? SQLReadyEvent;
 
 
 
@@ -18,22 +26,74 @@ namespace KYCSQL
         {
             SQLWorker = new SQLExecuter(DBServerSettings.Default.SQLDataSoruce, DBServerSettings.Default.SQLGameDataBaseName,
                 DBServerSettings.Default.SQLSecurity, DBServerSettings.Default.SQLPoolMinSize, DBServerSettings.Default.SQLPoolMaxSize, DBServerSettings.Default.SQLTimeOut);
+            StartSQLProcess();
         }
 
-        public async Task ConnectToSQL(TaskCompletionSource<bool> ServerEvent)
+        public async Task ConnectToSQL(TaskCompletionSource<bool> SQLEvent)
         {
-            ServerReadeyEvent = ServerEvent;
+            SQLReadyEvent = SQLEvent;
             await SQLWorker.TryConnect().ConfigureAwait(false);
-            if (ServerReadeyEvent != null)
+            if (SQLReadyEvent != null)
             {
-                ServerReadeyEvent.SetResult(true);
-                ServerReadeyEvent = null;
+                SQLReadyEvent.TrySetResult(true);
+                UIEvent.GetSingletone.UpdateDBServerStatus(true);
+                SQLReadyEvent = null;
             }
         }
 
         public async Task StopSQL()
         {
+            SQLCancelToken.Cancel();
+            SQLChannel.Writer.Complete();
             await SQLWorker.Cancel().ConfigureAwait(false);
+        }
+
+        private void StartSQLProcess()
+        {
+            Task.Run(SQLProcess);
+        }
+
+        private async Task SQLProcess()
+        {
+            while (!SQLCancelToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await SQLChannel.Reader.WaitToReadAsync(SQLCancelToken.Token).ConfigureAwait(false);
+                    while (SQLChannel.Reader.TryRead(out var item))
+                    {
+                        switch (item.ID)
+                        {
+                            case DB_SP.SP_TEST:
+                                // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
+                                int ReturnValue  = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_TEST.ToString(), item.parameters).ConfigureAwait(false);
+                                ResponseDBTestPacket Packet = new ResponseDBTestPacket("test","sex",ReturnValue,12321421);
+                                GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_DB_TEST, Packet);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    LogManager.GetSingletone.WriteLog("SQL 작업이 중단되었습니다.");
+                }
+                catch (Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog(e);
+                }
+            }
+        }
+
+        public void SQL_DB_TEST(string AccountID, string NickName)
+        {
+            SqlParameter[] parameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@NickName", SqlDbType.VarChar, 50) { Value = NickName },
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_TEST, parameters));
         }
     }
 }

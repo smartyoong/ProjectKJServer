@@ -73,13 +73,13 @@ namespace GameServer
                 while (!CheckCancelToken.IsCancellationRequested)
                 {
                     if (IsConnected())
-                        UIEvent.GetSingletone.UpdateLoginServerStatus(true);
+                        UIEvent.GetSingletone.UpdateGameServerStatus(true);
                     else
-                        UIEvent.GetSingletone.UpdateLoginServerStatus(false);
+                        UIEvent.GetSingletone.UpdateGameServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
                 // 프로세스 체크가 종료되었다면 끊겼다고 한다 (주로 서버 종료시 발생)
-                UIEvent.GetSingletone.UpdateLoginServerStatus(false);
+                UIEvent.GetSingletone.UpdateGameServerStatus(false);
             }, CheckCancelToken.Token);
         }
 

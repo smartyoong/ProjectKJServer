@@ -90,7 +90,7 @@ namespace LoginServer
             }
         }
 
-        public void SP_LOGIN_REQUEST(string AccountID, string AccountPW, int ClientID)
+        public void SQL_LOGIN_REQUEST(string AccountID, string AccountPW, int ClientID)
         {
             SqlParameter[] parameters =
             [

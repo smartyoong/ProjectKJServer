@@ -12,8 +12,8 @@ namespace GameServer
 {
     internal class DBServerRecvPacketPipeline
     {
-        private static readonly Lazy<GameServerRecvPacketPipeline> instance = new Lazy<GameServerRecvPacketPipeline>(() => new GameServerRecvPacketPipeline());
-        public static GameServerRecvPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<DBServerRecvPacketPipeline> instance = new Lazy<DBServerRecvPacketPipeline>(() => new DBServerRecvPacketPipeline());
+        public static DBServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -22,7 +22,7 @@ namespace GameServer
             MaxDegreeOfParallelism = 3,
             TaskScheduler = TaskScheduler.Default,
             EnsureOrdered = false,
-            NameFormat = "GameServerRecvPipeLine",
+            NameFormat = "DBServerRecvPipeLine",
             SingleProducerConstrained = false,
         };
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
@@ -31,14 +31,14 @@ namespace GameServer
 
 
 
-        private GameServerRecvPacketPipeline()
+        private DBServerRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
                 MaxDegreeOfParallelism = 3,
-                NameFormat = "GameServerRecvPacketPipeline.MemoryToPacketBlock",
+                NameFormat = "DBServerRecvPacketPipeline.MemoryToPacketBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -48,7 +48,7 @@ namespace GameServer
             {
                 BoundedCapacity = 40,
                 MaxDegreeOfParallelism = 10,
-                NameFormat = "GameServerRecvPacketPipeline.PacketProcessBlock",
+                NameFormat = "DBServerRecvPacketPipeline.PacketProcessBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -56,7 +56,7 @@ namespace GameServer
 
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
-            LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline 생성 완료");
+            LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline 생성 완료");
         }
 
         public void PushToPacketPipeline(Memory<byte> packet)
@@ -99,7 +99,7 @@ namespace GameServer
         {
             if (Packet is ErrorPacket)
             {
-                ProcessGeneralErrorCode(Packet.ErrorCode, $"LoginPacketProcessor {message}에서 에러 발생");
+                ProcessGeneralErrorCode(Packet.ErrorCode, $"DBPacketProcessor {message}에서 에러 발생");
                 return true;
             }
             return false;
@@ -126,16 +126,16 @@ namespace GameServer
 
         private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-            LoginGamePacketListID ID = PacketUtils.GetIDFromPacket<LoginGamePacketListID>(ref packet);
+            GameDBPacketListID ID = PacketUtils.GetIDFromPacket<GameDBPacketListID>(ref packet);
 
             switch (ID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
-                    ResponseUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseUserInfoSummaryPacket>(ref packet);
-                    if (ResponseSummaryCharInfoPacket == null)
+                case GameDBPacketListID.RESPONSE_DB_TEST:
+                    ResponseDBTestPacket? TestPacket = PacketUtils.GetPacketStruct<ResponseDBTestPacket>(ref packet);
+                    if (TestPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
-                        return ResponseSummaryCharInfoPacket;
+                        return TestPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -143,24 +143,24 @@ namespace GameServer
 
         public void ProcessPacket(dynamic Packet)
         {
-            if (IsErrorPacket(Packet, "GameServerRecvProcessPacket"))
+            if (IsErrorPacket(Packet, "DBServerRecvProcessPacket"))
                 return;
             switch (Packet)
             {
-                case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
-                    Func_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
+                case ResponseDBTestPacket TestPacket:
+                    Func_DBTest(TestPacket);
                     break;
                 default:
-                    LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
+                    LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
             }
         }
 
-        private void Func_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
+        private void Func_DBTest(ResponseDBTestPacket packet)
         {
-            if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
+            if (IsErrorPacket(packet, "ResponseDBTest"))
                 return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
+            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} {packet.Level} {packet.Exp}");
             // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
             // 현재는 이 패킷 자체가 임시이니까 보류
         }

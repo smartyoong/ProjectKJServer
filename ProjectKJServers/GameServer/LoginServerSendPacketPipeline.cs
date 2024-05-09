@@ -7,14 +7,13 @@ using System.Threading.Tasks.Dataflow;
 using System.Net.Sockets;
 using KYCLog;
 using KYCPacket;
-using static GameServer.GamePacketList;
 
-namespace LoginServer
+namespace GameServer
 {
     internal class LoginServerSendPacketPipeline
     {
-        private static readonly Lazy<GameServerSendPacketPipeline> instance = new Lazy<GameServerSendPacketPipeline>(() => new GameServerSendPacketPipeline());
-        public static GameServerSendPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<LoginServerSendPacketPipeline> instance = new Lazy<LoginServerSendPacketPipeline>(() => new LoginServerSendPacketPipeline());
+        public static LoginServerSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -22,19 +21,19 @@ namespace LoginServer
             MaxDegreeOfParallelism = 10,
             TaskScheduler = TaskScheduler.Default,
             EnsureOrdered = false,
-            NameFormat = "GameServerSendPacketPipeline",
+            NameFormat = "LoginServerSendPacketPipeline",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>> PacketToMemoryBlock;
+        private TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
 
-        private GameServerSendPacketPipeline()
+        private LoginServerSendPacketPipeline()
         {
-            PacketToMemoryBlock = new TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
+            PacketToMemoryBlock = new TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
                 MaxDegreeOfParallelism = 3,
-                NameFormat = "GameServerSendPacketPipeline.PacketToMemoryBlock",
+                NameFormat = "LoginServerSendPacketPipeline.PacketToMemoryBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -44,19 +43,19 @@ namespace LoginServer
             {
                 BoundedCapacity = 50,
                 MaxDegreeOfParallelism = 15,
-                NameFormat = "GameServerSendPacketPipeline.MemorySendBlock",
+                NameFormat = "LoginServerSendPacketPipeline.MemorySendBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
             });
 
             PacketToMemoryBlock.LinkTo(MemorySendBlock, new DataflowLinkOptions { PropagateCompletion = true });
-            LogManager.GetSingletone.WriteLog("GameServerSendPacketPipeline 생성 완료");
+            LogManager.GetSingletone.WriteLog("LoginServerSendPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(LoginGamePacketListID ID, dynamic packet)
+        public void PushToPacketPipeline(GameLoginPacketListID ID, dynamic packet)
         {
-            PacketToMemoryBlock.Post(new GameServerSendPipeLineWrapper<LoginGamePacketListID>(ID, packet));
+            PacketToMemoryBlock.Post(new LoginServerSendPipeLineWrapper<GameLoginPacketListID>(ID, packet));
         }
 
         public void Cancel()
@@ -64,14 +63,14 @@ namespace LoginServer
             CancelToken.Cancel();
         }
 
-        private Memory<byte> MakePacketToMemory(GameServerSendPipeLineWrapper<LoginGamePacketListID> GamePacket)
+        private Memory<byte> MakePacketToMemory(LoginServerSendPipeLineWrapper<GameLoginPacketListID> GamePacket)
         {
             switch (GamePacket.PacketID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
+                case GameLoginPacketListID.RESPONSE_USER_INFO_SUMMARY:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseUserInfoSummaryPacket)GamePacket.Packet);
                 default:
-                    LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
+                    LogManager.GetSingletone.WriteLog($"ServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];
             }
         }
@@ -80,7 +79,7 @@ namespace LoginServer
         {
             if (data.IsEmpty)
                 return;
-            await GameServerConnector.GetSingletone.Send(data).ConfigureAwait(false);
+            await LoginServerAcceptor.GetSingletone.Send(data).ConfigureAwait(false);
         }
     }
 }

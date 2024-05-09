@@ -11,8 +11,8 @@ namespace GameServer
 {
     internal class DBServerSendPacketPipeline
     {
-        private static readonly Lazy<GameServerSendPacketPipeline> instance = new Lazy<GameServerSendPacketPipeline>(() => new GameServerSendPacketPipeline());
-        public static GameServerSendPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<DBServerSendPacketPipeline> instance = new Lazy<DBServerSendPacketPipeline>(() => new DBServerSendPacketPipeline());
+        public static DBServerSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -23,16 +23,16 @@ namespace GameServer
             NameFormat = "GameServerSendPacketPipeline",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>> PacketToMemoryBlock;
+        private TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
 
-        private GameServerSendPacketPipeline()
+        private DBServerSendPacketPipeline()
         {
-            PacketToMemoryBlock = new TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
+            PacketToMemoryBlock = new TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
                 MaxDegreeOfParallelism = 3,
-                NameFormat = "GameServerSendPacketPipeline.PacketToMemoryBlock",
+                NameFormat = "DBServerSendPacketPipeline.PacketToMemoryBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -42,19 +42,19 @@ namespace GameServer
             {
                 BoundedCapacity = 50,
                 MaxDegreeOfParallelism = 15,
-                NameFormat = "GameServerSendPacketPipeline.MemorySendBlock",
+                NameFormat = "DBServerSendPacketPipeline.MemorySendBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
             });
 
             PacketToMemoryBlock.LinkTo(MemorySendBlock, new DataflowLinkOptions { PropagateCompletion = true });
-            LogManager.GetSingletone.WriteLog("GameServerSendPacketPipeline 생성 완료");
+            LogManager.GetSingletone.WriteLog("DBServerSendPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(LoginGamePacketListID ID, dynamic packet)
+        public void PushToPacketPipeline(GameDBPacketListID ID, dynamic packet)
         {
-            PacketToMemoryBlock.Post(new GameServerSendPipeLineWrapper<LoginGamePacketListID>(ID, packet));
+            PacketToMemoryBlock.Post(new DBServerSendPipeLineWrapper<GameDBPacketListID>(ID, packet));
         }
 
         public void Cancel()
@@ -62,14 +62,14 @@ namespace GameServer
             CancelToken.Cancel();
         }
 
-        private Memory<byte> MakePacketToMemory(GameServerSendPipeLineWrapper<LoginGamePacketListID> GamePacket)
+        private Memory<byte> MakePacketToMemory(DBServerSendPipeLineWrapper<GameDBPacketListID> GamePacket)
         {
             switch (GamePacket.PacketID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseUserInfoSummaryPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_DB_TEST:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBTestPacket)GamePacket.Packet);
                 default:
-                    LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
+                    LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];
             }
         }
@@ -78,7 +78,7 @@ namespace GameServer
         {
             if (data.IsEmpty)
                 return;
-            await GameServerConnector.GetSingletone.Send(data).ConfigureAwait(false);
+            await DBServerConnector.GetSingletone.Send(data).ConfigureAwait(false);
         }
     }
 }

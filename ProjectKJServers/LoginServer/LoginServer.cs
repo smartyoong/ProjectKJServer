@@ -167,6 +167,12 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("게임서버와 연결을 끊습니다");
             await GameServerConnector.GetSingletone.Stop();
             await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("게임서버의 수신 파이프라인을 종료합니다");
+            GameServerRecvPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("게임서버의 송신 파이프라인을 종료합니다");
+            GameServerSendPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임 서버와 연결을 종료했습니다.");
             LogManager.GetSingletone.WriteLog("SQL 서버를 종료합니다.");
             await AccountSQLManager.GetSingletone.StopSQL();

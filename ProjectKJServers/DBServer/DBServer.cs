@@ -105,6 +105,12 @@ namespace DBServer
             LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.");
             await SocketManager.GetSingletone.Cancel();
             await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("게임 서버 송신 파이프라인을 중단합니다");
+            GameServerSendPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("게임 서버 수신 파이프라인을 중단합니다.");
+            GameServerRecvPacketPipeline.GetSingletone.Cancel();
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();

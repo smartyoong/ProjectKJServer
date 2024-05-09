@@ -8,13 +8,30 @@ namespace DBServer
 {
     enum DBPacketListID
     {
-        REQUST_CHRACTER_INFO = 0
+        REQUEST_DB_TEST = 0,
+        RESPONSE_DB_TEST = 1
+    }
+    // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
+    public record GameServerSendPipeLineWrapper<E>(E ID, dynamic Packet) where E : Enum
+    {
+        public E PacketID { get; set; } = ID;
+        public dynamic Packet { get; set; } = Packet;
     }
 
-    struct RequestCharacterInfoPacket(int AccountID, int CharacterID)
+    [Serializable]
+    public struct RequestDBTestPacket(string AccountID, string NickName)
     {
-        public int AccountID = AccountID;
-        public int CharacterID = CharacterID;
+        public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
+    }
+
+    [Serializable]
+    public struct ResponseDBTestPacket(string AccountID, string NickName, int Level, int Exp)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
+        public int Level { get; set; } = Level;
+        public int Exp { get; set; } = Exp;
     }
 
 }

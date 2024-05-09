@@ -13,8 +13,8 @@ using System.Net.Sockets;
 namespace GameServer
 {   internal class LoginServerRecvPacketPipeline
     {
-        private static readonly Lazy<GameServerRecvPacketPipeline> instance = new Lazy<GameServerRecvPacketPipeline>(() => new GameServerRecvPacketPipeline());
-        public static GameServerRecvPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<LoginServerRecvPacketPipeline> instance = new Lazy<LoginServerRecvPacketPipeline>(() => new LoginServerRecvPacketPipeline());
+        public static LoginServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -23,7 +23,7 @@ namespace GameServer
             MaxDegreeOfParallelism = 3,
             TaskScheduler = TaskScheduler.Default,
             EnsureOrdered = false,
-            NameFormat = "GameServerRecvPipeLine",
+            NameFormat = "LoginServerRecvPipeLine",
             SingleProducerConstrained = false,
         };
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
@@ -32,14 +32,14 @@ namespace GameServer
 
 
 
-        private GameServerRecvPacketPipeline()
+        private LoginServerRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
                 MaxDegreeOfParallelism = 3,
-                NameFormat = "GameServerRecvPacketPipeline.MemoryToPacketBlock",
+                NameFormat = "LoginServerRecvPacketPipeline.MemoryToPacketBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -49,7 +49,7 @@ namespace GameServer
             {
                 BoundedCapacity = 40,
                 MaxDegreeOfParallelism = 10,
-                NameFormat = "GameServerRecvPacketPipeline.PacketProcessBlock",
+                NameFormat = "LoginServerRecvPacketPipeline.PacketProcessBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -57,7 +57,7 @@ namespace GameServer
 
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
-            LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline 생성 완료");
+            LogManager.GetSingletone.WriteLog("LoginServerRecvPacketPipeline 생성 완료");
         }
 
         public void PushToPacketPipeline(Memory<byte> packet)
@@ -100,7 +100,7 @@ namespace GameServer
         {
             if (Packet is ErrorPacket)
             {
-                ProcessGeneralErrorCode(Packet.ErrorCode, $"LoginPacketProcessor {message}에서 에러 발생");
+                ProcessGeneralErrorCode(Packet.ErrorCode, $"LoginServerSendPipeLine {message}에서 에러 발생");
                 return true;
             }
             return false;
@@ -127,12 +127,12 @@ namespace GameServer
 
         private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-            LoginGamePacketListID ID = PacketUtils.GetIDFromPacket<LoginGamePacketListID>(ref packet);
+            GameLoginPacketListID ID = PacketUtils.GetIDFromPacket<GameLoginPacketListID>(ref packet);
 
             switch (ID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
-                    ResponseUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseUserInfoSummaryPacket>(ref packet);
+                case GameLoginPacketListID.REQUEST_USER_INFO_SUMMARY:
+                    RequestUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<RequestUserInfoSummaryPacket>(ref packet);
                     if (ResponseSummaryCharInfoPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
@@ -144,15 +144,18 @@ namespace GameServer
 
         public void ProcessPacket(dynamic Packet)
         {
-            if (IsErrorPacket(Packet, "GameServerRecvProcessPacket"))
+            if (IsErrorPacket(Packet, "LoginServerRecvProcessPacket"))
                 return;
             switch (Packet)
             {
                 case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
                     Func_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
                     break;
+                case RequestUserInfoSummaryPacket RequestSummaryUserInfoPacket:
+                    Func_RequestUserInfoSummary(RequestSummaryUserInfoPacket);
+                    break;
                 default:
-                    LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
+                    LogManager.GetSingletone.WriteLog("LoginServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
             }
         }
@@ -165,5 +168,15 @@ namespace GameServer
             // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
             // 현재는 이 패킷 자체가 임시이니까 보류
         }
+
+        private void Func_RequestUserInfoSummary(RequestUserInfoSummaryPacket packet)
+        {
+            if (IsErrorPacket(packet, "RequestUserInfoSummary"))
+                return;
+            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
+            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
+            LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_INFO_SUMMARY, new ResponseUserInfoSummaryPacket(packet.AccountID, packet.NickName, 1, 0));
+        }
+
     }
 }

@@ -112,7 +112,7 @@ namespace GameServer
                 {
                     if (IsConnected())
                     {
-                        UIEvent.GetSingletone.UpdateGameServerStatus(true);
+                        UIEvent.GetSingletone.UpdateDBServerStatus(true);
                         if(ServerReadeyEvent != null)
                         {
                             ServerReadeyEvent.SetResult(true);
@@ -120,7 +120,7 @@ namespace GameServer
                         }
                     }
                     else
-                        UIEvent.GetSingletone.UpdateGameServerStatus(false);
+                        UIEvent.GetSingletone.UpdateDBServerStatus(false);
                     await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 }
             }, CheckProcessToken.Token);

@@ -24,12 +24,12 @@ namespace GameServer
             NameFormat = "ClientSendPipeLine",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
+        private TransformBlock<ClientSendPacketPipeLineWrapper<GamePacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
         private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
 
         private ClientSendPacketPipeline()
         {
-            PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
+            PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<GamePacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -53,9 +53,9 @@ namespace GameServer
             LogManager.GetSingletone.WriteLog("ClientSendPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(LoginPacketListID ID, dynamic packet, int ClientID)
+        public void PushToPacketPipeline(GamePacketListID ID, dynamic packet, int ClientID)
         {
-            PacketToMemoryBlock.Post(new ClientSendPacketPipeLineWrapper<LoginPacketListID>(ID, packet, ClientID));
+            PacketToMemoryBlock.Post(new ClientSendPacketPipeLineWrapper<GamePacketListID>(ID, packet, ClientID));
         }
 
         public void Cancel()
@@ -63,12 +63,12 @@ namespace GameServer
             CancelToken.Cancel();
         }
 
-        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> packet)
+        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<GamePacketListID> packet)
         {
             switch (packet.ID)
             {
-                case LoginPacketListID.LOGIN_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.ClientID);
+                case GamePacketListID.RESPONSE_GAME_TEST:
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseGameTestPacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
                     return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);

@@ -129,12 +129,12 @@ namespace GameServer
         private ClientRecvPacketPipeLineWrapper MakeMemoryToPacket(ClientRecvMemoryPipeLineWrapper Packet)
         {
             var Data = Packet.MemoryData;
-            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Data);
+            GamePacketListID ID = PacketUtils.GetIDFromPacket<GamePacketListID>(ref Data);
 
             switch (ID)
             {
-                case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
+                case GamePacketListID.REQUEST_GAME_TEST:
+                    RequestGameTestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<RequestGameTestPacket>(ref Data);
                     if (RequestCharInfoPacket == null)
                         return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
                     else
@@ -150,17 +150,18 @@ namespace GameServer
                 return;
             switch (Packet.Packet)
             {
-                case LoginRequestPacket RequestPacket:
-                    Func_LoginRequest(RequestPacket, Packet.ClientID);
+                case RequestGameTestPacket RequestPacket:
+                    Func_GameTest(RequestPacket, Packet.ClientID);
                     break;
             }
         }
 
-        private void Func_LoginRequest(LoginRequestPacket packet, int ClientID)
+        private void Func_GameTest(RequestGameTestPacket packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "LoginRequest"))
+            if (IsErrorPacket(packet, "GameTestRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
+            LogManager.GetSingletone.WriteLog($"GameTestRequest: {packet.AccountID} {packet.NickName}");
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_GAME_TEST, new ResponseGameTestPacket(packet.AccountID, packet.NickName,1,false), ClientID);
         }
     }
 }

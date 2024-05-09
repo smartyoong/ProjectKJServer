@@ -151,16 +151,16 @@ namespace LoginServer
             switch (Packet.Packet)
             {
                 case LoginRequestPacket RequestPacket:
-                    Func_LoginRequest(RequestPacket, Packet.ClientID);
+                    SP_LoginRequest(RequestPacket, Packet.ClientID);
                     break;
             }
         }
 
-        private void Func_LoginRequest(LoginRequestPacket packet, int ClientID)
+        private void SP_LoginRequest(LoginRequestPacket packet, int ClientID)
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
+            AccountSQLManager.GetSingletone.SQL_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
         }
     }
 }

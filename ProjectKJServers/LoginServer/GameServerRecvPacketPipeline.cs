@@ -149,7 +149,7 @@ namespace LoginServer
             switch (Packet)
             {
                 case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
-                    Func_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
+                    SP_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -157,7 +157,7 @@ namespace LoginServer
             }
         }
 
-        private void Func_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
+        private void SP_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
         {
             if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
                 return;
