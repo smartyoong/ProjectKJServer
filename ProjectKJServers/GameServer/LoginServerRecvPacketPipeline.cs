@@ -10,46 +10,46 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Net.Sockets;
 
-namespace LoginServer
+namespace GameServer
 {   internal class LoginServerRecvPacketPipeline
     {
-        private static readonly Lazy<LoginServerRecvPacketPipeline> instance = new Lazy<LoginServerRecvPacketPipeline>(() => new LoginServerRecvPacketPipeline());
-        public static LoginServerRecvPacketPipeline GetSingletone => instance.Value;
+        private static readonly Lazy<GameServerRecvPacketPipeline> instance = new Lazy<GameServerRecvPacketPipeline>(() => new GameServerRecvPacketPipeline());
+        public static GameServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
-            BoundedCapacity = 20,
-            MaxDegreeOfParallelism = 10,
+            BoundedCapacity = 5,
+            MaxDegreeOfParallelism = 3,
             TaskScheduler = TaskScheduler.Default,
             EnsureOrdered = false,
-            NameFormat = "ClientRecvPipeLine",
+            NameFormat = "GameServerRecvPipeLine",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<(Memory<byte>, Socket), (dynamic, Socket)> MemoryToPacketBlock;
-        private ActionBlock<(dynamic, Socket)> PacketProcessBlock;
+        private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
+        private ActionBlock<dynamic> PacketProcessBlock;
 
 
 
 
-        private LoginServerRecvPacketPipeline()
+        private GameServerRecvPacketPipeline()
         {
 
-            MemoryToPacketBlock = new TransformBlock<(Memory<byte>,Socket), (dynamic,Socket)>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
+            MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
-                BoundedCapacity = 10,
-                MaxDegreeOfParallelism = 5,
-                NameFormat = "ClientRecvPipeLine.MemoryToPacketBlock",
+                BoundedCapacity = 5,
+                MaxDegreeOfParallelism = 3,
+                NameFormat = "GameServerRecvPacketPipeline.MemoryToPacketBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
             });
 
-            PacketProcessBlock = new ActionBlock<(dynamic,Socket)>(ProcessPacket, new ExecutionDataflowBlockOptions
+            PacketProcessBlock = new ActionBlock<dynamic>(ProcessPacket, new ExecutionDataflowBlockOptions
             {
-                BoundedCapacity = 100,
-                MaxDegreeOfParallelism = 50,
-                NameFormat = "ClientRecvPipeLine.PacketProcessBlock",
+                BoundedCapacity = 40,
+                MaxDegreeOfParallelism = 10,
+                NameFormat = "GameServerRecvPacketPipeline.PacketProcessBlock",
                 EnsureOrdered = false,
                 SingleProducerConstrained = false,
                 CancellationToken = CancelToken.Token
@@ -57,12 +57,12 @@ namespace LoginServer
 
             MemoryToPacketBlock.LinkTo(PacketProcessBlock, new DataflowLinkOptions { PropagateCompletion = true });
             ProcessBlock();
-            LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline 생성 완료");
+            LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(Memory<byte> packet, Socket socket)
+        public void PushToPacketPipeline(Memory<byte> packet)
         {
-            MemoryToPacketBlock.Post((packet, socket));
+            MemoryToPacketBlock.Post(packet);
         }
 
         public void Cancel()
@@ -125,40 +125,45 @@ namespace LoginServer
             }
         }
 
-        private (dynamic PacketStruct, Socket Sock) MakeMemoryToPacket((Memory<byte> packet, Socket Sock) Packet)
+        private dynamic MakeMemoryToPacket(Memory<byte> packet)
         {
-            LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Packet.packet);
+            LoginGamePacketListID ID = PacketUtils.GetIDFromPacket<LoginGamePacketListID>(ref packet);
 
             switch (ID)
             {
-                case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Packet.packet);
-                    if (RequestCharInfoPacket == null)
-                        return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.Sock);
+                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
+                    ResponseUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseUserInfoSummaryPacket>(ref packet);
+                    if (ResponseSummaryCharInfoPacket == null)
+                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
-                        return (RequestCharInfoPacket, Packet.Sock);
+                        return ResponseSummaryCharInfoPacket;
                 default:
-                    return (new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.Sock);
+                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
         }
 
-        public void ProcessPacket((dynamic packet,Socket Sock) Packet)
+        public void ProcessPacket(dynamic Packet)
         {
-            if (IsErrorPacket(Packet.packet, "ProcessPacket"))
+            if (IsErrorPacket(Packet, "GameServerRecvProcessPacket"))
                 return;
-            switch (Packet.packet)
+            switch (Packet)
             {
-                case LoginRequestPacket RequestPacket:
-                    Func_LoginRequest(RequestPacket, Packet.Sock);
+                case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
+                    Func_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
+                    break;
+                default:
+                    LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
             }
         }
 
-        private void Func_LoginRequest(LoginRequestPacket packet, Socket Sock)
+        private void Func_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
         {
-            if (IsErrorPacket(packet, "LoginRequest"))
+            if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
                 return;
-            AccountSQLManager.GetSingletone.SP_LOGIN_REQUEST(packet.AccountID, packet.Password, Sock);
+            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
+            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
+            // 현재는 이 패킷 자체가 임시이니까 보류
         }
     }
 }

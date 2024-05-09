@@ -8,7 +8,7 @@ using System.Net.Sockets;
 using KYCLog;
 using KYCPacket;
 
-namespace LoginServer
+namespace GameServer
 {
     internal class ClientSendPacketPipeline
     {
@@ -24,12 +24,12 @@ namespace LoginServer
             NameFormat = "ClientSendPipeLine",
             SingleProducerConstrained = false,
         };
-        private TransformBlock<(LoginPacketListID ID,dynamic Packet, Socket Sock), (Memory<byte>, Socket)> PacketToMemoryBlock;
-        private ActionBlock<(Memory<byte>, Socket)> MemorySendBlock;
+        private TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
+        private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
 
         private ClientSendPacketPipeline()
         {
-            PacketToMemoryBlock = new TransformBlock<(LoginPacketListID ID ,dynamic Packet, Socket Sock), (Memory<byte>, Socket)>(MakePacketToMemory, new ExecutionDataflowBlockOptions
+            PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
                 MaxDegreeOfParallelism = 5,
@@ -39,7 +39,7 @@ namespace LoginServer
                 CancellationToken = CancelToken.Token
             });
 
-            MemorySendBlock = new ActionBlock<(Memory<byte>, Socket)>(SendMemory, new ExecutionDataflowBlockOptions
+            MemorySendBlock = new ActionBlock<ClientSendMemoryPipeLineWrapper>(SendMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 100,
                 MaxDegreeOfParallelism = 50,
@@ -53,9 +53,9 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("ClientSendPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(LoginPacketListID ID ,dynamic packet, Socket socket)
+        public void PushToPacketPipeline(LoginPacketListID ID, dynamic packet, int ClientID)
         {
-            PacketToMemoryBlock.Post((ID, packet, socket));
+            PacketToMemoryBlock.Post(new ClientSendPacketPipeLineWrapper<LoginPacketListID>(ID, packet, ClientID));
         }
 
         public void Cancel()
@@ -63,28 +63,23 @@ namespace LoginServer
             CancelToken.Cancel();
         }
 
-        private (Memory<byte>, Socket) MakePacketToMemory((LoginPacketListID ID,dynamic Packet, Socket Sock) packet)
+        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> packet)
         {
-           switch(packet.ID)
+            switch (packet.ID)
             {
                 case LoginPacketListID.LOGIN_RESPONESE:
-                    return (PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.Sock);
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
-                    return (new byte[0], packet.Sock);
+                    return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);
             }
         }
 
-        private async Task SendMemory((Memory<byte> data, Socket Sock) packet)
+        private async Task SendMemory(ClientSendMemoryPipeLineWrapper packet)
         {
-            if (packet.data.IsEmpty)
+            if (packet.MemoryData.IsEmpty)
                 return;
-            int SendBytes = await ClientAcceptor.GetSingletone.Send(packet.Sock, packet.data).ConfigureAwait(false);
-            if(SendBytes <=0)
-            {
-                LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 데이터를 보내는데 실패했습니다.");
-            }
-
+            await ClientAcceptor.GetSingletone.Send(ClientAcceptor.GetSingletone.GetClientSocket(packet.ClientID)!, packet.MemoryData).ConfigureAwait(false);
         }
     }
 }

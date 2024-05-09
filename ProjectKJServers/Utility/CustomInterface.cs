@@ -4,12 +4,9 @@ namespace KYCInterface
 {
     public interface IPacketProcess
     {
-        public void GetRecvPacket();
+        protected virtual void PushToPipeLine(Memory<byte> Data, Socket Sock)
+        {
 
-        public void PushToSendQueue();
-
-        public void PopFromSendQueue();
-
-        public void ProcessPacket();
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using KYCException;
+using KYCInterface;
 using KYCLog;
 using KYCPacket;
 using KYCUIEventManager;
@@ -8,7 +9,7 @@ using System.Net.Sockets;
 
 namespace KYCSocketCore
 {
-    public class Acceptor : IDisposable
+    public abstract class Acceptor : IDisposable
     {
         private bool IsAlreadyDisposed = false;
 
@@ -36,9 +37,12 @@ namespace KYCSocketCore
 
         private int CurrentClientID = 0;
 
+        private string ServerName = string.Empty;
 
-        protected Acceptor(int MaxAcceptCount)
+
+        protected Acceptor(int MaxAcceptCount, string ServerName)
         {
+            this.ServerName = ServerName;
             AcceptCancelToken = new CancellationTokenSource();
             this.MaxAcceptCount = MaxAcceptCount;
             ClientSocks = new ConcurrentDictionary<int, Socket>();
@@ -82,24 +86,24 @@ namespace KYCSocketCore
             }
         }
 
-        protected virtual void Start(string ServerName)
+        protected virtual void Start()
         {
-            Task.Run(async () => { await AcceptStart(ServerName); });
+            Task.Run(AcceptStart);
         }
 
-        private async Task AcceptStart(string ServerName)
+        private async Task AcceptStart()
         {
             if (MaxAcceptCount == MAX_ACCEPT_INFINITE)
             {
-                await InfiniteAccept(ServerName).ConfigureAwait(false);
+                await InfiniteAccept().ConfigureAwait(false);
             }
             else
             {
-                await LimitedAccept(ServerName).ConfigureAwait(false);
+                await LimitedAccept().ConfigureAwait(false);
             }
         }
 
-        private async Task InfiniteAccept(string ServerName)
+        private async Task InfiniteAccept()
         {
             LogManager.GetSingletone.WriteLog($"{ServerName}의 무한정 연결을 대기합니다.");
             while (!AcceptCancelToken.Token.IsCancellationRequested)
@@ -127,7 +131,7 @@ namespace KYCSocketCore
             }
         }
 
-        private async Task LimitedAccept(string ServerName)
+        private async Task LimitedAccept()
         {
             for (int i = 0; i < MaxAcceptCount; i++)
             {
@@ -174,9 +178,10 @@ namespace KYCSocketCore
                     LogManager.GetSingletone.WriteLog(e);
                 }
             }
+            Process();
         }
 
-        protected virtual async Task Stop(string ServerName, TimeSpan DelayTime)
+        protected virtual async Task Stop(TimeSpan DelayTime)
         {
             await CancelAccept(DelayTime).ConfigureAwait(false);
             await CleanUpAcceptTask(ServerName).ConfigureAwait(false);
@@ -232,10 +237,71 @@ namespace KYCSocketCore
             LogManager.GetSingletone.WriteLog($"{ServerName}와 실행중인 남은 Task 완료를 대기합니다.");
             await Task.WhenAll(RunningTasks).ConfigureAwait(false);
         }
+
+        // 클라용 Process
         protected virtual async Task Process(Socket ClientSocket)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
+            while (!AcceptCancelToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
+                    PushToPipeLine(Data, ClientSocket);
+                }
+                catch (ConnectionClosedException e)
+                {
+                    LogManager.GetSingletone.WriteLog(e.Message);
+                    break;
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    LogManager.GetSingletone.WriteLog(e);
+                    break;
+                }
+            }
         }
+
+        // 서버용 Process 오버로드
+        protected void Process()
+        {
+            Task.Run(async () =>
+            {
+                while (!AcceptCancelToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var DataBuffer = await RecvData().ConfigureAwait(false);
+                        PushToPipeLine(DataBuffer);
+                    }
+                    catch (ConnectionClosedException e)
+                    {
+                        // 연결종료됨 다시 연결을 받아오도록 지시
+                        LogManager.GetSingletone.WriteLog(e);
+                        LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 끊겼습니다");
+                        // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
+                        PrepareToReAccept();
+                        Start();
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
+                        LogManager.GetSingletone.WriteLog(e);
+                        LogManager.GetSingletone.WriteLog($"{ServerName}에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
+                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        // 그외 에러
+                        LogManager.GetSingletone.WriteLog(e);
+                    }
+                }
+            });
+        }
+
+        // 클라용
+        protected abstract void PushToPipeLine(Memory<byte> Data, Socket Sock);
+        // 서버용
+        protected abstract void PushToPipeLine(Memory<byte> Data);
 
 
         private bool CheckIsAllowedIP(Socket ClientSocket)
@@ -492,7 +558,7 @@ namespace KYCSocketCore
             }
         }
 
-        protected void PrepareToReAccept(string ServerName)
+        protected void PrepareToReAccept()
         {
             CancelAccept(TimeSpan.FromSeconds(1)).Wait();
             AcceptCancelToken = new CancellationTokenSource();

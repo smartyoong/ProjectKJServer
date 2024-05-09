@@ -60,10 +60,10 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline 생성 완료");
         }
 
-        public void PushToPacketPipeline(Memory<byte> packet, Socket socket)
+        public void PushToPacketPipeline(Memory<byte> packet, int socketID)
         {
 
-            MemoryToPacketBlock.Post(new ClientRecvMemoryPipeLineWrapper(packet,ClientAcceptor.GetSingletone.GetClientID(socket)));
+            MemoryToPacketBlock.Post(new ClientRecvMemoryPipeLineWrapper(packet,socketID));
         }
 
         public void Cancel()

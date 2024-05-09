@@ -129,12 +129,24 @@ namespace GameServer
             LoginServerAcceptor.GetSingletone.Start(LoginServerReadyEvent);
             await LoginServerReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("로그인 서버와 연결되었습니다.");
+            LogManager.GetSingletone.WriteLog("DB 서버의 연결을 대기합니다.");
+            DBServerConnector.GetSingletone.Start(DBServerReadyEvent);
+            await DBServerReadyEvent.Task;
+            LogManager.GetSingletone.WriteLog("DB 서버와 연결되었습니다.");
+            LogManager.GetSingletone.WriteLog("클라이언트의 연결을 받겠습니다..");
+            ClientAcceptor.GetSingletone.Start();
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             LogManager.GetSingletone.WriteLog("로그인 서버와 연결을 중단합니다.");
             await LoginServerAcceptor.GetSingletone.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("DB 서버와 연결을 중단합니다.");
+            await DBServerConnector.GetSingletone.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            LogManager.GetSingletone.WriteLog("클라이언트와 연결을 중단합니다.");
+            await ClientAcceptor.GetSingletone.Stop();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("연결중인 모든 소켓을 중단합니다.");
             await SocketManager.GetSingletone.Cancel();

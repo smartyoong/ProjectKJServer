@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using KYCException;
+using KYCInterface;
 using KYCLog;
 using KYCPacket;
 using KYCSocketCore;
@@ -25,21 +26,21 @@ namespace LoginServer
         private CancellationTokenSource CheckCancelToken;
 
 
-        private ClientAcceptor() : base(Settings.Default.ClientAcceptCount)
+        private ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
         {
             CheckCancelToken = new CancellationTokenSource();
         }
 
-        public void Start()
+        public new void Start()
         {
             Init(IPAddress.Any, Settings.Default.ClientAcceptPort);
-            Start("Client");
+            base.Start();
             ProcessCheck();
         }
 
         public async Task Stop()
         {
-            await Stop("Client", TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            await Stop(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             CheckCancelToken.Cancel();
             Dispose();
         }
@@ -84,25 +85,14 @@ namespace LoginServer
         }
 
         // 클라이언트를 Accept할 때에는 아래의 함수를 재정의 해야한다
-        protected override async Task Process(Socket ClientSocket)
+        protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)
         {
-            while(!CheckCancelToken.IsCancellationRequested)
-            {
-                try
-                {
-                    var Data = await RecvClientData(ClientSocket).ConfigureAwait(false);
-                    ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, ClientSocket);
-                }
-                catch (ConnectionClosedException)
-                {
-                    break;
-                }
-                catch (Exception e) when (e is not OperationCanceledException)
-                {
-                    LogManager.GetSingletone.WriteLog(e);
-                    break;
-                }
-            }
+            ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, GetClientID(Sock));
+        }
+
+        protected override void PushToPipeLine(Memory<byte> Data)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<int> Send(Socket ClientSocket, Memory<byte> Data)

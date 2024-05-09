@@ -27,7 +27,7 @@ namespace GameServer
 
         // 추후 파이프 라인 추가하자
 
-        private LoginServerAcceptor() : base(GameServerSettings.Default.LoginServerAcceptCount)
+        private LoginServerAcceptor() : base(GameServerSettings.Default.LoginServerAcceptCount, "LoginServer")
         {
             CheckCancelToken = new CancellationTokenSource();
         }
@@ -35,15 +35,14 @@ namespace GameServer
         public void Start(TaskCompletionSource<bool> ServerEvent)
         {
             Init(IPAddress.Parse(GameServerSettings.Default.LoginServerIPAddress), GameServerSettings.Default.LoginServerAcceptPort);
-            Start("LoginServer");
+            Start();
             ProcessCheck();
-            GetRecvPacket();
             ServerReadeyEvent = ServerEvent;
         }
 
         public async Task Stop()
         {
-            await Stop("LoginServer",TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            await Stop(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             Dispose();
         }
 
@@ -91,45 +90,32 @@ namespace GameServer
                 }
             }, CheckCancelToken.Token);
         }
-        
-        public void GetRecvPacket()
+
+        protected override void PushToPipeLine(Memory<byte> Data)
         {
-            Task.Run( async() =>
-            {
-                while(!CheckCancelToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var DataBuffer = await RecvData().ConfigureAwait(false);
-                        // 파이프라인에 추가하는거 작업해야함
-                    }
-                    catch (ConnectionClosedException e)
-                    {
-                        // 연결종료됨 다시 연결을 받아오도록 지시
-                        LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("LoginServer와 연결이 끊겼습니다");
-                        // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
-                        PrepareToReAccept("LoginServer");
-                        Start("LoginServer");
-                    }
-                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
-                    {
-                        // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
-                        LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("LoginServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
-                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-                    }
-                    catch (Exception e) when (e is not OperationCanceledException)
-                    {
-                        // 그외 에러
-                        LogManager.GetSingletone.WriteLog(e);
-                    }
-                }
-            });
+            throw new NotImplementedException();
         }
+
+        protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)
+        {
+            ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, GetClientID(Sock));
+        }
+
         public async Task<int> Send(Memory<byte> Data)
         {
-            return await SendData(Data).ConfigureAwait(false);
+            try
+            {
+                return await SendData(Data).ConfigureAwait(false);
+            }
+            catch (ConnectionClosedException)
+            {
+                return -1;
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e);
+                return -1;
+            }
         }
     }
 }

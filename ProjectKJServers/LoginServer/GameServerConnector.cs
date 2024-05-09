@@ -33,7 +33,7 @@ namespace LoginServer
         /// GameServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private GameServerConnector() : base(Settings.Default.GameServerConnectCount)
+        private GameServerConnector() : base(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), Settings.Default.GameServerConnectCount, "GameServer")
         {
             CheckProcessToken = new CancellationTokenSource();
         }
@@ -44,11 +44,10 @@ namespace LoginServer
         /// </summary>
         public void Start(TaskCompletionSource<bool>? ServerEvent)
         {
-            Start(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), "Game서버");
+            Start();
             ProcessCheck();
             // Recv하는거 추가해야함
             ServerReadeyEvent = ServerEvent;
-            GetRecvPacket();
         }
 
         /// <summary>
@@ -60,7 +59,7 @@ namespace LoginServer
         /// </summary>
         public async Task Stop()
         {
-            await Stop("Game서버",TimeSpan.FromSeconds(3));
+            await Stop(TimeSpan.FromSeconds(3));
             UIEvent.GetSingletone.UpdateGameServerStatus(false);
             Dispose();
         }
@@ -127,42 +126,6 @@ namespace LoginServer
                 }
             }, CheckProcessToken.Token);
         }
-
-        public void GetRecvPacket()
-        {
-            Task.Run(async () =>
-            {
-                while (!CheckProcessToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var DataBuffer = await RecvData().ConfigureAwait(false);
-                        GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(DataBuffer);
-                    }
-                    catch (ConnectionClosedException e)
-                    {
-                        // 연결종료됨 다시 연결을 받아오도록 지시
-                        LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("GameServer와 연결이 끊겼습니다");
-                        // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
-                        PrepareToReConnect("GameServer");
-                        Start(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), "GameServer");
-                    }
-                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
-                    {
-                        // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
-                        LogManager.GetSingletone.WriteLog(e);
-                        LogManager.GetSingletone.WriteLog("LoginServerAcceptor에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
-                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-                    }
-                    catch (Exception e) when (e is not OperationCanceledException)
-                    {
-                        // 그외 에러
-                        LogManager.GetSingletone.WriteLog(e);
-                    }
-                }
-            });
-        }
         public async Task<int> Send(Memory<byte> Data)
         {
             try
@@ -178,6 +141,11 @@ namespace LoginServer
                 LogManager.GetSingletone.WriteLog(e);
                 return -1;
             }
+        }
+
+        protected override void PushToPipeLine(Memory<byte> Data)
+        {
+            GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data);
         }
     }
 }

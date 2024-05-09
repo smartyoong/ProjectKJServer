@@ -67,8 +67,8 @@ namespace LoginServer
         {
             switch (GamePacket.PacketID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseUserInfoSummaryPacket)GamePacket.Packet);
+                case LoginGamePacketListID.REQUEST_USER_INFO_SUMMARY:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestUserInfoSummaryPacket)GamePacket.Packet);
                 default:
                     LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];
