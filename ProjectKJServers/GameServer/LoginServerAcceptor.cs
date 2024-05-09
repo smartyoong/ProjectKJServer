@@ -93,12 +93,12 @@ namespace GameServer
 
         protected override void PushToPipeLine(Memory<byte> Data)
         {
-            throw new NotImplementedException();
+            LoginServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data);
         }
 
         protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)
         {
-            ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, GetClientID(Sock));
+            throw new NotImplementedException();
         }
 
         public async Task<int> Send(Memory<byte> Data)

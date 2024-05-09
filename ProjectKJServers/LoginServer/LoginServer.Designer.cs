@@ -36,6 +36,8 @@
             ServerStatusTextBox = new TextBox();
             CurrentUserCountTextBox = new TextBox();
             UserCountLabel = new Label();
+            button1 = new Button();
+            button2 = new Button();
             SuspendLayout();
             // 
             // LogListBox
@@ -73,11 +75,11 @@
             ServerStartButton.UseVisualStyleBackColor = true;
             ServerStartButton.Click += ServerStartButton_Click;
             // 
-            // DBServerStatusTextBox
+            // SQLStatusTextBox
             // 
             SQLStatusTextBox.Font = new Font("맑은 고딕", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
             SQLStatusTextBox.Location = new Point(625, 12);
-            SQLStatusTextBox.Name = "DBServerStatusTextBox";
+            SQLStatusTextBox.Name = "SQLStatusTextBox";
             SQLStatusTextBox.ReadOnly = true;
             SQLStatusTextBox.Size = new Size(163, 35);
             SQLStatusTextBox.TabIndex = 3;
@@ -126,11 +128,33 @@
             UserCountLabel.TabIndex = 7;
             UserCountLabel.Text = "동접자 수 :";
             // 
+            // button1
+            // 
+            button1.Location = new Point(693, 211);
+            button1.Name = "button1";
+            button1.Size = new Size(75, 23);
+            button1.TabIndex = 8;
+            button1.Text = "button1";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
+            // button2
+            // 
+            button2.Location = new Point(693, 240);
+            button2.Name = "button2";
+            button2.Size = new Size(75, 23);
+            button2.TabIndex = 9;
+            button2.Text = "button2";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
             // LoginServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(button2);
+            Controls.Add(button1);
             Controls.Add(UserCountLabel);
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
@@ -155,5 +179,7 @@
         private TextBox ServerStatusTextBox;
         private TextBox CurrentUserCountTextBox;
         private Label UserCountLabel;
+        private Button button1;
+        private Button button2;
     }
 }

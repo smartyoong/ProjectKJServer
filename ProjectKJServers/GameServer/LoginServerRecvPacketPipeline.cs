@@ -148,9 +148,6 @@ namespace GameServer
                 return;
             switch (Packet)
             {
-                case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
-                    Func_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
-                    break;
                 case RequestUserInfoSummaryPacket RequestSummaryUserInfoPacket:
                     Func_RequestUserInfoSummary(RequestSummaryUserInfoPacket);
                     break;
@@ -158,15 +155,6 @@ namespace GameServer
                     LogManager.GetSingletone.WriteLog("LoginServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
             }
-        }
-
-        private void Func_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
-        {
-            if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
-                return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
-            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
-            // 현재는 이 패킷 자체가 임시이니까 보류
         }
 
         private void Func_RequestUserInfoSummary(RequestUserInfoSummaryPacket packet)

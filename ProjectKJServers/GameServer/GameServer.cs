@@ -174,5 +174,10 @@ namespace GameServer
             await Task.Delay(TimeSpan.FromSeconds(2));
             Application.Exit();
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_DB_TEST, new RequestDBTestPacket("sex","pussy"));
+        }
     }
 }

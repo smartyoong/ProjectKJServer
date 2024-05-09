@@ -185,5 +185,15 @@ namespace LoginServer
             LogManager.GetSingletone.Close();
             Application.Exit();
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_USER_INFO_SUMMARY, new RequestUserInfoSummaryPacket("sex", "sex"));
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_USER_INFO_SUMMARY, new RequestUserInfoSummaryPacket("sex", "sex"));
+        }
     }
 }

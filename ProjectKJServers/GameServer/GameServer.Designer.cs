@@ -36,6 +36,7 @@
             UserCountLabel = new Label();
             CurrentUserCountTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
+            button1 = new Button();
             SuspendLayout();
             // 
             // ServerStopButton
@@ -126,11 +127,22 @@
             ServerStatusTextBox.Text = "Status";
             ServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
+            // button1
+            // 
+            button1.Location = new Point(693, 214);
+            button1.Name = "button1";
+            button1.Size = new Size(75, 23);
+            button1.TabIndex = 11;
+            button1.Text = "button1";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
             // GameServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(button1);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(UserCountLabel);
@@ -155,5 +167,6 @@
         private Label UserCountLabel;
         private TextBox CurrentUserCountTextBox;
         private TextBox ServerStatusTextBox;
+        private Button button1;
     }
 }

@@ -14,9 +14,11 @@ namespace KYCSocketCore
 
         private List<Task> TryConnectTaskList = new List<Task>();
 
-        int NeedConnectCount;
+        private int NeedConnectCount;
 
-        int CurrentGroupID = -1;
+        private int SendGroupID = -1;
+
+        private int RecvGroupID = -1;
 
         private ManualResetEvent ServerConnected = new ManualResetEvent(false);
 
@@ -108,14 +110,37 @@ namespace KYCSocketCore
                     await Sock.ConnectAsync(IPAddr, ConnectCancelToken.Token).ConfigureAwait(false);
                     LogManager.GetSingletone.WriteLog($"{i + 1}번째 객체가 {ServerName}와 연결에 성공하였습니다.");
 
+                    int CurrentGroupID = -1;
+                    // 짝수는 Send 홀수는 Recv 그룹으로
+                    if (i % 2 == 0)
+                    {
+                        CurrentGroupID = SendGroupID;
+                    }
+                    else
+                    {
+                        CurrentGroupID = RecvGroupID;
+                    }
+
                     if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
                     {
                         SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, Sock);
-                        ServerConnected.Set();
+                        LogManager.GetSingletone.WriteLog($" Add {i} {CurrentGroupID}");
                     }
                     else
                     {
                         CurrentGroupID = SocketManager.GetSingletone.MakeNewSocketGroup(Sock);
+
+                        LogManager.GetSingletone.WriteLog($" MakeBefore {i} {CurrentGroupID}");
+
+                        if (i % 2 == 0)
+                        {
+                            SendGroupID = CurrentGroupID;
+                        }
+                        else
+                        {
+                            RecvGroupID = CurrentGroupID;
+                        }
+                        LogManager.GetSingletone.WriteLog($" Make After {i} {CurrentGroupID}");
                     }
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
@@ -134,6 +159,7 @@ namespace KYCSocketCore
                     LogManager.GetSingletone.WriteLog(e);
                 }
             }
+            ServerConnected.Set();
             Process();
         }
 
@@ -149,29 +175,14 @@ namespace KYCSocketCore
         public virtual bool IsConnected()
         {
             // 아직 그룹이 정해지지 않았다
-            if (CurrentGroupID == -1)
+            if (SendGroupID == -1 || RecvGroupID == -1)
                 return false;
 
             ServerConnected.WaitOne();
 
-            try
-            {
-                foreach (var Socket in SocketManager.GetSingletone.GetSocketGroup(CurrentGroupID)!)
-                {
-
-                    if (!Socket.Connected || Socket.Poll(1000, SelectMode.SelectRead) && Socket.Available == 0)
-                    {
-                        return false;
-                    }
-
-                }
-            }
-            catch (Exception e)
-            {
-                LogManager.GetSingletone.WriteLog(e);
+            if (!SocketManager.GetSingletone.IsGroupConnected(RecvGroupID))
                 return false;
-            }
-            return true;
+            return SocketManager.GetSingletone.IsGroupConnected(SendGroupID);
         }
 
         private async Task CancelConnect(TimeSpan DelayTime)
@@ -193,29 +204,43 @@ namespace KYCSocketCore
 
         private void Process()
         {
-            Task.Run(RecvData);
+            ServerConnected.WaitOne();
+            Task.Run(async () =>
+            {
+                while (!ConnectCancelToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        Socket? RecvSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(RecvGroupID).ConfigureAwait(false);
+                        _ = RecvData(RecvSocket);
+                    }
+                    catch (Exception e)
+                    {
+                        // 그외 에러
+                        LogManager.GetSingletone.WriteLog(e);
+                        break;
+                    }
+                }
+            });
         }
 
         // Acceptor와 Send Recv는 동일 코드
-        protected virtual async Task RecvData()
+        protected virtual async Task RecvData(Socket RecvSocket)
         {
             while(!ConnectCancelToken.IsCancellationRequested)
             {
-                Socket? RecvSocket = null;
                 try
                 {
-                    ServerConnected.WaitOne();
                     // 나중에 메세지 버퍼 크기를 대략적으로 조사한 후에 고정 패킷을 사용하는걸 고려해봐야할듯
-                    RecvSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
-                    RecvSocket.ReceiveTimeout = 500;
                     Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
-                    int RecvSize = await RecvSocket.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+
+                    int RecvSize = await RecvSocket!.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
                     if (RecvSize <= 0)
                     {
                         if (RecvSocket != null)
                             SocketManager.GetSingletone.ReturnSocket(RecvSocket);
                         ServerConnected.Reset();
-                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
+                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                     }
 
                     Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
@@ -225,9 +250,9 @@ namespace KYCSocketCore
                         if (RecvSocket != null)
                             SocketManager.GetSingletone.ReturnSocket(RecvSocket);
                         ServerConnected.Reset();
-                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
+                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                     }
-                    SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
+                    SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
                     PushToPipeLine(DataBuffer);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
@@ -248,8 +273,8 @@ namespace KYCSocketCore
                     // RecvTimeout이 발생했다. 그룹으로 리턴시켜준다. 만약 그룹 값이 이상하다면 재사용소켓으로 넘긴다 (그룹에서는 제거)
                     if (RecvSocket != null)
                     {
-                        if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
-                            SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, RecvSocket);
+                        if (SocketManager.GetSingletone.IsAlreadyGroup(RecvGroupID))
+                            SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
                         else
                             SocketManager.GetSingletone.ReturnSocket(RecvSocket);
                     }
@@ -271,12 +296,18 @@ namespace KYCSocketCore
             try
             {
                 ServerConnected.WaitOne();
-                SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(CurrentGroupID).ConfigureAwait(false);
-                SendSocket.SendTimeout = 500;
+                SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(SendGroupID).ConfigureAwait(false);
+
+                var addr = SendSocket.LocalEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint : null;
+                LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 전송합니다. {addr?.Address}:{addr?.Port}");
+
                 int SendSize = await SendSocket.SendAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
-                SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, SendSocket);
+                SocketManager.GetSingletone.AddSocketToGroup(SendGroupID, SendSocket);
                 if (SendSize > 0)
+                {
+                    LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 전송하였습니다. {SendSize}바이트");
                     return SendSize;
+                }
                 else
                 {
                     if (SendSocket != null)
@@ -291,15 +322,15 @@ namespace KYCSocketCore
                 if (SendSocket != null)
                     SocketManager.GetSingletone.ReturnSocket(SendSocket);
                 ServerConnected.Reset();
-                throw new ConnectionClosedException($"Send를 시도하던 중에 {CurrentGroupID} 그룹 소켓이 종료되었습니다.");
+                throw new ConnectionClosedException($"Send를 시도하던 중에 {SendGroupID} 그룹 소켓이 종료되었습니다.");
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
             {
                 // SendTimeout이 발생했다. 그룹으로 리턴시켜준다. 만약 그룹 값이 이상하다면 재사용소켓으로 넘긴다 (그룹에서는 제거)
                 if (SendSocket != null)
                 {
-                    if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
-                        SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, SendSocket);
+                    if (SocketManager.GetSingletone.IsAlreadyGroup(SendGroupID))
+                        SocketManager.GetSingletone.AddSocketToGroup(SendGroupID, SendSocket);
                     else
                         SocketManager.GetSingletone.ReturnSocket(SendSocket);
                 }
@@ -314,7 +345,7 @@ namespace KYCSocketCore
 
         protected void PrepareToReConnect()
         {
-            CancelConnect(TimeSpan.FromSeconds(3)).Wait();
+            CancelConnect(TimeSpan.FromSeconds(10)).Wait();
             ConnectCancelToken = new CancellationTokenSource();
             LogManager.GetSingletone.WriteLog($"{ServerName} Connect를 재시작합니다.");
             ServerConnected.Reset();
