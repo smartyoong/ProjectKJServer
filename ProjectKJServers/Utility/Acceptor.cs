@@ -91,18 +91,15 @@ namespace KYCSocketCore
 
         protected virtual void Start()
         {
-            Task.Run(AcceptStart);
-        }
-
-        private async Task AcceptStart()
-        {
+            //Task.Run(AcceptStart);
             if (MaxAcceptCount == MAX_ACCEPT_INFINITE)
             {
-                await InfiniteAccept().ConfigureAwait(false);
+                Task.Run(InfiniteAccept);
             }
             else
             {
-                await LimitedAccept().ConfigureAwait(false);
+                Task.Run(LimitedAccept);
+                Task.Run(Process);
             }
         }
 
@@ -168,11 +165,9 @@ namespace KYCSocketCore
                         if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
                         {
                             SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, ClientSocket);
-                            LogManager.GetSingletone.WriteLog($" Add {i} {CurrentGroupID}");
                         }
                         else
                         {
-                            LogManager.GetSingletone.WriteLog($" MakeBefore {i} {CurrentGroupID}");
                             CurrentGroupID = SocketManager.GetSingletone.MakeNewSocketGroup(ClientSocket);
 
                             if (i % 2 == 0)
@@ -183,7 +178,6 @@ namespace KYCSocketCore
                             {
                                 SendGroupID = CurrentGroupID;
                             }
-                            LogManager.GetSingletone.WriteLog($" Make After {i} {CurrentGroupID}");
                         }
                     }
                     else
@@ -205,7 +199,6 @@ namespace KYCSocketCore
                 }
             }
             ServerAccepted.Set();
-            Process();
         }
 
         protected virtual async Task Stop(TimeSpan DelayTime)
@@ -397,8 +390,6 @@ namespace KYCSocketCore
                 // 나중에 메세지 버퍼 크기를 대략적으로 조사한 후에 고정 패킷을 사용하는걸 고려해봐야할듯
                 Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
 
-                var addr = RecvSocket.RemoteEndPoint is IPEndPoint LocalEndPoint ? LocalEndPoint : null;
-                LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 수신합니다. {addr?.Address}:{addr?.Port}");
 
                 int RecvSize = await RecvSocket.ReceiveAsync(DataSizeBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 if(RecvSize <= 0)
@@ -408,9 +399,6 @@ namespace KYCSocketCore
                     ServerAccepted.Reset();
                     throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                 }
-
-                addr = RecvSocket.RemoteEndPoint is IPEndPoint LocalEndPoint2 ? LocalEndPoint2 : null;
-                LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 수신합니다2. {addr?.Address}:{addr?.Port}");
 
                 Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
                 RecvSize = await RecvSocket.ReceiveAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
@@ -422,9 +410,10 @@ namespace KYCSocketCore
                     throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                 }
                 SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
+
+
                 PushToPipeLine(DataBuffer);
 
-                LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 수신완료했습니다. {addr?.Address}:{addr?.Port}");
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
@@ -464,7 +453,8 @@ namespace KYCSocketCore
                 SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(SendGroupID).ConfigureAwait(false);
                 int SendSize = await SendSocket.SendAsync(DataBuffer, AcceptCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(SendGroupID, SendSocket);
-                if(SendSize > 0)
+
+                if (SendSize > 0)
                     return SendSize;
                 else
                 {

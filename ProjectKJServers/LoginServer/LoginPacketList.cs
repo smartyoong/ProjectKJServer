@@ -12,8 +12,8 @@ namespace LoginServer
 
     public enum LoginGamePacketListID
     {
-        REQUEST_USER_INFO_SUMMARY = 0,
-        RESPONSE_USER_INFO_SUMMARY = 1
+        REQUEST_LOGIN_TEST = 0,
+        RESPONSE_LOGIN_TEST = 1
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -83,14 +83,14 @@ namespace LoginServer
     /// <param name="AccountID"></param>
 
     [Serializable]
-    public struct RequestUserInfoSummaryPacket(string AccountID, string NickName)
+    public struct RequestGameTestPacket(string AccountID, string NickName)
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
 
     [Serializable]
-    public struct ResponseUserInfoSummaryPacket(string AccountID, string NickName, int Level, int Exp)
+    public struct ResponseGameTestPacket(string AccountID, string NickName, int Level, int Exp)
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;

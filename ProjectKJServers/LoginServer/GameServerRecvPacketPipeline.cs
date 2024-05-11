@@ -131,8 +131,8 @@ namespace LoginServer
 
             switch (ID)
             {
-                case LoginGamePacketListID.RESPONSE_USER_INFO_SUMMARY:
-                    ResponseUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseUserInfoSummaryPacket>(ref packet);
+                case LoginGamePacketListID.RESPONSE_LOGIN_TEST:
+                    ResponseGameTestPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseGameTestPacket>(ref packet);
                     if (ResponseSummaryCharInfoPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
@@ -148,7 +148,7 @@ namespace LoginServer
                 return;
             switch (Packet)
             {
-                case ResponseUserInfoSummaryPacket ResponseSummaryUserInfoPacket:
+                case ResponseGameTestPacket ResponseSummaryUserInfoPacket:
                     SP_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
                     break;
                 default:
@@ -157,13 +157,11 @@ namespace LoginServer
             }
         }
 
-        private void SP_ResponseUserInfoSummary(ResponseUserInfoSummaryPacket packet)
+        private void SP_ResponseUserInfoSummary(ResponseGameTestPacket packet)
         {
             if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
-            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
-            // 현재는 이 패킷 자체가 임시이니까 보류
         }
     }
 }

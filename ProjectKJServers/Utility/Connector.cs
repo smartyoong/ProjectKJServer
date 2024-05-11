@@ -25,7 +25,7 @@ namespace KYCSocketCore
         private string ServerName = string.Empty;
 
         IPEndPoint IPAddr;
-        protected Connector(IPEndPoint Addr,int ConnectCount, string serverName)
+        protected Connector(IPEndPoint Addr, int ConnectCount, string serverName)
         {
             ConnectCancelToken = new CancellationTokenSource();
             NeedConnectCount = ConnectCount;
@@ -62,10 +62,8 @@ namespace KYCSocketCore
 
         protected virtual void Start()
         {
-            if (ConnectCancelToken.Token.IsCancellationRequested)
-                return;
             Task.Run(TryConnect);
-
+            Task.Run(Process);
         }
 
         /// <summary>
@@ -124,13 +122,11 @@ namespace KYCSocketCore
                     if (SocketManager.GetSingletone.IsAlreadyGroup(CurrentGroupID))
                     {
                         SocketManager.GetSingletone.AddSocketToGroup(CurrentGroupID, Sock);
-                        LogManager.GetSingletone.WriteLog($" Add {i} {CurrentGroupID}");
                     }
                     else
                     {
                         CurrentGroupID = SocketManager.GetSingletone.MakeNewSocketGroup(Sock);
 
-                        LogManager.GetSingletone.WriteLog($" MakeBefore {i} {CurrentGroupID}");
 
                         if (i % 2 == 0)
                         {
@@ -140,7 +136,6 @@ namespace KYCSocketCore
                         {
                             RecvGroupID = CurrentGroupID;
                         }
-                        LogManager.GetSingletone.WriteLog($" Make After {i} {CurrentGroupID}");
                     }
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
@@ -160,7 +155,6 @@ namespace KYCSocketCore
                 }
             }
             ServerConnected.Set();
-            Process();
         }
 
 
@@ -227,66 +221,71 @@ namespace KYCSocketCore
         // Acceptor와 Send Recv는 동일 코드
         protected virtual async Task RecvData(Socket RecvSocket)
         {
-            while(!ConnectCancelToken.IsCancellationRequested)
+            // 2번째 Recv부터 데이터 수신이 이상하게 발생한 원인 발견 while(!ConnectCancelToken.IsCancellationRequested) 이것 때문 이였음
+            // Process내에서도 이미 While문이 돌고 있는데, 첫번째 RecvData 이후 같은 소켓으로 await RecvAsync를 대기함
+            // 그런데 Process가 2번째로 RecvData를 호출하면서 이미 await RecvAsync를 하고 있는 소켓을 또 RecvAsync시킴
+            // 그래서 같은 소켓으로 다른 스레드가 여러번의 RecvAsync를 시키며 문제가 발생했던것임
+            // 그리고 while문 내에서는 null 경고 떴는데 지우니까 안뜨는 이유는 혹시나 예외처리 catch후 다시 while 되면서 Socket이 null 될 수 있다는 뜻
+
+            try
             {
-                try
-                {
-                    // 나중에 메세지 버퍼 크기를 대략적으로 조사한 후에 고정 패킷을 사용하는걸 고려해봐야할듯
-                    Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
+                // 나중에 메세지 버퍼 크기를 대략적으로 조사한 후에 고정 패킷을 사용하는걸 고려해봐야할듯
+                Memory<byte> DataSizeBuffer = new byte[sizeof(int)];
 
-                    int RecvSize = await RecvSocket!.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
-                    if (RecvSize <= 0)
-                    {
-                        if (RecvSocket != null)
-                            SocketManager.GetSingletone.ReturnSocket(RecvSocket);
-                        ServerConnected.Reset();
-                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
-                    }
-
-                    Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
-                    RecvSize = await RecvSocket.ReceiveAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
-                    if (RecvSize <= 0)
-                    {
-                        if (RecvSocket != null)
-                            SocketManager.GetSingletone.ReturnSocket(RecvSocket);
-                        ServerConnected.Reset();
-                        throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
-                    }
-                    SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
-                    PushToPipeLine(DataBuffer);
-                }
-                catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                int RecvSize = await RecvSocket.ReceiveAsync(DataSizeBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+                if (RecvSize <= 0)
                 {
-                    LogManager.GetSingletone.WriteLog(e);
-                    LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 끊겼습니다");
-                    //연결이 끊겼다. 재사용 가능한 소켓으로 반납시킨후 재사용 가능하도록 준비한다
-                    // 끊겼다는 에러는 소켓을 받아왔지만, 해당 소켓이 ReceiveAsync중에 끊긴 것이다. 그룹에서는 제거된다.
                     if (RecvSocket != null)
                         SocketManager.GetSingletone.ReturnSocket(RecvSocket);
                     ServerConnected.Reset();
-                    // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
-                    PrepareToReConnect();
-                    Start();
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                 }
-                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+
+
+                Memory<byte> DataBuffer = new byte[PacketUtils.GetSizeFromPacket(DataSizeBuffer)];
+                RecvSize = await RecvSocket.ReceiveAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
+                if (RecvSize <= 0)
                 {
-                    // RecvTimeout이 발생했다. 그룹으로 리턴시켜준다. 만약 그룹 값이 이상하다면 재사용소켓으로 넘긴다 (그룹에서는 제거)
                     if (RecvSocket != null)
-                    {
-                        if (SocketManager.GetSingletone.IsAlreadyGroup(RecvGroupID))
-                            SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
-                        else
-                            SocketManager.GetSingletone.ReturnSocket(RecvSocket);
-                    }
-                    // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
-                    LogManager.GetSingletone.WriteLog(e);
-                    LogManager.GetSingletone.WriteLog($"{ServerName}에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
-                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                        SocketManager.GetSingletone.ReturnSocket(RecvSocket);
+                    ServerConnected.Reset();
+                    throw new ConnectionClosedException($"Recv를 시도하던 중에 {RecvGroupID} 그룹 소켓이 종료되었습니다.");
                 }
-                catch (Exception e)
+
+                SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
+                PushToPipeLine(DataBuffer);
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                LogManager.GetSingletone.WriteLog(e);
+                LogManager.GetSingletone.WriteLog($"{ServerName}와 연결이 끊겼습니다");
+                //연결이 끊겼다. 재사용 가능한 소켓으로 반납시킨후 재사용 가능하도록 준비한다
+                // 끊겼다는 에러는 소켓을 받아왔지만, 해당 소켓이 ReceiveAsync중에 끊긴 것이다. 그룹에서는 제거된다.
+                if (RecvSocket != null)
+                    SocketManager.GetSingletone.ReturnSocket(RecvSocket);
+                ServerConnected.Reset();
+                // 만약 서버가 죽은거라면 관련된 모든 소켓이 죽었을 것이기 때문에 모두 처음부터 다시 연결을 해야한다
+                PrepareToReConnect();
+                Start();
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+            {
+                // RecvTimeout이 발생했다. 그룹으로 리턴시켜준다. 만약 그룹 값이 이상하다면 재사용소켓으로 넘긴다 (그룹에서는 제거)
+                if (RecvSocket != null)
                 {
-                    LogManager.GetSingletone.WriteLog(e);
+                    if (SocketManager.GetSingletone.IsAlreadyGroup(RecvGroupID))
+                        SocketManager.GetSingletone.AddSocketToGroup(RecvGroupID, RecvSocket);
+                    else
+                        SocketManager.GetSingletone.ReturnSocket(RecvSocket);
                 }
+                // 가용가능한 소켓이 없음 1초 대기후 다시 소켓을 받아오도록 지시
+                LogManager.GetSingletone.WriteLog(e);
+                LogManager.GetSingletone.WriteLog($"{ServerName}에서 데이터를 Recv할 Socket이 부족하여 TimeOut이 되었습니다.");
+                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e);
             }
         }
 
@@ -299,13 +298,11 @@ namespace KYCSocketCore
                 SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(SendGroupID).ConfigureAwait(false);
 
                 var addr = SendSocket.LocalEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint : null;
-                LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 전송합니다. {addr?.Address}:{addr?.Port}");
 
                 int SendSize = await SendSocket.SendAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(SendGroupID, SendSocket);
                 if (SendSize > 0)
                 {
-                    LogManager.GetSingletone.WriteLog($"{ServerName}에 데이터를 전송하였습니다. {SendSize}바이트");
                     return SendSize;
                 }
                 else

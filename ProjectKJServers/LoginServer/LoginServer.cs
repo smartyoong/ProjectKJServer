@@ -188,12 +188,8 @@ namespace LoginServer
 
         private void button1_Click(object sender, EventArgs e)
         {
-            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_USER_INFO_SUMMARY, new RequestUserInfoSummaryPacket("sex", "sex"));
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_USER_INFO_SUMMARY, new RequestUserInfoSummaryPacket("sex", "sex"));
+            LogManager.GetSingletone.WriteLog("AccountID : 로그인 서버입니다. DB까지 전달됩니까? NickName : DB까지되나요");
+            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_LOGIN_TEST, new RequestGameTestPacket("로그인 서버입니다. DB까지 전달됩니까?", "DB까지되나요?"));
         }
     }
 }

@@ -2,8 +2,8 @@
 {
     public enum GameLoginPacketListID
     {
-        REQUEST_USER_INFO_SUMMARY = 0,
-        RESPONSE_USER_INFO_SUMMARY = 1
+        REQUEST_LOGIN_TEST = 0,
+        RESPONSE_LOGIN_TEST = 1
     }
 
     public enum GameDBPacketListID
@@ -60,14 +60,14 @@
     /// <param name="AccountID"></param>
     /// <param name="NickName"></param>
     [Serializable]
-    public struct RequestUserInfoSummaryPacket(string AccountID, string NickName)
+    public struct RequestLoginTestPacket(string AccountID, string NickName)
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
 
     [Serializable]
-    public struct ResponseUserInfoSummaryPacket(string AccountID, string NickName, int Level, int Exp)
+    public struct ResponseLoginTestPacket(string AccountID, string NickName, int Level, int Exp)
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;

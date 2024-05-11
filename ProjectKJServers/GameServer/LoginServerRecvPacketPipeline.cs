@@ -131,8 +131,8 @@ namespace GameServer
 
             switch (ID)
             {
-                case GameLoginPacketListID.REQUEST_USER_INFO_SUMMARY:
-                    RequestUserInfoSummaryPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<RequestUserInfoSummaryPacket>(ref packet);
+                case GameLoginPacketListID.REQUEST_LOGIN_TEST:
+                    RequestLoginTestPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<RequestLoginTestPacket>(ref packet);
                     if (ResponseSummaryCharInfoPacket == null)
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
@@ -148,7 +148,7 @@ namespace GameServer
                 return;
             switch (Packet)
             {
-                case RequestUserInfoSummaryPacket RequestSummaryUserInfoPacket:
+                case RequestLoginTestPacket RequestSummaryUserInfoPacket:
                     Func_RequestUserInfoSummary(RequestSummaryUserInfoPacket);
                     break;
                 default:
@@ -157,13 +157,12 @@ namespace GameServer
             }
         }
 
-        private void Func_RequestUserInfoSummary(RequestUserInfoSummaryPacket packet)
+        private void Func_RequestUserInfoSummary(RequestLoginTestPacket packet)
         {
             if (IsErrorPacket(packet, "RequestUserInfoSummary"))
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
-            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
-            LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_INFO_SUMMARY, new ResponseUserInfoSummaryPacket(packet.AccountID, packet.NickName, 1, 0));
+            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_DB_TEST, new RequestDBTestPacket("로그인 서버 내용 받았습니다", "게임 서버가 DB 서버로 대신 전달할게요!"));
         }
 
     }
