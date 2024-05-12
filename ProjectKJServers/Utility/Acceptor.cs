@@ -116,7 +116,6 @@ namespace KYCSocketCore
                     // 클라의 경우 await로 Accept를 받고 시작하기에 문제가 없다.
                     LogOn(ClientSocket);
                     TotalTaskList.Add(Task.Run(() => Process(ClientSocket)));
-                    UIEvent.GetSingletone.IncreaseUserCount(true);
                 }
                 catch (OperationCanceledException)
                 {
