@@ -297,8 +297,6 @@ namespace KYCSocketCore
                 ServerConnected.WaitOne();
                 SendSocket = await SocketManager.GetSingletone.GetAvailableSocketFromGroup(SendGroupID).ConfigureAwait(false);
 
-                var addr = SendSocket.LocalEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint : null;
-
                 int SendSize = await SendSocket.SendAsync(DataBuffer, ConnectCancelToken.Token).ConfigureAwait(false);
                 SocketManager.GetSingletone.AddSocketToGroup(SendGroupID, SendSocket);
                 if (SendSize > 0)
