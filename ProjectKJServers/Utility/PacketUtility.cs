@@ -20,7 +20,11 @@ namespace KYCPacket
 
         public static S? DeserializePacket<S>(ref Memory<byte> DataBuffer) where S : struct
         {
-            return JsonSerializer.Deserialize<S>(DataBuffer.Span);
+            var Options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            return JsonSerializer.Deserialize<S>(DataBuffer.Span,Options);
         }
 
         public static Memory<byte> SerializePacket<S>(S Data) where S : struct
