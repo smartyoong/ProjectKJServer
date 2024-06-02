@@ -88,7 +88,7 @@ namespace LoginServer
     [Serializable]
     public struct IDUniqueCheckResponsePacket(bool IsSuccess)
     {
-        public bool IsSuccess { get; set; } = IsSuccess;
+        public bool IsUnique { get; set; } = IsSuccess;
     }
 
     /// <summary>
