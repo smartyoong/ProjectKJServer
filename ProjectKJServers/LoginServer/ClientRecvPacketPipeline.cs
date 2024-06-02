@@ -139,6 +139,12 @@ namespace LoginServer
                         return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
                     else
                         return new ClientRecvPacketPipeLineWrapper(RequestCharInfoPacket, Packet.ClientID);
+                case LoginPacketListID.ID_UNIQUE_CHECK_REQUEST:
+                    IDUniqueCheckRequestPacket? RequestIDUniqueCheckPacket = PacketUtils.GetPacketStruct<IDUniqueCheckRequestPacket>(ref Data);
+                    if (RequestIDUniqueCheckPacket == null)
+                        return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
+                    else
+                        return new ClientRecvPacketPipeLineWrapper(RequestIDUniqueCheckPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -153,6 +159,12 @@ namespace LoginServer
                 case LoginRequestPacket RequestPacket:
                     SP_LoginRequest(RequestPacket, Packet.ClientID);
                     break;
+                case IDUniqueCheckRequestPacket RequestPacket:
+                    SP_IDUniqueCheckRequest(RequestPacket, Packet.ClientID);
+                    break;
+                default:
+                    LogManager.GetSingletone.WriteLog("ClientRecvPipeline ProcessPacket에서 할당되지 않은 패킷이 들어왔습니다.");
+                    break;
             }
         }
 
@@ -161,6 +173,13 @@ namespace LoginServer
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
             AccountSQLManager.GetSingletone.SQL_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
+        }
+
+        private void SP_IDUniqueCheckRequest(IDUniqueCheckRequestPacket packet, int ClientID)
+        {
+            if (IsErrorPacket(packet, "IDUniqueCheckRequest"))
+                return;
+            AccountSQLManager.GetSingletone.SQL_ID_UNIQUE_CHECK_REQUEST(packet.AccountID, ClientID);
         }
     }
 }

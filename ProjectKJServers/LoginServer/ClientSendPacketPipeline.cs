@@ -69,6 +69,8 @@ namespace LoginServer
             {
                 case LoginPacketListID.LOGIN_RESPONESE:
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.ClientID);
+                case LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE:
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (IDUniqueCheckResponsePacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
                     return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);

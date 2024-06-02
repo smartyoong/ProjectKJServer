@@ -135,7 +135,7 @@ namespace KYCSQL
             }
         }
 
-        public async Task<(int ErrorCode, List<List<object>> ValueList)> ExecuteSqlSPGeResulttListAsync(string SPName, params SqlParameter[] SQLParameters)
+        public async Task<(int ErrorCode, List<List<object>> ValueList)> ExecuteSqlSPGetResultListAsync(string SPName, params SqlParameter[] SQLParameters)
         {
             List<List<object>> ResultList = new List<List<object>>();
             try

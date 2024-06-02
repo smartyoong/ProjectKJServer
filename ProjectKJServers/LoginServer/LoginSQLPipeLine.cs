@@ -74,6 +74,12 @@ namespace LoginServer
                                 LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, Item.ReturnValue);
                                 ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.ClientID);
                                 break;
+                            case LOGIN_SP.SP_ID_UNIQUE_CHECK:
+                                int ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_ID_UNIQUE_CHECK.ToString(), item.parameters).ConfigureAwait(false);
+                                bool IsUnique = ReturnValue == 0 ? true : false;
+                                IDUniqueCheckResponsePacket IDUniquePacket = new IDUniqueCheckResponsePacket(IsUnique);
+                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, item.ClientID);
+                                break;
                             default:
                                 break;
                         }
@@ -99,6 +105,15 @@ namespace LoginServer
                 new SqlParameter("@NickName", SqlDbType.NVarChar, 16) { Direction = ParameterDirection.Output }
             ];
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_LOGIN, parameters, ClientID));
+        }
+
+        public void SQL_ID_UNIQUE_CHECK_REQUEST(string AccountID, int ClientID)
+        {
+            SqlParameter[] parameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID }
+            ];
+            SQLChannel.Writer.TryWrite((LOGIN_SP.SP_ID_UNIQUE_CHECK, parameters, ClientID));
         }
 
     }

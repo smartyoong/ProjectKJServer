@@ -7,7 +7,9 @@ namespace LoginServer
         LOGIN_REQUEST = 0,
         LOGIN_RESPONESE = 1,
         REGIST_ACCOUNT_REQUEST = 2,
-        REGIST_ACCOUNT_RESPONESE = 3
+        REGIST_ACCOUNT_RESPONESE = 3,
+        ID_UNIQUE_CHECK_REQUEST = 4,
+        ID_UNIQUE_CHECK_RESPONESE = 5
     }
 
     public enum LoginGamePacketListID
@@ -75,6 +77,18 @@ namespace LoginServer
     {
         public bool IsSuccess { get; set; } = IsSuccess;
         public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+    [Serializable]
+    public struct IDUniqueCheckRequestPacket(string AccountID)
+    {
+        public string AccountID { get; set; } = AccountID;
+    }
+
+    [Serializable]
+    public struct IDUniqueCheckResponsePacket(bool IsSuccess)
+    {
+        public bool IsSuccess { get; set; } = IsSuccess;
     }
 
     /// <summary>
