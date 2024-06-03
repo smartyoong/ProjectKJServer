@@ -36,7 +36,6 @@
             ServerStatusTextBox = new TextBox();
             CurrentUserCountTextBox = new TextBox();
             UserCountLabel = new Label();
-            button1 = new Button();
             SuspendLayout();
             // 
             // LogListBox
@@ -127,22 +126,11 @@
             UserCountLabel.TabIndex = 7;
             UserCountLabel.Text = "동접자 수 :";
             // 
-            // button1
-            // 
-            button1.Location = new Point(693, 211);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 8;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
-            // 
             // LoginServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(button1);
             Controls.Add(UserCountLabel);
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(ServerStatusTextBox);
@@ -167,6 +155,5 @@
         private TextBox ServerStatusTextBox;
         private TextBox CurrentUserCountTextBox;
         private Label UserCountLabel;
-        private Button button1;
     }
 }
