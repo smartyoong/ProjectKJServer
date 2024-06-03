@@ -13,6 +13,7 @@ namespace KYCException
     {
         ERR_PACKET_IS_NOT_ASSIGNED = 0
       , ERR_PACKET_IS_NULL = 1
+      , ERR_SQL_RETURN_ERROR = 999999
     }
 
     public struct ErrorPacket(GeneralErrorCode ErrorCode)

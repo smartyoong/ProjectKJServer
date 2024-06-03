@@ -73,9 +73,8 @@ namespace LoginServer
     }
 
     [Serializable]
-    public struct RegistAccountResponsePacket(bool IsSuccess, int ErrorCode)
+    public struct RegistAccountResponsePacket(int ErrorCode)
     {
-        public bool IsSuccess { get; set; } = IsSuccess;
         public int ErrorCode { get; set; } = ErrorCode;
     }
 

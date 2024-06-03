@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Net.Sockets;
+using System.Net;
 
 namespace LoginServer
 {   internal class ClientRecvPacketPipeline
@@ -134,17 +135,14 @@ namespace LoginServer
             switch (ID)
             {
                 case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
-                    if (RequestCharInfoPacket == null)
-                        return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
-                    else
-                        return new ClientRecvPacketPipeLineWrapper(RequestCharInfoPacket, Packet.ClientID);
+                    LoginRequestPacket? RequestLoginPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
+                    return RequestLoginPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestLoginPacket, Packet.ClientID);
                 case LoginPacketListID.ID_UNIQUE_CHECK_REQUEST:
                     IDUniqueCheckRequestPacket? RequestIDUniqueCheckPacket = PacketUtils.GetPacketStruct<IDUniqueCheckRequestPacket>(ref Data);
-                    if (RequestIDUniqueCheckPacket == null)
-                        return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
-                    else
-                        return new ClientRecvPacketPipeLineWrapper(RequestIDUniqueCheckPacket, Packet.ClientID);
+                    return RequestIDUniqueCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestIDUniqueCheckPacket, Packet.ClientID);
+                case LoginPacketListID.REGIST_ACCOUNT_REQUEST:
+                    RegistAccountRequestPacket? RequestRegistAccountPacket = PacketUtils.GetPacketStruct<RegistAccountRequestPacket>(ref Data);
+                    return RequestRegistAccountPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestRegistAccountPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -161,6 +159,9 @@ namespace LoginServer
                     break;
                 case IDUniqueCheckRequestPacket RequestPacket:
                     SP_IDUniqueCheckRequest(RequestPacket, Packet.ClientID);
+                    break;
+                case RegistAccountRequestPacket RequestPacket:
+                    SP_RegistAccountRequest(RequestPacket, Packet.ClientID);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("ClientRecvPipeline ProcessPacket에서 할당되지 않은 패킷이 들어왔습니다.");
@@ -180,6 +181,17 @@ namespace LoginServer
             if (IsErrorPacket(packet, "IDUniqueCheckRequest"))
                 return;
             AccountSQLManager.GetSingletone.SQL_ID_UNIQUE_CHECK_REQUEST(packet.AccountID, ClientID);
+        }
+
+        private void SP_RegistAccountRequest(RegistAccountRequestPacket packet, int ClientID)
+        {
+            if (IsErrorPacket(packet, "RegistAccountRequest"))
+                return;
+            IPEndPoint? ClientIPEndPoint = ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
+            if (ClientIPEndPoint != null)
+                AccountSQLManager.GetSingletone.SQL_REGIST_ACCOUNT_REQUEST(packet.AccountID, packet.Password, ClientIPEndPoint.Address.ToString(), ClientID);
+            else
+                LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline SP_RegistAccountRequest에서 ClientIPEndPoint가 null입니다.");
         }
     }
 }

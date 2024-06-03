@@ -10,6 +10,7 @@ using System.Threading.Channels;
 using System.Data.SqlClient;
 using System.Net.Sockets;
 using KYCLog;
+using KYCException;
 
 namespace LoginServer
 {
@@ -66,6 +67,7 @@ namespace LoginServer
                     await SQLChannel.Reader.WaitToReadAsync(SQLCancelToken.Token).ConfigureAwait(false);
                     while (SQLChannel.Reader.TryRead(out var item))
                     {
+                        int ReturnValue = (int)GeneralErrorCode.ERR_SQL_RETURN_ERROR;
                         switch (item.ID)
                         {
                             case LOGIN_SP.SP_LOGIN:
@@ -75,10 +77,15 @@ namespace LoginServer
                                 ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.ClientID);
                                 break;
                             case LOGIN_SP.SP_ID_UNIQUE_CHECK:
-                                int ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_ID_UNIQUE_CHECK.ToString(), item.parameters).ConfigureAwait(false);
+                                ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_ID_UNIQUE_CHECK.ToString(), item.parameters).ConfigureAwait(false);
                                 bool IsUnique = ReturnValue == 0 ? true : false;
                                 IDUniqueCheckResponsePacket IDUniquePacket = new IDUniqueCheckResponsePacket(IsUnique);
                                 ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, item.ClientID);
+                                break;
+                            case LOGIN_SP.SP_REGIST_ACCOUNT:
+                                ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_REGIST_ACCOUNT.ToString(), item.parameters).ConfigureAwait(false);
+                                RegistAccountResponsePacket RegistPacket = new RegistAccountResponsePacket(ReturnValue);
+                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, item.ClientID);
                                 break;
                             default:
                                 break;
@@ -114,6 +121,17 @@ namespace LoginServer
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID }
             ];
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_ID_UNIQUE_CHECK, parameters, ClientID));
+        }
+
+        public void SQL_REGIST_ACCOUNT_REQUEST(string AccountID, string AccountPW, string IPAddr, int ClientID)
+        {
+            SqlParameter[] parameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@PW", SqlDbType.VarChar, 50) { Value = AccountPW },
+                new SqlParameter("@IP", SqlDbType.VarChar, 50) { Value = IPAddr }
+            ];
+            SQLChannel.Writer.TryWrite((LOGIN_SP.SP_REGIST_ACCOUNT, parameters, ClientID));
         }
 
     }
