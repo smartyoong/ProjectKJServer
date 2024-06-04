@@ -3,7 +3,9 @@
     public enum GameLoginPacketListID
     {
         REQUEST_LOGIN_TEST = 0,
-        RESPONSE_LOGIN_TEST = 1
+        RESPONSE_LOGIN_TEST = 1,
+        SEND_USER_HASH_INFO = 2,
+        RESPONSE_USER_HASH_INFO = 3
     }
 
     public enum GameDBPacketListID
@@ -15,7 +17,9 @@
     public enum GamePacketListID
     {
         REQUEST_GAME_TEST = 0,
-        RESPONSE_GAME_TEST = 1
+        RESPONSE_GAME_TEST = 1,
+        REQUEST_HASH_AUTH_CHECK = 2,
+        RESPONSE_HASH_AUTH_CHECK = 3
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -75,6 +79,22 @@
         public int Exp { get; set; } = Exp;
     }
 
+    [Serializable]
+    public struct SendUserHashInfoPacket(string Addr, string AccountID, string HashValue)
+    {
+        public string IPAddr { get; set; } = Addr;
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashValue;
+    }
+
+    [Serializable]
+    public struct ResponseUserHashInfoPacket(string IPAddr, string AccountID, int ErrCode)
+    {
+        public string IPAddr { get; set; } = IPAddr;
+        public string AccountID { get; set; } = AccountID;
+        public int ErrorCode { get; set; } = ErrCode;
+    }
+
     /// 디비 서버
     /// 
     [Serializable]
@@ -109,5 +129,19 @@
         public string NickName { get; set; } = NickName;
         public int Level { get; set; } = Level;
         public bool Exp { get; set; } = Exp;
+    }
+
+    [Serializable]
+    public struct RequestHashAuthCheckPacket(string AccountID, string HashCode)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashCode;
+    }
+
+    [Serializable]
+    public struct ResponseHashAuthCheckPacket(string AccountID, int ErrorCode)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int ErrorCode { get; set; } = ErrorCode;
     }
 }
