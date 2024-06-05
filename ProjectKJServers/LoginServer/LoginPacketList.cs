@@ -61,9 +61,10 @@ namespace LoginServer
     }
 
     [Serializable]
-    public struct LoginResponsePacket(string NickName, int ErrorCode)
+    public struct LoginResponsePacket(string NickName, string HashCode, int ErrorCode)
     {
         public string NickName { get; set; } = NickName;
+        public string HashValue { get; set; } = HashCode;
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
