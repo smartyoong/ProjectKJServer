@@ -129,6 +129,7 @@ namespace LoginServer
                 // 해시 코드 생성에 성공했다면, 게임 서버한테 전달한다.
                 GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO, 
                     new SendUserHashInfoPacket(Item.NickName, HashCode, ClientID, ClientAcceptor.GetSingletone.GetIPAddrByClientID(ClientID)));
+                ClientAcceptor.GetSingletone.MapSocketNickName(ClientAcceptor.GetSingletone.GetClientSocket(ClientID), Item.NickName);
             }
             // 클라이언트한테는 어떻게든 전달한다
             LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, HashCode, Item.ReturnValue);

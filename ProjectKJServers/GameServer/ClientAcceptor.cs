@@ -127,6 +127,12 @@ namespace GameServer
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
                 }
             }
+            if(SocketNickNameDictionary.TryRemove(ClientSock, out string? NickName))
+            {
+                if(!string.IsNullOrEmpty(NickName))
+                    NickNameSocketDictionary.TryRemove(NickName, out _);
+            }
+
             UIEvent.GetSingletone.IncreaseUserCount(false);
             LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결이 끊겼습니다.");
             RemoveHashCodeBySocket(ClientSock);
@@ -141,8 +147,6 @@ namespace GameServer
                 return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
             if(AuthHashAndNickNameDictionary.TryAdd(NickName, HashValue))
             {
-                SocketNickNameDictionary.TryAdd(GetClientSocketByAddr(IPAddr)!, NickName);
-                NickNameSocketDictionary.TryAdd(NickName, GetClientSocketByAddr(IPAddr)!);
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
             }
             return GeneralErrorCode.ERR_AUTH_FAIL;
@@ -166,7 +170,7 @@ namespace GameServer
 
         public void RemoveHashCodeBySocket(Socket Sock)
         {
-            string? NickName= string.Empty;
+            string? NickName;
             if(SocketNickNameDictionary.TryGetValue(Sock,out NickName))
             {
                 if(!string.IsNullOrEmpty(NickName))
@@ -190,6 +194,38 @@ namespace GameServer
             if (SocketNickNameDictionary.TryGetValue(Sock, out string? NickName))
                 return NickName;
             return string.Empty;
+        }
+
+        // 이건 추후 클라가 해시 인증 성공하면 매핑하자 
+        public void MapSocketNickName(Socket Sock, string NickName)
+        {
+            SocketNickNameDictionary.TryAdd(Sock, NickName);
+            NickNameSocketDictionary.TryAdd(NickName, Sock);
+        }
+        public void KickClient(Socket Sock)
+        {
+            string Addr = GetIPAddrByClientSocket(Sock);
+            if (KeyValuePairs.TryRemove(Sock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {GetPortByClientSocket(Sock)}이 강제 추방되었습니다.");
+                    ClientsSocksAddr.TryRemove($"{Addr}{GetPortByClientSocket(Sock)}", out _);
+                }
+            }
+            if (SocketNickNameDictionary.TryRemove(Sock, out string? NickName))
+            {
+                if (!string.IsNullOrEmpty(NickName))
+                    NickNameSocketDictionary.TryRemove(NickName, out _);
+            }
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");
+            SocketManager.GetSingletone.ReturnSocket(Sock);
+        }
+
+        public void KickClientByID(int ClientID)
+        {
+            KickClient(GetClientSocket(ClientID)!);
         }
     }
 }

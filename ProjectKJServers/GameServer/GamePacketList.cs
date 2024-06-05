@@ -92,9 +92,10 @@
         public int TimeToLive { get; set; } = TTL;
     }
     [Serializable]
-    public struct RequestKickUserPacket(string IPAddr)
+    public struct RequestKickUserPacket(string IPAddr, string NickName)
     {
         public string IPAddr { get; set; } = IPAddr;
+        public string NickName { get; set; } = NickName;
     }
 
     /// 디비 서버

@@ -170,10 +170,10 @@ namespace GameServer
             {
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
                 // 기존 유저를 짜르고 신규유저가 들어간다
-                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName) !=null)
+                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName) != null)
                 {
                     LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.REQUEST_KICK_USER,
-                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
+                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID),Packet.NickName));
                     ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
                         ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!));
 
@@ -185,6 +185,7 @@ namespace GameServer
             }
 
             // 성공했다면 딱히 처리할 로직이 없다.
+            LogManager.GetSingletone.WriteLog($"Func_SendUserHashInfo: {Packet.NickName} \n {Packet.HashCode} {Packet.ClientLoginID}");
         }
 
     }

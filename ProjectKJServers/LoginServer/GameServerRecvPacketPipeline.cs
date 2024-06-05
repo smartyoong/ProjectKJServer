@@ -202,12 +202,12 @@ namespace LoginServer
         {
             if (IsErrorPacket(Packet, "RequestKickUser"))
                 return;
-            Socket? ClientSocket = ClientAcceptor.GetSingletone.GetClientSocketByAddr(Packet.IPAddr);
+            Socket? ClientSocket = ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName);
             if (ClientSocket == null)
             {
-                LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {Packet.IPAddr}");
                 return;
             }
+            LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {Packet.IPAddr} {Packet.NickName}");
             ClientAcceptor.GetSingletone.KickClient(ClientSocket);
         }
     }

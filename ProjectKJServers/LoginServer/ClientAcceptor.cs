@@ -14,6 +14,7 @@ using KYCSocketCore;
 using KYCUIEventManager;
 using LoginServer.Properties;
 using System.Security.Cryptography;
+using System.Collections.Concurrent;
 
 namespace LoginServer
 {
@@ -26,6 +27,8 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
+        private ConcurrentDictionary<Socket, string> SocketNickNameDictionary = new ConcurrentDictionary<Socket, string>();
+        private ConcurrentDictionary<string, Socket> NickNameSocketDictionary = new ConcurrentDictionary<string, Socket>();
 
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
         {
@@ -116,18 +119,87 @@ namespace LoginServer
         public string MakeAuthHashCode(string NickName, int ClientID)
         {
             string Addr = GetIPAddrByClientID(ClientID);
+            string Port = GetPortByClientID(ClientID).ToString();
 
-            if(string.IsNullOrEmpty(Addr))
+            if (string.IsNullOrEmpty(Addr))
                 return string.Empty;
 
             SHA256 Secret = SHA256.Create();
-            byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(NickName + Addr));
+            byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(NickName + Addr + Port));
             StringBuilder StringMaker = new StringBuilder();
             foreach(var v in HashValue)
             {
                 StringMaker.Append(v.ToString("x2"));
             }
             return StringMaker.ToString();
+        }
+
+        protected override void LogOut(Socket ClientSock)
+        {
+            var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+            if (KeyValuePairs.TryRemove(ClientSock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
+                }
+            }
+            if (SocketNickNameDictionary.TryRemove(ClientSock, out string? NickName))
+            {
+                if (!string.IsNullOrEmpty(NickName))
+                    NickNameSocketDictionary.TryRemove(NickName, out _);
+            }
+
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결이 끊겼습니다.");
+            SocketManager.GetSingletone.ReturnSocket(ClientSock);
+        }
+
+        public Socket? GetClientSocketByNickName(string NickName)
+        {
+            if (NickNameSocketDictionary.TryGetValue(NickName, out Socket? Sock))
+                return Sock;
+            return null;
+        }
+
+        public string GetNickNameByClientSocket(Socket Sock)
+        {
+            if (SocketNickNameDictionary.TryGetValue(Sock, out string? NickName))
+                return NickName;
+            return string.Empty;
+        }
+
+        // 이건 추후 클라가 해시 인증 성공하면 매핑하자 
+        public void MapSocketNickName(Socket Sock, string NickName)
+        {
+            SocketNickNameDictionary.TryAdd(Sock, NickName);
+            NickNameSocketDictionary.TryAdd(NickName, Sock);
+        }
+
+        public void KickClient(Socket Sock)
+        {
+            string Addr = GetIPAddrByClientSocket(Sock);
+            if (KeyValuePairs.TryRemove(Sock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {GetPortByClientSocket(Sock)}이 강제 추방되었습니다.");
+                    ClientsSocksAddr.TryRemove($"{Addr}{GetPortByClientSocket(Sock)}", out _);
+                }
+            }
+            if (SocketNickNameDictionary.TryRemove(Sock, out string? NickName))
+            {
+                if (!string.IsNullOrEmpty(NickName))
+                    NickNameSocketDictionary.TryRemove(NickName, out _);
+            }
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");
+            SocketManager.GetSingletone.ReturnSocket(Sock);
+        }
+
+        public void KickClientByID(int ClientID)
+        {
+            KickClient(GetClientSocket(ClientID)!);
         }
 
     }
