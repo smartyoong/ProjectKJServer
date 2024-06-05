@@ -131,12 +131,9 @@ namespace GameServer
 
             switch (ID)
             {
-                case GameLoginPacketListID.REQUEST_LOGIN_TEST:
-                    RequestLoginTestPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<RequestLoginTestPacket>(ref packet);
-                    if (ResponseSummaryCharInfoPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return ResponseSummaryCharInfoPacket;
+                case GameLoginPacketListID.SEND_USER_HASH_INFO:
+                    SendUserHashInfoPacket? SendUserHashInfoPacket = PacketUtils.GetPacketStruct<SendUserHashInfoPacket>(ref packet);
+                    return SendUserHashInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : SendUserHashInfoPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -148,8 +145,8 @@ namespace GameServer
                 return;
             switch (Packet)
             {
-                case RequestLoginTestPacket RequestSummaryUserInfoPacket:
-                    Func_RequestUserInfoSummary(RequestSummaryUserInfoPacket);
+                case SendUserHashInfoPacket SendUserHashInfoPacket:
+                    Func_SendUserHashInfo(SendUserHashInfoPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("LoginServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -163,6 +160,25 @@ namespace GameServer
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
             DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_DB_TEST, new RequestDBTestPacket("로그인 서버 내용 받았습니다", "게임 서버가 DB 서버로 대신 전달할게요!"));
+        }
+
+        private void Func_SendUserHashInfo(SendUserHashInfoPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "SendUserHashInfo"))
+                return;
+            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName,Packet.HashCode, Packet.ClientLoginID);
+            if(ErrorCode == GeneralErrorCode.ERR_AUTH_FAIL)
+            {
+                LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO,
+                    new ResponseUserHashInfoPacket(Packet.ClientLoginID, Packet.NickName, (int)GeneralErrorCode.ERR_AUTH_FAIL, ++Packet.TimeToLive)
+                    );
+            }
+            else if (ErrorCode == GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED)
+            {
+                // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
+            }
+
+            // 성공했다면 딱히 처리할 로직이 없다.
         }
 
     }

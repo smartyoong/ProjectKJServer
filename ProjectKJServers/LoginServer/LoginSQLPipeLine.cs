@@ -73,19 +73,15 @@ namespace LoginServer
                             case LOGIN_SP.SP_LOGIN:
                                 // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
                                 (int ReturnValue, dynamic NickName) Item = await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
-                                LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, Item.ReturnValue);
-                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, item.ClientID);
+                                SQL_RESULT_LOGIN_RESPONSE(Item,item.ClientID);
                                 break;
                             case LOGIN_SP.SP_ID_UNIQUE_CHECK:
                                 ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_ID_UNIQUE_CHECK.ToString(), item.parameters).ConfigureAwait(false);
-                                bool IsUnique = ReturnValue == 0 ? true : false;
-                                IDUniqueCheckResponsePacket IDUniquePacket = new IDUniqueCheckResponsePacket(IsUnique);
-                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, item.ClientID);
+                                SQL_RESULT_ID_UNIQUE_CHECK_RESPONSE(ReturnValue, item.ClientID);
                                 break;
                             case LOGIN_SP.SP_REGIST_ACCOUNT:
                                 ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_REGIST_ACCOUNT.ToString(), item.parameters).ConfigureAwait(false);
-                                RegistAccountResponsePacket RegistPacket = new RegistAccountResponsePacket(ReturnValue);
-                                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, item.ClientID);
+                                SQL_RESULT_REGIST_ACCOUNT_RESPONSE(ReturnValue, item.ClientID);
                                 break;
                             default:
                                 break;
@@ -114,6 +110,31 @@ namespace LoginServer
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_LOGIN, parameters, ClientID));
         }
 
+        public void SQL_RESULT_LOGIN_RESPONSE((int ReturnValue, dynamic NickName) Item, int ClientID)
+        {
+            const int LOGIN_SUCCESS = 2;
+            const int HASH_CODE_CREATE_FAIL = 3;
+
+            string HashCode = string.Empty;
+
+            if (Item.ReturnValue == LOGIN_SUCCESS)
+                HashCode = ClientAcceptor.GetSingletone.MakeAuthHashCode(Item.NickName,ClientID);
+            if (string.IsNullOrEmpty(HashCode))
+            {
+                Item.ReturnValue = HASH_CODE_CREATE_FAIL;
+                HashCode = "NONEHASH";
+            }
+            else
+            {
+                // 해시 코드 생성에 성공했다면, 게임 서버한테 전달한다.
+                GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO, 
+                    new SendUserHashInfoPacket(Item.NickName, HashCode, ClientID));
+            }
+            // 클라이언트한테는 어떻게든 전달한다
+            LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, HashCode, Item.ReturnValue);
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, ClientID);
+        }
+
         public void SQL_ID_UNIQUE_CHECK_REQUEST(string AccountID, int ClientID)
         {
             SqlParameter[] parameters =
@@ -121,6 +142,13 @@ namespace LoginServer
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID }
             ];
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_ID_UNIQUE_CHECK, parameters, ClientID));
+        }
+
+        public void SQL_RESULT_ID_UNIQUE_CHECK_RESPONSE(int ReturnValue, int ClientID)
+        {
+            bool IsUnique = ReturnValue == 0 ? true : false;
+            IDUniqueCheckResponsePacket IDUniquePacket = new IDUniqueCheckResponsePacket(IsUnique);
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, ClientID);
         }
 
         public void SQL_REGIST_ACCOUNT_REQUEST(string AccountID, string AccountPW, string IPAddr, int ClientID)
@@ -132,6 +160,12 @@ namespace LoginServer
                 new SqlParameter("@IP", SqlDbType.VarChar, 50) { Value = IPAddr }
             ];
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_REGIST_ACCOUNT, parameters, ClientID));
+        }
+
+        public void SQL_RESULT_REGIST_ACCOUNT_RESPONSE(int ReturnValue, int ClientID)
+        {
+            RegistAccountResponsePacket RegistPacket = new RegistAccountResponsePacket(ReturnValue);
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, ClientID);
         }
 
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing.Text;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ABI.System.Collections.Generic;
 using KYCException;
 using KYCInterface;
 using KYCLog;
@@ -23,6 +25,9 @@ namespace GameServer
         private bool IsAlreadyDisposed = false;
 
         private CancellationTokenSource CheckCancelToken;
+
+        private ConcurrentDictionary<string, string> AuthHashAndNickNameDictionary = new ConcurrentDictionary<string, string>();
+        private ConcurrentDictionary<Socket, string> SocketNickNameDictionary = new ConcurrentDictionary<Socket, string>();
 
 
         private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
@@ -109,6 +114,59 @@ namespace GameServer
             {
                 LogManager.GetSingletone.WriteLog(e);
                 return -1;
+            }
+        }
+        protected override void LogOut(Socket ClientSock)
+        {
+            var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+            if (KeyValuePairs.TryRemove(ClientSock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
+                }
+            }
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결이 끊겼습니다.");
+            RemoveHashCodeBySocket(ClientSock);
+            SocketManager.GetSingletone.ReturnSocket(ClientSock);
+        }
+
+        public GeneralErrorCode AddHashCodeAndNickName(string NickName, string HashValue, int ClientID)
+        {
+            if(AuthHashAndNickNameDictionary.ContainsKey(NickName))
+                return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
+            if(AuthHashAndNickNameDictionary.TryAdd(NickName, HashValue))
+            {
+                SocketNickNameDictionary.TryAdd(GetClientSocket(ClientID)!, NickName);
+                return GeneralErrorCode.ERR_AUTH_SUCCESS;
+            }
+            return GeneralErrorCode.ERR_AUTH_FAIL;
+        }
+
+        public GeneralErrorCode GetAuthHashCode(string NickName, ref string HashCode)
+        {
+            if (!AuthHashAndNickNameDictionary.ContainsKey(NickName))
+                return GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST;
+
+            string? Value;
+            //Success가 아니면 HashCode는 null이다.
+            if (AuthHashAndNickNameDictionary.TryGetValue(NickName, out Value))
+            {
+                HashCode = Value ?? "NONEHASH";
+                return GeneralErrorCode.ERR_AUTH_SUCCESS;
+            }
+            else
+                return GeneralErrorCode.ERR_AUTH_FAIL;
+        }
+
+        public void RemoveHashCodeBySocket(Socket Sock)
+        {
+            string? NickName= string.Empty;
+            if(SocketNickNameDictionary.TryGetValue(Sock,out NickName))
+            {
+                if(!string.IsNullOrEmpty(NickName))
+                    AuthHashAndNickNameDictionary.TryRemove(NickName, out _);
             }
         }
 

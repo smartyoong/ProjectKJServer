@@ -13,6 +13,7 @@ using KYCPacket;
 using KYCSocketCore;
 using KYCUIEventManager;
 using LoginServer.Properties;
+using System.Security.Cryptography;
 
 namespace LoginServer
 {
@@ -110,6 +111,33 @@ namespace LoginServer
                 LogManager.GetSingletone.WriteLog(e);
                 return -1;
             }
+        }
+
+        public string GetIPAddrByClientID(int ClientID)
+        {
+            IPEndPoint? IPEndAddr = GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
+
+            if (IPEndAddr == null)
+                return string.Empty;
+
+            return IPEndAddr.Address.ToString();
+        }
+
+        public string MakeAuthHashCode(string NickName, int ClientID)
+        {
+            string Addr = GetIPAddrByClientID(ClientID);
+
+            if(string.IsNullOrEmpty(Addr))
+                return string.Empty;
+
+            SHA256 Secret = SHA256.Create();
+            byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(NickName + Addr));
+            StringBuilder StringMaker = new StringBuilder();
+            foreach(var v in HashValue)
+            {
+                StringMaker.Append(v.ToString("x2"));
+            }
+            return StringMaker.ToString();
         }
 
     }

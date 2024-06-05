@@ -185,11 +185,5 @@ namespace LoginServer
             LogManager.GetSingletone.Close();
             Application.Exit();
         }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            LogManager.GetSingletone.WriteLog("AccountID : 로그인 서버입니다. DB까지 전달됩니까? NickName : DB까지되나요");
-            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.REQUEST_LOGIN_TEST, new RequestGameTestPacket("로그인 서버입니다. DB까지 전달됩니까?", "DB까지되나요?"));
-        }
     }
 }

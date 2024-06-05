@@ -161,7 +161,7 @@ namespace GameServer
             if (IsErrorPacket(packet, "ResponseDBTest"))
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} {packet.Level} {packet.Exp}");
-            LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_LOGIN_TEST, new ResponseLoginTestPacket(packet.AccountID, packet.NickName, packet.Level,packet.Exp));
+            LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO, new ResponseLoginTestPacket(packet.AccountID, packet.NickName, packet.Level,packet.Exp));
         }
     }
 }

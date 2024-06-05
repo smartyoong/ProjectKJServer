@@ -131,12 +131,9 @@ namespace LoginServer
 
             switch (ID)
             {
-                case LoginGamePacketListID.RESPONSE_LOGIN_TEST:
-                    ResponseGameTestPacket? ResponseSummaryCharInfoPacket = PacketUtils.GetPacketStruct<ResponseGameTestPacket>(ref packet);
-                    if (ResponseSummaryCharInfoPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return ResponseSummaryCharInfoPacket;
+                case LoginGamePacketListID.RESPONSE_USER_HASH_INFO:
+                    ResponseUserHashInfoPacket? ResponseUserHashInfoPacket = PacketUtils.GetPacketStruct<ResponseUserHashInfoPacket>(ref packet);
+                    return ResponseUserHashInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : ResponseUserHashInfoPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -148,8 +145,8 @@ namespace LoginServer
                 return;
             switch (Packet)
             {
-                case ResponseGameTestPacket ResponseSummaryUserInfoPacket:
-                    SP_ResponseUserInfoSummary(ResponseSummaryUserInfoPacket);
+                case ResponseUserHashInfoPacket ResponseUserHashInfoPacket:
+                    Func_ResponseUserHashInfo(ResponseUserHashInfoPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -162,6 +159,36 @@ namespace LoginServer
             if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
+        }
+
+        private void Func_ResponseUserHashInfo(ResponseUserHashInfoPacket Packet)
+        {
+            const int MAX_TTL = 10;
+            if (IsErrorPacket(Packet, "ResponseUserHashInfo"))
+                return;
+            if(Packet.TimeToLive == MAX_TTL)
+            {
+               LogManager.GetSingletone.WriteLog($"TimeToLive이 만료되었습니다. {Packet.NickName}의 해쉬값이 만료됩니다.");
+               return;
+            }
+            else if(Packet.ErrorCode == (int)GeneralErrorCode.ERR_AUTH_FAIL)
+            {
+                string HashCode = ClientAcceptor.GetSingletone.MakeAuthHashCode(Packet.NickName, Packet.ClientLoginID);
+                int ReturnValue = (int)GeneralErrorCode.ERR_AUTH_RETRY;
+                if (string.IsNullOrEmpty(HashCode))
+                {
+                    LogManager.GetSingletone.WriteLog($"해시 코드 재생성에 실패했습니다. NickName : {Packet.NickName}");
+                    ReturnValue = (int)GeneralErrorCode.ERR_AUTH_FAIL;
+                }
+                else
+                {
+                    GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO,
+                        new SendUserHashInfoPacket(Packet.NickName, HashCode, Packet.ClientLoginID));
+                }
+                // 클라이언트한테는 어떻게든 전달한다
+                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, 
+                    new LoginResponsePacket(Packet.NickName, HashCode, ReturnValue), Packet.ClientLoginID);
+            }
         }
     }
 }

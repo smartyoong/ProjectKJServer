@@ -2,10 +2,8 @@
 {
     public enum GameLoginPacketListID
     {
-        REQUEST_LOGIN_TEST = 0,
-        RESPONSE_LOGIN_TEST = 1,
-        SEND_USER_HASH_INFO = 2,
-        RESPONSE_USER_HASH_INFO = 3
+        SEND_USER_HASH_INFO = 1,
+        RESPONSE_USER_HASH_INFO = 2
     }
 
     public enum GameDBPacketListID
@@ -80,19 +78,21 @@
     }
 
     [Serializable]
-    public struct SendUserHashInfoPacket(string Addr, string AccountID, string HashValue)
+    public struct SendUserHashInfoPacket(string NickName, string HashValue, int ClientID)
     {
-        public string IPAddr { get; set; } = Addr;
-        public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
         public string HashCode { get; set; } = HashValue;
+        public int ClientLoginID { get; set; } = ClientID;
+        public int TimeToLive = 0;
     }
 
     [Serializable]
-    public struct ResponseUserHashInfoPacket(string IPAddr, string AccountID, int ErrCode)
+    public struct ResponseUserHashInfoPacket(int ClientID, string NickName, int ErrCode, int TTL)
     {
-        public string IPAddr { get; set; } = IPAddr;
-        public string AccountID { get; set; } = AccountID;
+        public int ClientLoginID { get; set; } = ClientID;
+        public string NickName { get; set; } = NickName;
         public int ErrorCode { get; set; } = ErrCode;
+        public int TimeToLive { get; set; } = TTL;
     }
 
     /// 디비 서버

@@ -34,9 +34,9 @@ namespace KYCSocketCore
 
         // 클라이언트 소켓을 관리하기 위한 변수 속도를 위해 메모리를 희생
 
-        private ConcurrentDictionary<int, Socket> ClientSocks;
+        protected ConcurrentDictionary<int, Socket> ClientSocks;
 
-        private ConcurrentDictionary<Socket, int> KeyValuePairs;
+        protected ConcurrentDictionary<Socket, int> KeyValuePairs;
 
         private int CurrentClientID = 0;
 
@@ -349,7 +349,7 @@ namespace KYCSocketCore
             LogManager.GetSingletone.WriteLog($"새로운 클라이언트 {Addr}이 연결되었습니다.");
         }
 
-        private void LogOut(Socket ClientSock)
+        protected virtual void LogOut(Socket ClientSock)
         {
             var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
             if (KeyValuePairs.TryRemove(ClientSock, out int ClientID))
