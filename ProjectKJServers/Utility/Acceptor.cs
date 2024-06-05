@@ -128,7 +128,7 @@ namespace KYCSocketCore
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
-                    LogManager.GetSingletone.WriteLog($"infinite Accept {e.Message}");
+                    LogManager.GetSingletone.WriteLog(e);
                 }
             }
         }
