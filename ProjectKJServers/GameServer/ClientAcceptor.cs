@@ -28,6 +28,7 @@ namespace GameServer
 
         private ConcurrentDictionary<string, string> AuthHashAndNickNameDictionary = new ConcurrentDictionary<string, string>();
         private ConcurrentDictionary<Socket, string> SocketNickNameDictionary = new ConcurrentDictionary<Socket, string>();
+        private ConcurrentDictionary<string, Socket> NickNameSocketDictionary = new ConcurrentDictionary<string, Socket>();
 
 
         private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
@@ -132,13 +133,16 @@ namespace GameServer
             SocketManager.GetSingletone.ReturnSocket(ClientSock);
         }
 
-        public GeneralErrorCode AddHashCodeAndNickName(string NickName, string HashValue, int ClientID)
+        // 근데 로그인 서버랑 게임서버랑 ID가 다르잖아?
+        // IP 기반으로 가야하나?
+        public GeneralErrorCode AddHashCodeAndNickName(string NickName, string HashValue, int ClientID, string IPAddr)
         {
             if(AuthHashAndNickNameDictionary.ContainsKey(NickName))
                 return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
             if(AuthHashAndNickNameDictionary.TryAdd(NickName, HashValue))
             {
-                SocketNickNameDictionary.TryAdd(GetClientSocket(ClientID)!, NickName);
+                SocketNickNameDictionary.TryAdd(GetClientSocketByIPAddr(IPAddr)!, NickName);
+                NickNameSocketDictionary.TryAdd(NickName, GetClientSocketByIPAddr(IPAddr)!);
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
             }
             return GeneralErrorCode.ERR_AUTH_FAIL;
@@ -169,6 +173,23 @@ namespace GameServer
                     AuthHashAndNickNameDictionary.TryRemove(NickName, out _);
             }
         }
+        public void RemoveHashCodeByNickName(string NickName)
+        {
+            AuthHashAndNickNameDictionary.TryRemove(NickName, out _);
+        }
 
+        public Socket? GetClientSocketByNickName(string NickName)
+        {
+            if (NickNameSocketDictionary.TryGetValue(NickName, out Socket? Sock))
+                return Sock;
+            return null;
+        }
+
+        public string GetNickNameByClientSocket(Socket Sock)
+        {
+            if (SocketNickNameDictionary.TryGetValue(Sock, out string? NickName))
+                return NickName;
+            return string.Empty;
+        }
     }
 }

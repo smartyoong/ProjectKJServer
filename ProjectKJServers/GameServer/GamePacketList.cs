@@ -61,12 +61,6 @@
     /// </summary>
     /// <param name="AccountID"></param>
     /// <param name="NickName"></param>
-    [Serializable]
-    public struct RequestLoginTestPacket(string AccountID, string NickName)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-    }
 
     [Serializable]
     public struct ResponseLoginTestPacket(string AccountID, string NickName, int Level, int Exp)
@@ -78,11 +72,12 @@
     }
 
     [Serializable]
-    public struct SendUserHashInfoPacket(string NickName, string HashValue, int ClientID)
+    public struct SendUserHashInfoPacket(string NickName, string HashValue, int ClientID, string IPAddr)
     {
         public string NickName { get; set; } = NickName;
         public string HashCode { get; set; } = HashValue;
         public int ClientLoginID { get; set; } = ClientID;
+        public string IPAddr { get; set; } = IPAddr;
         public int TimeToLive = 0;
     }
 

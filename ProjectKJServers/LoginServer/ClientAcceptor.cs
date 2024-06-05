@@ -113,16 +113,6 @@ namespace LoginServer
             }
         }
 
-        public string GetIPAddrByClientID(int ClientID)
-        {
-            IPEndPoint? IPEndAddr = GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
-
-            if (IPEndAddr == null)
-                return string.Empty;
-
-            return IPEndAddr.Address.ToString();
-        }
-
         public string MakeAuthHashCode(string NickName, int ClientID)
         {
             string Addr = GetIPAddrByClientID(ClientID);

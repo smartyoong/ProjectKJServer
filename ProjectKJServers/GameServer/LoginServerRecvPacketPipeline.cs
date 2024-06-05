@@ -154,14 +154,6 @@ namespace GameServer
             }
         }
 
-        private void Func_RequestUserInfoSummary(RequestLoginTestPacket packet)
-        {
-            if (IsErrorPacket(packet, "RequestUserInfoSummary"))
-                return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
-            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_DB_TEST, new RequestDBTestPacket("로그인 서버 내용 받았습니다", "게임 서버가 DB 서버로 대신 전달할게요!"));
-        }
-
         private void Func_SendUserHashInfo(SendUserHashInfoPacket Packet)
         {
             if (IsErrorPacket(Packet, "SendUserHashInfo"))
@@ -176,6 +168,13 @@ namespace GameServer
             else if (ErrorCode == GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED)
             {
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
+                // 기존 유저를 짜르고 신규유저가 들어간다
+                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!=null)
+                {
+                    ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!);
+                }
+                ClientAcceptor.GetSingletone.RemoveHashCodeByNickName(Packet.NickName);
+                ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName, Packet.HashCode, Packet.ClientLoginID);
             }
 
             // 성공했다면 딱히 처리할 로직이 없다.

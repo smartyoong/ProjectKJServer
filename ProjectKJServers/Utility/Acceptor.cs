@@ -36,6 +36,8 @@ namespace KYCSocketCore
 
         protected ConcurrentDictionary<int, Socket> ClientSocks;
 
+        protected ConcurrentDictionary<string, Socket> ClientsSocksAddr;
+
         protected ConcurrentDictionary<Socket, int> KeyValuePairs;
 
         private int CurrentClientID = 0;
@@ -49,6 +51,7 @@ namespace KYCSocketCore
             AcceptCancelToken = new CancellationTokenSource();
             this.MaxAcceptCount = MaxAcceptCount;
             ClientSocks = new ConcurrentDictionary<int, Socket>();
+            ClientsSocksAddr = new ConcurrentDictionary<string, Socket>();
             KeyValuePairs = new ConcurrentDictionary<Socket, int>();
             ListenSocket = SocketManager.GetSingletone.BorrowSocket();
         }
@@ -343,6 +346,14 @@ namespace KYCSocketCore
                 ClientSocks.TryRemove(CurrentClientID, out _);
                 return;
             }
+
+            if(!ClientsSocksAddr.TryAdd(GetIPAddrByClientSocket(ClientSock),ClientSock))
+            {
+                KeyValuePairs.TryRemove(ClientSock, out _);
+                ClientSocks.TryRemove(CurrentClientID, out _);
+                return;
+            }
+
             Interlocked.Increment(ref CurrentClientID);
             var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
             UIEvent.GetSingletone.IncreaseUserCount(true);
@@ -357,6 +368,7 @@ namespace KYCSocketCore
                 if (ClientSocks.TryRemove(ClientID, out _))
                 {
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
+                    ClientsSocksAddr.TryRemove(Addr.ToString(),out _);
                 }
             }
             UIEvent.GetSingletone.IncreaseUserCount(false);
@@ -374,6 +386,12 @@ namespace KYCSocketCore
         public Socket? GetClientSocket(int ClientID)
         {
             if (ClientSocks.TryGetValue(ClientID, out Socket? ClientSock))
+                return ClientSock;
+            return null;
+        }
+        public Socket? GetClientSocketByAddr(string Addr)
+        {
+            if (ClientSocksAddr.TryGetValue(Addr, out Socket? ClientSock))
                 return ClientSock;
             return null;
         }
@@ -572,6 +590,42 @@ namespace KYCSocketCore
             AcceptCancelToken = new CancellationTokenSource();
             LogManager.GetSingletone.WriteLog($"{ServerName} Accept를 재시작합니다.");
             ServerAccepted.Reset();
+        }
+
+        public void KickClient(Socket Sock)
+        {
+            string Addr = GetIPAddrByClientSocket(Sock);
+            if (KeyValuePairs.TryRemove(Sock, out int ClientID))
+            {
+                if (ClientSocks.TryRemove(ClientID, out _))
+                {
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 강제 추방되었습니다.");
+                    ClientsSocksAddr.TryRemove(Addr, out _);
+                }
+            }
+            UIEvent.GetSingletone.IncreaseUserCount(false);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");
+            SocketManager.GetSingletone.ReturnSocket(Sock);
+        }
+
+        public void KickClientByID(int ClientID)
+        {
+            KickClient(GetClientSocket(ClientID)!);
+        }
+
+        public string GetIPAddrByClientID(int ClientID)
+        {
+            return GetIPAddrByClientSocket(GetClientSocket(ClientID)!);
+        }
+
+        public string GetIPAddrByClientSocket(Socket ClientSock)
+        {
+            IPEndPoint? IPEndAddr = ClientSock!.RemoteEndPoint as IPEndPoint;
+
+            if (IPEndAddr == null)
+                return string.Empty;
+
+            return IPEndAddr.Address.ToString();
         }
     }
 }
