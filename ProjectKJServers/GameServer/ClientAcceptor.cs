@@ -26,9 +26,7 @@ namespace GameServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private ConcurrentDictionary<string, string> AuthHashAndNickNameDictionary = new ConcurrentDictionary<string, string>();
-        private ConcurrentDictionary<Socket, string> SocketNickNameDictionary = new ConcurrentDictionary<Socket, string>();
-        private ConcurrentDictionary<string, Socket> NickNameSocketDictionary = new ConcurrentDictionary<string, Socket>();
+        private ConcurrentDictionary<string, string> AuthHashAndAccountIDDictionary = new ConcurrentDictionary<string, string>();
 
 
         private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
@@ -141,11 +139,15 @@ namespace GameServer
 
         // 근데 로그인 서버랑 게임서버랑 ID가 다르잖아?
         // IP 기반으로 가야하나?
-        public GeneralErrorCode AddHashCodeAndNickName(string NickName, string HashValue, int ClientID, string IPAddr)
+        public GeneralErrorCode AddHashCodeAndAccountID(string AccountID, string HashValue)
         {
-            if(AuthHashAndNickNameDictionary.ContainsKey(NickName))
+            if(AuthHashAndAccountIDDictionary.ContainsKey(AccountID))
+            {
+                LogManager.GetSingletone.WriteLog("Duplicated");
                 return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
-            if(AuthHashAndNickNameDictionary.TryAdd(NickName, HashValue))
+            }
+
+            if(AuthHashAndAccountIDDictionary.TryAdd(AccountID, HashValue))
             {
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
             }
@@ -154,12 +156,12 @@ namespace GameServer
 
         public GeneralErrorCode GetAuthHashCode(string NickName, ref string HashCode)
         {
-            if (!AuthHashAndNickNameDictionary.ContainsKey(NickName))
+            if (!AuthHashAndAccountIDDictionary.ContainsKey(NickName))
                 return GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST;
 
             string? Value;
             //Success가 아니면 HashCode는 null이다.
-            if (AuthHashAndNickNameDictionary.TryGetValue(NickName, out Value))
+            if (AuthHashAndAccountIDDictionary.TryGetValue(NickName, out Value))
             {
                 HashCode = Value ?? "NONEHASH";
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
@@ -174,12 +176,12 @@ namespace GameServer
             if(SocketNickNameDictionary.TryGetValue(Sock,out NickName))
             {
                 if(!string.IsNullOrEmpty(NickName))
-                    AuthHashAndNickNameDictionary.TryRemove(NickName, out _);
+                    AuthHashAndAccountIDDictionary.TryRemove(NickName, out _);
             }
         }
         public void RemoveHashCodeByNickName(string NickName)
         {
-            AuthHashAndNickNameDictionary.TryRemove(NickName, out _);
+            AuthHashAndAccountIDDictionary.TryRemove(NickName, out _);
         }
 
         public Socket? GetClientSocketByNickName(string NickName)

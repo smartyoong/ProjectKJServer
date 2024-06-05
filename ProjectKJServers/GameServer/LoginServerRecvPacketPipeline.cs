@@ -158,33 +158,43 @@ namespace GameServer
         {
             if (IsErrorPacket(Packet, "SendUserHashInfo"))
                 return;
-            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName,Packet.HashCode, Packet.ClientLoginID, 
-                ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID));
+
+            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID,Packet.HashCode);
+            LogManager.GetSingletone.WriteLog("1");
+
             if(ErrorCode == GeneralErrorCode.ERR_AUTH_FAIL)
             {
                 LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO,
-                    new ResponseUserHashInfoPacket(Packet.ClientLoginID, Packet.NickName, (int)GeneralErrorCode.ERR_AUTH_FAIL, ++Packet.TimeToLive)
-                    );
+                    new ResponseUserHashInfoPacket(Packet.ClientLoginID, Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL, ++Packet.TimeToLive));
+                LogManager.GetSingletone.WriteLog("2");
+
             }
             else if (ErrorCode == GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED)
             {
+                LogManager.GetSingletone.WriteLog("3");
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
                 // 기존 유저를 짜르고 신규유저가 들어간다
-                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName) != null)
+                if (ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.AccountID) != null)
                 {
                     LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.REQUEST_KICK_USER,
-                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID),Packet.NickName));
-                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
-                        ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!));
+                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID),Packet.AccountID));
 
-                    ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!);
+                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
+                        ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.AccountID)!));
+
+                    ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.AccountID)!);
+                    ClientAcceptor.GetSingletone.RemoveHashCodeByNickName(Packet.AccountID);
+                    ClientAcceptor.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);
                 }
-                ClientAcceptor.GetSingletone.RemoveHashCodeByNickName(Packet.NickName);
-                ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName, Packet.HashCode, Packet.ClientLoginID, 
-                    ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID));
+                // 만약 NickName으로 소켓을 못 얻어온다는 것은 아직 게임서버에게 로그인 시도를 요청 안했다는 것
+                else
+                {
+                    LogManager.GetSingletone.WriteLog($"{Packet.AccountID}으로 소켓을 못 찾았습니다. 게임서버에게 로그인 요청을 보내지 않았다는 것입니다.");
+                }
             }
 
             // 성공했다면 딱히 처리할 로직이 없다.
+            LogManager.GetSingletone.WriteLog($"Func_SendUserHashInfo: {Packet.AccountID} {Packet.HashCode}");
         }
 
     }

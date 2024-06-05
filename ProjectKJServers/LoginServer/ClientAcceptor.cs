@@ -27,9 +27,6 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
-        private ConcurrentDictionary<Socket, string> SocketNickNameDictionary = new ConcurrentDictionary<Socket, string>();
-        private ConcurrentDictionary<string, Socket> NickNameSocketDictionary = new ConcurrentDictionary<string, Socket>();
-
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
         {
             CheckCancelToken = new CancellationTokenSource();
@@ -116,7 +113,7 @@ namespace LoginServer
             }
         }
 
-        public string MakeAuthHashCode(string NickName, int ClientID)
+        public string MakeAuthHashCode(string AccountID, int ClientID)
         {
             string Addr = GetIPAddrByClientID(ClientID);
             string Port = GetPortByClientID(ClientID).ToString();
@@ -125,7 +122,7 @@ namespace LoginServer
                 return string.Empty;
 
             SHA256 Secret = SHA256.Create();
-            byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(NickName + Addr + Port));
+            byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(AccountID + Addr + Port));
             StringBuilder StringMaker = new StringBuilder();
             foreach(var v in HashValue)
             {

@@ -74,12 +74,13 @@
     }
 
     [Serializable]
-    public struct SendUserHashInfoPacket(string NickName, string HashValue, int ClientID, string IPAddr)
+    public struct SendUserHashInfoPacket(string Account, string HashValue, int ClientID, string IPAddr)
     {
-        public string NickName { get; set; } = NickName;
+        public string AccountID { get; set; } = Account;
         public string HashCode { get; set; } = HashValue;
         public int ClientLoginID { get; set; } = ClientID;
         public string IPAddr { get; set; } = IPAddr;
+
         public int TimeToLive = 0;
     }
 
@@ -92,10 +93,10 @@
         public int TimeToLive { get; set; } = TTL;
     }
     [Serializable]
-    public struct RequestKickUserPacket(string IPAddr, string NickName)
+    public struct RequestKickUserPacket(string IPAddr, string AccountID)
     {
         public string IPAddr { get; set; } = IPAddr;
-        public string NickName { get; set; } = NickName;
+        public string AccountID { get; set; } = AccountID;
     }
 
     /// 디비 서버
@@ -118,22 +119,6 @@
 
     /// 클라이언트
     /// 
-    [Serializable]
-    public struct RequestGameTestPacket(string AccountID, string NickName)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-    }
-
-    [Serializable]
-    public struct ResponseGameTestPacket(string AccountID, string NickName, int Level, bool Exp)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-        public int Level { get; set; } = Level;
-        public bool Exp { get; set; } = Exp;
-    }
-
     [Serializable]
     public struct RequestHashAuthCheckPacket(string AccountID, string HashCode)
     {

@@ -133,12 +133,10 @@ namespace GameServer
 
             switch (ID)
             {
-                case GamePacketListID.REQUEST_GAME_TEST:
-                    RequestGameTestPacket? RequestCharInfoPacket = PacketUtils.GetPacketStruct<RequestGameTestPacket>(ref Data);
-                    if (RequestCharInfoPacket == null)
-                        return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID);
-                    else
-                        return new ClientRecvPacketPipeLineWrapper(RequestCharInfoPacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_HASH_AUTH_CHECK:
+                    RequestHashAuthCheckPacket? RequestHashAuthCheckPacket = PacketUtils.GetPacketStruct<RequestHashAuthCheckPacket>(ref Data);
+                    return RequestHashAuthCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : 
+                        new ClientRecvPacketPipeLineWrapper(RequestHashAuthCheckPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -150,18 +148,17 @@ namespace GameServer
                 return;
             switch (Packet.Packet)
             {
-                case RequestGameTestPacket RequestPacket:
-                    Func_GameTest(RequestPacket, Packet.ClientID);
+                case RequestHashAuthCheckPacket RequestPacket:
+                    Func_HashAuthCheck(RequestPacket, Packet.ClientID);
                     break;
             }
         }
 
-        private void Func_GameTest(RequestGameTestPacket packet, int ClientID)
+        private void Func_HashAuthCheck(RequestHashAuthCheckPacket Packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "GameTestRequest"))
-                return;
-            LogManager.GetSingletone.WriteLog($"GameTestRequest: {packet.AccountID} {packet.NickName}");
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_GAME_TEST, new ResponseGameTestPacket(packet.AccountID, packet.NickName,1,false), ClientID);
+            string HashCode = string.Empty;
+            // 닉네임이 최초에는 전부 Guest인데,,, 소켓은 이거 인증 못받으면 닉네임이랑 매핑안됨
+            GeneralErrorCode ErrorCode = ClientAcceptor.GetSingletone.GetAuthHashCode(Packet.AccountID, ref HashCode);
         }
     }
 }

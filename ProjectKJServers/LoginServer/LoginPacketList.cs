@@ -108,9 +108,9 @@ namespace LoginServer
     }
 
     [Serializable]
-    public struct SendUserHashInfoPacket(string NickName, string HashValue, int ClientID, string IPAddr)
+    public struct SendUserHashInfoPacket(string AccountID, string HashValue, int ClientID, string IPAddr)
     {
-        public string NickName { get; set; } = NickName;
+        public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashValue;
         public int ClientLoginID { get; set; } = ClientID;
         public string IPAddr { get; set; } = IPAddr;
@@ -127,9 +127,9 @@ namespace LoginServer
     }
 
     [Serializable]
-    public struct RequestKickUserPacket(string IPAddr, string NickName)
+    public struct RequestKickUserPacket(string IPAddr, string AccountID)
     {
         public string IPAddr { get; set; } = IPAddr;
-        public string NickName { get; set; } = NickName;
+        public string AccountID { get; set; } = AccountID;
     }
 }
