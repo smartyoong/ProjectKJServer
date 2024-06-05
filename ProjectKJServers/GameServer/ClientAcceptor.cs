@@ -141,8 +141,8 @@ namespace GameServer
                 return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
             if(AuthHashAndNickNameDictionary.TryAdd(NickName, HashValue))
             {
-                SocketNickNameDictionary.TryAdd(GetClientSocketByIPAddr(IPAddr)!, NickName);
-                NickNameSocketDictionary.TryAdd(NickName, GetClientSocketByIPAddr(IPAddr)!);
+                SocketNickNameDictionary.TryAdd(GetClientSocketByAddr(IPAddr)!, NickName);
+                NickNameSocketDictionary.TryAdd(NickName, GetClientSocketByAddr(IPAddr)!);
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
             }
             return GeneralErrorCode.ERR_AUTH_FAIL;

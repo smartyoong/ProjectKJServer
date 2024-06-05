@@ -15,7 +15,8 @@ namespace LoginServer
     public enum LoginGamePacketListID
     {
         SEND_USER_HASH_INFO = 1,
-        RESPONSE_USER_HASH_INFO = 2
+        RESPONSE_USER_HASH_INFO = 2,
+        REQUEST_KICK_USER = 3
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -91,6 +92,7 @@ namespace LoginServer
         public bool IsUnique { get; set; } = IsSuccess;
     }
 
+
     /// <summary>
     /// ////////////////////////////////////////////////////////////////////////////////////////
     /// </summary>
@@ -122,5 +124,11 @@ namespace LoginServer
         public string NickName { get; set; } = NickName;
         public int ErrorCode { get; set; } = ErrCode;
         public int TimeToLive { get; set; } = TTL;
+    }
+
+    [Serializable]
+    public struct RequestKickUserPacket(string IPAddr)
+    {
+        public string IPAddr { get; set; } = IPAddr;
     }
 }

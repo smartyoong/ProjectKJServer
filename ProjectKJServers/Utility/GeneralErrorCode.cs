@@ -21,6 +21,11 @@ namespace KYCException
       , ERR_SQL_RETURN_ERROR = 999999
     }
 
+    public enum KickReason
+    {
+        DUPLICATED_LOGIN = 0
+    }
+
     public struct ErrorPacket(GeneralErrorCode ErrorCode)
     {
         public GeneralErrorCode ErrorCode { get; } = ErrorCode;

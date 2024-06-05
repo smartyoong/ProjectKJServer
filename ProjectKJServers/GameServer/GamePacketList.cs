@@ -3,7 +3,8 @@
     public enum GameLoginPacketListID
     {
         SEND_USER_HASH_INFO = 1,
-        RESPONSE_USER_HASH_INFO = 2
+        RESPONSE_USER_HASH_INFO = 2,
+        REQUEST_KICK_USER = 3
     }
 
     public enum GameDBPacketListID
@@ -17,7 +18,8 @@
         REQUEST_GAME_TEST = 0,
         RESPONSE_GAME_TEST = 1,
         REQUEST_HASH_AUTH_CHECK = 2,
-        RESPONSE_HASH_AUTH_CHECK = 3
+        RESPONSE_HASH_AUTH_CHECK = 3,
+        KICK_CLIENT = 4
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -89,6 +91,11 @@
         public int ErrorCode { get; set; } = ErrCode;
         public int TimeToLive { get; set; } = TTL;
     }
+    [Serializable]
+    public struct RequestKickUserPacket(string IPAddr)
+    {
+        public string IPAddr { get; set; } = IPAddr;
+    }
 
     /// 디비 서버
     /// 
@@ -138,5 +145,10 @@
     {
         public string AccountID { get; set; } = AccountID;
         public int ErrorCode { get; set; } = ErrorCode;
+    }
+    [Serializable]
+    public struct SendKickClientPacket(int Reason)
+    {
+        int Reason { get; set; } = Reason;
     }
 }

@@ -134,6 +134,9 @@ namespace LoginServer
                 case LoginGamePacketListID.RESPONSE_USER_HASH_INFO:
                     ResponseUserHashInfoPacket? ResponseUserHashInfoPacket = PacketUtils.GetPacketStruct<ResponseUserHashInfoPacket>(ref packet);
                     return ResponseUserHashInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : ResponseUserHashInfoPacket;
+                case LoginGamePacketListID.REQUEST_KICK_USER:
+                    RequestKickUserPacket? RequestKickUserPacket = PacketUtils.GetPacketStruct<RequestKickUserPacket>(ref packet);
+                    return RequestKickUserPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : RequestKickUserPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -147,6 +150,9 @@ namespace LoginServer
             {
                 case ResponseUserHashInfoPacket ResponseUserHashInfoPacket:
                     Func_ResponseUserHashInfo(ResponseUserHashInfoPacket);
+                    break;
+                case RequestKickUserPacket RequestKickUserPacket:
+                    Func_RequestKickUser(RequestKickUserPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -183,12 +189,26 @@ namespace LoginServer
                 else
                 {
                     GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO,
-                        new SendUserHashInfoPacket(Packet.NickName, HashCode, Packet.ClientLoginID));
+                        new SendUserHashInfoPacket(Packet.NickName, HashCode, Packet.ClientLoginID, 
+                        ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
                 }
                 // 클라이언트한테는 어떻게든 전달한다
                 ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, 
                     new LoginResponsePacket(Packet.NickName, HashCode, ReturnValue), Packet.ClientLoginID);
             }
+        }
+
+        private void Func_RequestKickUser(RequestKickUserPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestKickUser"))
+                return;
+            Socket? ClientSocket = ClientAcceptor.GetSingletone.GetClientSocketByAddr(Packet.IPAddr);
+            if (ClientSocket == null)
+            {
+                LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {Packet.IPAddr}");
+                return;
+            }
+            ClientAcceptor.GetSingletone.KickClient(ClientSocket);
         }
     }
 }

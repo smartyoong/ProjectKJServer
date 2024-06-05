@@ -158,7 +158,8 @@ namespace GameServer
         {
             if (IsErrorPacket(Packet, "SendUserHashInfo"))
                 return;
-            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName,Packet.HashCode, Packet.ClientLoginID);
+            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName,Packet.HashCode, Packet.ClientLoginID, 
+                ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID));
             if(ErrorCode == GeneralErrorCode.ERR_AUTH_FAIL)
             {
                 LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO,
@@ -169,12 +170,18 @@ namespace GameServer
             {
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
                 // 기존 유저를 짜르고 신규유저가 들어간다
-                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!=null)
+                if(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName) !=null)
                 {
+                    LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.REQUEST_KICK_USER,
+                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
+                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
+                        ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!));
+
                     ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByNickName(Packet.NickName)!);
                 }
                 ClientAcceptor.GetSingletone.RemoveHashCodeByNickName(Packet.NickName);
-                ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName, Packet.HashCode, Packet.ClientLoginID);
+                ClientAcceptor.GetSingletone.AddHashCodeAndNickName(Packet.NickName, Packet.HashCode, Packet.ClientLoginID, 
+                    ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID));
             }
 
             // 성공했다면 딱히 처리할 로직이 없다.

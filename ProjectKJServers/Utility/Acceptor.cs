@@ -391,7 +391,7 @@ namespace KYCSocketCore
         }
         public Socket? GetClientSocketByAddr(string Addr)
         {
-            if (ClientSocksAddr.TryGetValue(Addr, out Socket? ClientSock))
+            if (ClientsSocksAddr.TryGetValue(Addr, out Socket? ClientSock))
                 return ClientSock;
             return null;
         }
