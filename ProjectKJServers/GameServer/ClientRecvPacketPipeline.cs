@@ -159,6 +159,38 @@ namespace GameServer
             string HashCode = string.Empty;
             // 닉네임이 최초에는 전부 Guest인데,,, 소켓은 이거 인증 못받으면 닉네임이랑 매핑안됨
             GeneralErrorCode ErrorCode = ClientAcceptor.GetSingletone.GetAuthHashCode(Packet.AccountID, ref HashCode);
+            switch(ErrorCode)
+            {
+                case GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST:
+                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                        new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST), ClientID);
+                    LogManager.GetSingletone.WriteLog($"해시 코드 등록전입니다. {Packet.AccountID} {Packet.HashCode}");
+                    break;
+                case GeneralErrorCode.ERR_AUTH_SUCCESS:
+                    if(Packet.HashCode == HashCode)
+                    {
+                        ClientAcceptor.GetSingletone.MappingSocketAccountID(ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!,Packet.AccountID);
+
+                        ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                            new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_SUCCESS), ClientID);
+
+                        LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드 인증 성공 {Packet.HashCode}");
+                    }
+                    else
+                    {
+                        if(HashCode == "NONEHASH")
+                            LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드가 없습니다. {Packet.HashCode}");
+
+                        ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                            new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
+                    }
+                    break;
+                case GeneralErrorCode.ERR_AUTH_FAIL:
+                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                        new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
+                    break;
+
+            }
         }
     }
 }
