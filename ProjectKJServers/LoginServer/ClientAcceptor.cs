@@ -27,6 +27,8 @@ namespace LoginServer
 
         private CancellationTokenSource CheckCancelToken;
 
+        private ConcurrentDictionary<Socket, string> SocketAccountIDDictionary = new ConcurrentDictionary<Socket, string>();
+
         private ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
         {
             CheckCancelToken = new CancellationTokenSource();
@@ -141,10 +143,10 @@ namespace LoginServer
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
                 }
             }
-            if (SocketNickNameDictionary.TryRemove(ClientSock, out string? NickName))
+            if (SocketAccountIDDictionary.TryRemove(ClientSock, out string? AccountID))
             {
-                if (!string.IsNullOrEmpty(NickName))
-                    NickNameSocketDictionary.TryRemove(NickName, out _);
+                if (!string.IsNullOrEmpty(AccountID))
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 로그아웃 했습니다.");
             }
 
             UIEvent.GetSingletone.IncreaseUserCount(false);
@@ -152,25 +154,24 @@ namespace LoginServer
             SocketManager.GetSingletone.ReturnSocket(ClientSock);
         }
 
-        public Socket? GetClientSocketByNickName(string NickName)
+        public Socket? GetClientSocketByAccountID(string AccountID)
         {
-            if (NickNameSocketDictionary.TryGetValue(NickName, out Socket? Sock))
+            // 이 메서드는 탐색 속도가 느립니다.
+            Socket Sock = SocketAccountIDDictionary.FirstOrDefault(x => x.Value == AccountID).Key;
+            if (Sock != null)
                 return Sock;
             return null;
         }
 
-        public string GetNickNameByClientSocket(Socket Sock)
-        {
-            if (SocketNickNameDictionary.TryGetValue(Sock, out string? NickName))
-                return NickName;
-            return string.Empty;
-        }
-
         // 이건 추후 클라가 해시 인증 성공하면 매핑하자 
-        public void MapSocketNickName(Socket Sock, string NickName)
+        public void MappingSocketAccountID(Socket Sock, string AccountID)
         {
-            SocketNickNameDictionary.TryAdd(Sock, NickName);
-            NickNameSocketDictionary.TryAdd(NickName, Sock);
+            if(Sock == null)
+            {
+                LogManager.GetSingletone.WriteLog("MappingSocket이 null입니다.");
+                return;
+            }
+            SocketAccountIDDictionary.TryAdd(Sock, AccountID);
         }
 
         public void KickClient(Socket Sock)
@@ -181,13 +182,12 @@ namespace LoginServer
                 if (ClientSocks.TryRemove(ClientID, out _))
                 {
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {GetPortByClientSocket(Sock)}이 강제 추방되었습니다.");
-                    ClientsSocksAddr.TryRemove($"{Addr}{GetPortByClientSocket(Sock)}", out _);
                 }
             }
-            if (SocketNickNameDictionary.TryRemove(Sock, out string? NickName))
+            if (SocketAccountIDDictionary.TryRemove(Sock, out string? AccountID))
             {
-                if (!string.IsNullOrEmpty(NickName))
-                    NickNameSocketDictionary.TryRemove(NickName, out _);
+                if (!string.IsNullOrEmpty(AccountID))
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 강제 추방되었습니다.");
             }
             UIEvent.GetSingletone.IncreaseUserCount(false);
             LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");

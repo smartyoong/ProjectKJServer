@@ -73,7 +73,7 @@ namespace LoginServer
                             case LOGIN_SP.SP_LOGIN:
                                 // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
                                 (int ReturnValue, dynamic NickName) Item = await SQLWorker.ExecuteSqlSPWithOneOutPutParamAsync(LOGIN_SP.SP_LOGIN.ToString(), item.parameters).ConfigureAwait(false);
-                                SQL_RESULT_LOGIN_RESPONSE(Item,item.ClientID);
+                                SQL_RESULT_LOGIN_RESPONSE(Item, (string)item.parameters[0].Value/*AccountID*/,item.ClientID);
                                 break;
                             case LOGIN_SP.SP_ID_UNIQUE_CHECK:
                                 ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_ID_UNIQUE_CHECK.ToString(), item.parameters).ConfigureAwait(false);
@@ -110,7 +110,7 @@ namespace LoginServer
             SQLChannel.Writer.TryWrite((LOGIN_SP.SP_LOGIN, parameters, ClientID));
         }
 
-        public void SQL_RESULT_LOGIN_RESPONSE((int ReturnValue, dynamic NickName) Item, int ClientID)
+        public void SQL_RESULT_LOGIN_RESPONSE((int ReturnValue, dynamic NickName) Item, string AccountID, int ClientID)
         {
             const int LOGIN_SUCCESS = 2;
             const int HASH_CODE_CREATE_FAIL = 3;
@@ -128,9 +128,10 @@ namespace LoginServer
             {
                 // 해시 코드 생성에 성공했다면, 게임 서버한테 전달한다.
                 GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO, 
-                    new SendUserHashInfoPacket(Item.NickName, HashCode, ClientID, ClientAcceptor.GetSingletone.GetIPAddrByClientID(ClientID)));
-                ClientAcceptor.GetSingletone.MapSocketNickName(ClientAcceptor.GetSingletone.GetClientSocket(ClientID), Item.NickName);
+                    new SendUserHashInfoPacket(AccountID, HashCode, ClientID, ClientAcceptor.GetSingletone.GetIPAddrByClientID(ClientID)));
+                ClientAcceptor.GetSingletone.MappingSocketAccountID(ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!, AccountID);
             }
+
             // 클라이언트한테는 어떻게든 전달한다
             LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, HashCode, Item.ReturnValue);
             ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, ClientID);

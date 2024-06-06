@@ -36,8 +36,6 @@ namespace KYCSocketCore
 
         protected ConcurrentDictionary<int, Socket> ClientSocks;
 
-        protected ConcurrentDictionary<string, Socket> ClientsSocksAddr;
-
         protected ConcurrentDictionary<Socket, int> KeyValuePairs;
 
         private int CurrentClientID = -1;
@@ -51,7 +49,6 @@ namespace KYCSocketCore
             AcceptCancelToken = new CancellationTokenSource();
             this.MaxAcceptCount = MaxAcceptCount;
             ClientSocks = new ConcurrentDictionary<int, Socket>();
-            ClientsSocksAddr = new ConcurrentDictionary<string, Socket>();
             KeyValuePairs = new ConcurrentDictionary<Socket, int>();
             ListenSocket = SocketManager.GetSingletone.BorrowSocket();
         }
@@ -350,12 +347,6 @@ namespace KYCSocketCore
                 return;
             }
 
-            if(!ClientsSocksAddr.TryAdd($"{GetIPAddrByClientSocket(ClientSock)}{GetPortByClientSocket(ClientSock)}",ClientSock))
-            {
-                KeyValuePairs.TryRemove(ClientSock, out _);
-                ClientSocks.TryRemove(CurrentClientID, out _);
-                return;
-            }
             var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
             UIEvent.GetSingletone.IncreaseUserCount(true);
             LogManager.GetSingletone.WriteLog($"새로운 클라이언트 {Addr}이 연결되었습니다.");
@@ -370,7 +361,6 @@ namespace KYCSocketCore
                 if (ClientSocks.TryRemove(ClientID, out _))
                 {
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {Port}이 로그아웃 하였습니다.");
-                    ClientsSocksAddr.TryRemove($"{Addr}{Port}", out _);
 
                 }
             }
@@ -389,12 +379,6 @@ namespace KYCSocketCore
         public Socket? GetClientSocket(int ClientID)
         {
             if (ClientSocks.TryGetValue(ClientID, out Socket? ClientSock))
-                return ClientSock;
-            return null;
-        }
-        public Socket? GetClientSocketByAddr(string Addr, int Port)
-        {
-            if (ClientsSocksAddr.TryGetValue($"{Addr}{Port}", out Socket? ClientSock))
                 return ClientSock;
             return null;
         }

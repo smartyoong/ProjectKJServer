@@ -27,6 +27,8 @@ namespace GameServer
         private CancellationTokenSource CheckCancelToken;
 
         private ConcurrentDictionary<string, string> AuthHashAndAccountIDDictionary = new ConcurrentDictionary<string, string>();
+        
+        private ConcurrentDictionary<Socket,string> SocketAccountIDDictionary = new ConcurrentDictionary<Socket,string>();
 
 
         private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
@@ -125,10 +127,10 @@ namespace GameServer
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 로그아웃 하였습니다.");
                 }
             }
-            if(SocketNickNameDictionary.TryRemove(ClientSock, out string? NickName))
+            if(SocketAccountIDDictionary.TryRemove(ClientSock, out string? AccountID))
             {
-                if(!string.IsNullOrEmpty(NickName))
-                    NickNameSocketDictionary.TryRemove(NickName, out _);
+                if (!string.IsNullOrEmpty(AccountID))
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 로그아웃 했습니다.");
             }
 
             UIEvent.GetSingletone.IncreaseUserCount(false);
@@ -154,14 +156,14 @@ namespace GameServer
             return GeneralErrorCode.ERR_AUTH_FAIL;
         }
 
-        public GeneralErrorCode GetAuthHashCode(string NickName, ref string HashCode)
+        public GeneralErrorCode GetAuthHashCode(string AccountID, ref string HashCode)
         {
-            if (!AuthHashAndAccountIDDictionary.ContainsKey(NickName))
+            if (!AuthHashAndAccountIDDictionary.ContainsKey(AccountID))
                 return GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST;
 
             string? Value;
             //Success가 아니면 HashCode는 null이다.
-            if (AuthHashAndAccountIDDictionary.TryGetValue(NickName, out Value))
+            if (AuthHashAndAccountIDDictionary.TryGetValue(AccountID, out Value))
             {
                 HashCode = Value ?? "NONEHASH";
                 return GeneralErrorCode.ERR_AUTH_SUCCESS;
@@ -172,37 +174,30 @@ namespace GameServer
 
         public void RemoveHashCodeBySocket(Socket Sock)
         {
-            string? NickName;
-            if(SocketNickNameDictionary.TryGetValue(Sock,out NickName))
+            string? AccountID;
+            if(SocketAccountIDDictionary.TryGetValue(Sock,out AccountID))
             {
-                if(!string.IsNullOrEmpty(NickName))
-                    AuthHashAndAccountIDDictionary.TryRemove(NickName, out _);
+                if(!string.IsNullOrEmpty(AccountID))
+                    AuthHashAndAccountIDDictionary.TryRemove(AccountID, out _);
             }
         }
-        public void RemoveHashCodeByNickName(string NickName)
+        public void RemoveHashCodeByAccountID(string AccountID)
         {
-            AuthHashAndAccountIDDictionary.TryRemove(NickName, out _);
+            AuthHashAndAccountIDDictionary.TryRemove(AccountID, out _);
         }
 
-        public Socket? GetClientSocketByNickName(string NickName)
+        public Socket? GetClientSocketByAccountID(string AccountID)
         {
-            if (NickNameSocketDictionary.TryGetValue(NickName, out Socket? Sock))
+            Socket Sock = SocketAccountIDDictionary.FirstOrDefault(x => x.Value == AccountID).Key;
+            if (Sock != null)
                 return Sock;
             return null;
         }
 
-        public string GetNickNameByClientSocket(Socket Sock)
-        {
-            if (SocketNickNameDictionary.TryGetValue(Sock, out string? NickName))
-                return NickName;
-            return string.Empty;
-        }
-
         // 이건 추후 클라가 해시 인증 성공하면 매핑하자 
-        public void MapSocketNickName(Socket Sock, string NickName)
+        public void MappingSocketAccountID(Socket Sock, string AccountID)
         {
-            SocketNickNameDictionary.TryAdd(Sock, NickName);
-            NickNameSocketDictionary.TryAdd(NickName, Sock);
+            SocketAccountIDDictionary.TryAdd(Sock, AccountID);
         }
         public void KickClient(Socket Sock)
         {
@@ -212,13 +207,12 @@ namespace GameServer
                 if (ClientSocks.TryRemove(ClientID, out _))
                 {
                     LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {GetPortByClientSocket(Sock)}이 강제 추방되었습니다.");
-                    ClientsSocksAddr.TryRemove($"{Addr}{GetPortByClientSocket(Sock)}", out _);
                 }
             }
-            if (SocketNickNameDictionary.TryRemove(Sock, out string? NickName))
+            if (SocketAccountIDDictionary.TryRemove(Sock, out string? AccountID))
             {
-                if (!string.IsNullOrEmpty(NickName))
-                    NickNameSocketDictionary.TryRemove(NickName, out _);
+                if (!string.IsNullOrEmpty(AccountID))
+                    LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 강제 추방되었습니다.");
             }
             UIEvent.GetSingletone.IncreaseUserCount(false);
             LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");
