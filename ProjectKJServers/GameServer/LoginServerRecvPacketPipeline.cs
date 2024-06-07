@@ -173,12 +173,14 @@ namespace GameServer
                 // 기존 유저를 짜르고 신규유저가 들어간다
                 if (ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) != null)
                 {
+
                     LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.REQUEST_KICK_USER,
-                                               new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID),Packet.AccountID));
+                        new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientSocket(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!),
+                        Packet.AccountID));
 
                     ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
                         ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
-
+                    Task.Delay(TimeSpan.FromSeconds(3)).Wait(); // 이러면 해결은 될건데 매우 안좋은 방향인데
                     ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!);
                     ClientAcceptor.GetSingletone.RemoveHashCodeByAccountID(Packet.AccountID);
                     ClientAcceptor.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);

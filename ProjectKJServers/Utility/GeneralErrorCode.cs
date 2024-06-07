@@ -23,7 +23,7 @@ namespace KYCException
 
     public enum KickReason
     {
-        DUPLICATED_LOGIN = 0
+        DUPLICATED_LOGIN = 1
     }
 
     public struct ErrorPacket(GeneralErrorCode ErrorCode)

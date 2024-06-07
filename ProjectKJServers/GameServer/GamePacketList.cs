@@ -135,6 +135,6 @@
     [Serializable]
     public struct SendKickClientPacket(int Reason)
     {
-        int Reason { get; set; } = Reason;
+        public int Reason { get; set; } = Reason;
     }
 }

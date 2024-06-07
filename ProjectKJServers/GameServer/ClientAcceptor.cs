@@ -120,6 +120,7 @@ namespace GameServer
         protected override void LogOut(Socket ClientSock)
         {
             var Addr = ClientSock.RemoteEndPoint is IPEndPoint RemoteEndPoint ? RemoteEndPoint.Address : IPAddress.Any;
+            int Port = ClientSock.RemoteEndPoint is IPEndPoint RemotePort ? RemotePort.Port : 0;
             if (KeyValuePairs.TryRemove(ClientSock, out int ClientID))
             {
                 if (ClientSocks.TryRemove(ClientID, out _))
@@ -130,11 +131,14 @@ namespace GameServer
             if(SocketAccountIDDictionary.TryRemove(ClientSock, out string? AccountID))
             {
                 if (!string.IsNullOrEmpty(AccountID))
+                {
+                    AuthHashAndAccountIDDictionary.TryRemove(AccountID, out _);
                     LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 로그아웃 했습니다.");
+                }
             }
 
             UIEvent.GetSingletone.IncreaseUserCount(false);
-            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결이 끊겼습니다.");
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {Port}이 연결이 끊겼습니다.");
             RemoveHashCodeBySocket(ClientSock);
             SocketManager.GetSingletone.ReturnSocket(ClientSock);
         }
@@ -202,6 +206,7 @@ namespace GameServer
         public void KickClient(Socket Sock)
         {
             string Addr = GetIPAddrByClientSocket(Sock);
+            int Port = Sock.RemoteEndPoint is IPEndPoint RemotePort ? RemotePort.Port : 0;
             if (KeyValuePairs.TryRemove(Sock, out int ClientID))
             {
                 if (ClientSocks.TryRemove(ClientID, out _))
@@ -215,8 +220,8 @@ namespace GameServer
                     LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 강제 추방되었습니다.");
             }
             UIEvent.GetSingletone.IncreaseUserCount(false);
-            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr}이 연결을 끊었습니다.");
-            SocketManager.GetSingletone.ReturnSocket(Sock);
+            LogManager.GetSingletone.WriteLog($"클라이언트 {Addr} {Port}의 연결을 끊었습니다.");
+            Sock.Close(); // 강제로 Close 시켰으므로, 재사용 소켓에 안돌아간다.
         }
 
         public void KickClientByID(int ClientID)
