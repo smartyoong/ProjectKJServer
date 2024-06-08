@@ -194,7 +194,7 @@ namespace GameServer
             }
 
             // 성공했다면 딱히 처리할 로직이 없다.
-            LogManager.GetSingletone.WriteLog($"Func_SendUserHashInfo: {Packet.AccountID}에게 HashCode {Packet.HashCode}를 부여했습니다.");
+            //LogManager.GetSingletone.WriteLog($"Func_SendUserHashInfo: {Packet.AccountID}에게 HashCode {Packet.HashCode}를 부여했습니다.");
         }
 
     }

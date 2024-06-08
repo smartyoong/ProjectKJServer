@@ -164,7 +164,7 @@ namespace GameServer
                 case GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST:
                     ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                         new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST), ClientID);
-                    LogManager.GetSingletone.WriteLog($"해시 코드 등록전입니다. {Packet.AccountID} {Packet.HashCode}");
+                    //LogManager.GetSingletone.WriteLog($"해시 코드 등록전입니다. {Packet.AccountID} {Packet.HashCode}");
                     break;
                 case GeneralErrorCode.ERR_AUTH_SUCCESS:
                     if(Packet.HashCode == HashCode)
@@ -174,7 +174,7 @@ namespace GameServer
                         ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                             new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_SUCCESS), ClientID);
 
-                        LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드 인증 성공 {Packet.HashCode}");
+                        //LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드 인증 성공 {Packet.HashCode}");
                     }
                     else
                     {
