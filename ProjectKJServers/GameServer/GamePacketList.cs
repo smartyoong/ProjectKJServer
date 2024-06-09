@@ -132,9 +132,45 @@
         public string AccountID { get; set; } = AccountID;
         public int ErrorCode { get; set; } = ErrorCode;
     }
+
     [Serializable]
     public struct SendKickClientPacket(int Reason)
     {
         public int Reason { get; set; } = Reason;
+    }
+
+    [Serializable]
+    public struct RequestCharBaseInfoPacket(string AccountID, string HashCode)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashCode;
+    }
+
+    [Serializable]
+    public struct ResponseNeedToMakeCharcterPacket(int ErrorCode)
+    {
+        public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+    [Serializable]
+    public struct ResponseCharBaseInfoPacket(int Level, int Exp, int Job, int JobLevel, int LastMapID, int LastMapX, int LastMapY)
+    {
+        public int Level { get; set; } = Level;
+        public int Exp { get; set; } = Exp;
+        public int Job { get; set; } = Job;
+        public int JobLevel { get; set; } = JobLevel;
+        public int LastMapID { get; set; } = LastMapID;
+        public int LastMapX { get; set; } = LastMapX;
+        public int LastMapY { get; set; } = LastMapY;
+
+    }
+
+    [Serializable]
+    public struct RequestCreateCharacter(string AccountID, string HashCode, string NickName, int Gender)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashCode;
+        public string NickName { get; set; } = NickName;
+        public int Gender { get; set; } = Gender;
     }
 }

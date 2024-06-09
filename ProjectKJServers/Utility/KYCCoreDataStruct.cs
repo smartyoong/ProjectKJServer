@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace KYCCoreDataStruct
 {
-    public class Vector3
+    public struct Vector3
     {
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
     }
 
-    public class Obstacle(Vector3 Location, Vector3 Scale, Vector3 MeshSize, string MeshName)
+    public struct Obstacle(Vector3 Location, Vector3 Scale, Vector3 MeshSize, string MeshName)
     {
         public Vector3 Location { get; set; } = Location;
         public Vector3 Scale { get; set; } = Scale;
@@ -21,11 +21,22 @@ namespace KYCCoreDataStruct
         public string MeshName { get; set; } = MeshName;
     }
 
-    public class MapData(int MapID, string MapName, List<Obstacle> Obstacles)
+    public struct MapData(int MapID, string MapName, List<Obstacle> Obstacles, List<MapPortalData> Portals)
     {
         public int MapID { get; set; } = MapID;
         public string MapName { get; set; } = MapName;
         public List<Obstacle> Obstacles { get; set; } = Obstacles;
+        public List<MapPortalData> Portals { get; set; } = Portals;
+    }
+
+    public struct MapPortalData(int MapID, int LinkToMapID, string MapName, Vector3 Location, Vector3 Scale, Vector3 Bound)
+    {
+        public int MapID { get; set; } = MapID;
+        public int LinkToMapID { get; set; } = LinkToMapID;
+        public string MapName { get; set; } = MapName;
+        public Vector3 Location { get; set; } = Location;
+        public Vector3 Scale { get; set; } = Scale;
+        public Vector3 Bound { get; set; } = Bound;
     }
 
 }
