@@ -12,7 +12,7 @@ namespace GameServer {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.9.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.10.0.0")]
     internal sealed partial class GameServerSettings : global::System.Configuration.ApplicationSettingsBase {
         
         private static GameServerSettings defaultInstance = ((GameServerSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new GameServerSettings())));
@@ -164,6 +164,18 @@ namespace GameServer {
             }
             set {
                 this["MaxSocketCountPerGroup"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("D:\\ProjectKJ\\GameServer\\ProjectKJServers\\Resource")]
+        public string ResourceDicrectory {
+            get {
+                return ((string)(this["ResourceDicrectory"]));
+            }
+            set {
+                this["ResourceDicrectory"] = value;
             }
         }
     }
