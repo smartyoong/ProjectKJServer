@@ -126,6 +126,8 @@ namespace GameServer
             LogManager.GetSingletone.WriteLog("게임 서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
+            LogManager.GetSingletone.WriteLog("게임 엔진을 시작합니다.");
+            GameEngine.GetSingletone.Start();
             LogManager.GetSingletone.WriteLog("로그인 서버의 연결을 대기합니다.");
             LoginServerAcceptor.GetSingletone.Start(LoginServerReadyEvent);
             await LoginServerReadyEvent.Task;
