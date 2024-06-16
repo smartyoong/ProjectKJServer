@@ -16,7 +16,6 @@ namespace GameServer
         public static GameEngine GetSingletone { get { return instance.Value; } }
 
         private bool IsAlreadyDisposed = false;
-        private ResourceLoader ResourceLoader = new ResourceLoader();
         private CancellationTokenSource GameEngineCancleToken= new CancellationTokenSource();
         private Dictionary<int,MapData> MapDataDictionary = new Dictionary<int, MapData>();
 
@@ -32,42 +31,20 @@ namespace GameServer
         public void LoadResource()
         {
             LogManager.GetSingletone.WriteLog("리소스를 로드합니다.");
-            ResourceLoader.LoadMapData(ref MapDataDictionary);
-            foreach (var Data in MapDataDictionary)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID : {Data.Key}, 맵 이름 : {Data.Value.MapName}");
-                foreach (Obstacle ObstacleData in Data.Value.Obstacles)
-                {
-                    LogManager.GetSingletone.WriteLog($"장애물 이름 : {ObstacleData.MeshName}");
-                    LogManager.GetSingletone.WriteLog($"장애물 위치 : {ObstacleData.Location.X} {ObstacleData.Location.Y} {ObstacleData.Location.Z}");
-                    LogManager.GetSingletone.WriteLog($"장애물 크기 : {ObstacleData.Scale.X} {ObstacleData.Scale.Y} {ObstacleData.Scale.Z}");
-                    LogManager.GetSingletone.WriteLog($"메시 크기 : {ObstacleData.MeshSize.X}   {ObstacleData.MeshSize.Y}   {ObstacleData.MeshSize.Z}");
-                }
-                LogManager.GetSingletone.WriteLog($"맵 바운드 : {Data.Value.MapBoundX} {Data.Value.MapBoundY} {Data.Value.MapBoundZ}");
-                foreach (MapPortalData PortalData in Data.Value.Portals)
-                {
-                    LogManager.GetSingletone.WriteLog($"포탈 이름 : {PortalData.MapName}");
-                    LogManager.GetSingletone.WriteLog($"포탈 위치 : {PortalData.Portals[0].Location.X} {PortalData.Portals[0].Location.Y} {PortalData.Portals[0].Location.Z}");
-                    LogManager.GetSingletone.WriteLog($"포탈 크기 : {PortalData.Portals[0].Scale.X} {PortalData.Portals[0].Scale.Y} {PortalData.Portals[0].Scale.Z}");
-                    LogManager.GetSingletone.WriteLog($"포탈 바운드 : {PortalData.Portals[0].BoxSize.X} {PortalData.Portals[0].BoxSize.Y} {PortalData.Portals[0].BoxSize.Z}");
-                    LogManager.GetSingletone.WriteLog($"포탈 이동 맵 ID : {PortalData.Portals[0].LinkMapID}");
-                }
-
-            }
+            MapSystem.GetSingletone.LoadMapResource();
         }
 
-        public async Task Run()
+        public void Run()
         {
             while(!GameEngineCancleToken.IsCancellationRequested)
             {
-                LastTickCount = Environment.TickCount;
-                // 좀있다가 다시 작업
-                await Task.Delay(LastTickCount);
+                MapSystem.GetSingletone.Update();
             }
         }
 
         public void Stop()
         {
+            LogManager.GetSingletone.WriteLog("게임 엔진을 중단합니다.");
             GameEngineCancleToken.Cancel();
             Dispose();
         }

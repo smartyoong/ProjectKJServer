@@ -142,6 +142,9 @@ namespace GameServer
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
+            LogManager.GetSingletone.WriteLog("게임 서버를 중단합니다.");
+            GameEngine.GetSingletone.Stop();
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("로그인 서버와 연결을 중단합니다.");
             await LoginServerAcceptor.GetSingletone.Stop();
             await Task.Delay(TimeSpan.FromSeconds(2));

@@ -2,11 +2,8 @@
 
 namespace KYCInterface
 {
-    public interface IPacketProcess
+    public interface IComponentSystem
     {
-        protected virtual void PushToPipeLine(Memory<byte> Data, Socket Sock)
-        {
-
-        }
+        public void Update();
     }
 }
