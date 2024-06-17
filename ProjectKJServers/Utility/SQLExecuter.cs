@@ -64,6 +64,8 @@ namespace KYCSQL
             {
                 using (SqlConnection Connection = new SqlConnection(ConnectString))
                 {
+                    Connection.InfoMessage += new SqlInfoMessageEventHandler(OnInfoMessage);
+
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
                     {
@@ -103,6 +105,8 @@ namespace KYCSQL
             {
                 using (SqlConnection Connection = new SqlConnection(ConnectString))
                 {
+                    Connection.InfoMessage += new SqlInfoMessageEventHandler(OnInfoMessage);
+
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
                     {
@@ -143,6 +147,8 @@ namespace KYCSQL
 
                 using (SqlConnection Connection = new SqlConnection(ConnectString))
                 {
+                    Connection.InfoMessage += new SqlInfoMessageEventHandler(OnInfoMessage);
+
                     await Connection.OpenAsync(CancelSQL.Token).ConfigureAwait(false);
                     using (SqlCommand SQLCommand = new SqlCommand(SPName, Connection))
                     {
@@ -185,6 +191,10 @@ namespace KYCSQL
                 LogManager.GetSingletone.WriteLog(e);
                 return ((int)SP_ERROR.SQL_QUERY_ERROR, ResultList);
             }
+        }
+        void OnInfoMessage(object Sender, SqlInfoMessageEventArgs MsgArgs)
+        {
+            LogManager.GetSingletone.WriteLog("SQL Error : " + MsgArgs.Message);
         }
 
         public async Task Cancel()
