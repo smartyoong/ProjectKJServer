@@ -9,6 +9,7 @@ namespace DBServer
     enum DB_SP
     {
         SP_INVALID = 0,
-        SP_TEST = 1
+        SP_TEST = 1,
+        SP_READ_CHARACTER=2
     }
 }

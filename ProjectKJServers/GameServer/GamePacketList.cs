@@ -10,7 +10,10 @@
     public enum GameDBPacketListID
     {
         REQUEST_DB_TEST = 0,
-        RESPONSE_DB_TEST = 1
+        RESPONSE_DB_TEST = 1,
+        REQUEST_CHAR_BASE_INFO = 2,
+        RESPONSE_CHAR_BASE_INFO = 3,
+        RESPONSE_NEED_TO_MAKE_CHARACTER = 4
     }
 
     public enum GamePacketListID
@@ -19,7 +22,11 @@
         RESPONSE_GAME_TEST = 1,
         REQUEST_HASH_AUTH_CHECK = 2,
         RESPONSE_HASH_AUTH_CHECK = 3,
-        KICK_CLIENT = 4
+        KICK_CLIENT = 4,
+        REQUEST_CHAR_BASE_INFO = 5,
+        RESPONSE_NEED_TO_MAKE_CHARACTER = 6,
+        RESPONSE_CHAR_BASE_INFO = 7,
+        REQUEST_CREATE_CHARACTER = 8
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -115,6 +122,17 @@
         public string NickName { get; set; } = NickName;
         public int Level { get; set; } = Level;
         public int Exp { get; set; } = Exp;
+    }
+
+    [Serializable]
+    public struct RequestDBCharBaseInfoPacket(string AccountID)
+    {
+        public string AccountID { get; set; } = AccountID;
+    }
+    [Serializable]
+    public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
+    {
+        public string AccountID { get; set; } = AccountID;
     }
 
     /// 클라이언트

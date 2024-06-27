@@ -137,6 +137,10 @@ namespace GameServer
                     RequestHashAuthCheckPacket? RequestHashAuthCheckPacket = PacketUtils.GetPacketStruct<RequestHashAuthCheckPacket>(ref Data);
                     return RequestHashAuthCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : 
                         new ClientRecvPacketPipeLineWrapper(RequestHashAuthCheckPacket, Packet.ClientID);
+                case GamePacketListID.RESPONSE_CHAR_BASE_INFO:
+                    ResponseCharBaseInfoPacket? ResponseCharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseCharBaseInfoPacket>(ref Data);
+                    return ResponseCharBaseInfoPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(ResponseCharBaseInfoPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -151,6 +155,9 @@ namespace GameServer
                 case RequestHashAuthCheckPacket RequestPacket:
                     Func_HashAuthCheck(RequestPacket, Packet.ClientID);
                     break;
+                case RequestCharBaseInfoPacket RequestCharBaseInfoPacket:
+                    DB_Func_RequestCharacterBaseInfo(RequestCharBaseInfoPacket, Packet.ClientID);
+                    break;
             }
         }
 
@@ -158,7 +165,7 @@ namespace GameServer
         {
             string HashCode = string.Empty;
             // 닉네임이 최초에는 전부 Guest인데,,, 소켓은 이거 인증 못받으면 닉네임이랑 매핑안됨
-            GeneralErrorCode ErrorCode = ClientAcceptor.GetSingletone.GetAuthHashCode(Packet.AccountID, ref HashCode);
+            GeneralErrorCode ErrorCode = ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode);
             switch(ErrorCode)
             {
                 case GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST:
@@ -191,6 +198,22 @@ namespace GameServer
                     break;
 
             }
+        }
+
+        private void DB_Func_RequestCharacterBaseInfo(RequestCharBaseInfoPacket Packet, int ClientID)
+        {
+            string HashCode = Packet.HashCode;
+            if (GeneralErrorCode.ERR_AUTH_FAIL == ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID,ref HashCode))
+            {
+                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CHAR_BASE_INFO,
+                    new ResponseCharBaseInfoPacket(-1,-1,-1,-1,-1,-1,-1), ClientID);
+                // 해쉬 코드 인증 실패
+                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+                return;
+            }
+            // DB에서 캐릭터 정보를 가져온다.
+            RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID);
+            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
         }
     }
 }

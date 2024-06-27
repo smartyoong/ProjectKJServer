@@ -134,6 +134,9 @@ namespace DBServer
                         return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
                     else
                         return TestPacket;
+                case DBPacketListID.REQUEST_CHAR_BASE_INFO:
+                    RequestDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestDBCharBaseInfoPacket>(ref packet);
+                    return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -148,6 +151,9 @@ namespace DBServer
                 case RequestDBTestPacket TestPacket:
                     SP_DBTest(TestPacket);
                     break;
+                case RequestDBCharBaseInfoPacket CharBaseInfoPacket:
+                    SP_RequestCharBaseInfo(CharBaseInfoPacket);
+                    break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
@@ -161,6 +167,14 @@ namespace DBServer
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
             // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
             GameSQLPipeLine.GetSingletone.SQL_DB_TEST(packet.AccountID, packet.NickName);
+        }
+
+        private void SP_RequestCharBaseInfo(RequestDBCharBaseInfoPacket packet)
+        {
+            if (IsErrorPacket(packet, "RequestCharBaseInfo"))
+                return;
+            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID}");
+            GameSQLPipeLine.GetSingletone.SQL_READ_CHARACTER(packet.AccountID);
         }
     }
 }

@@ -68,6 +68,8 @@ namespace DBServer
             {
                 case DBPacketListID.RESPONSE_DB_TEST:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBTestPacket)GamePacket.Packet);
+                case DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBNeedToMakeCharacterPacket)GamePacket.Packet);
                 default:
                     LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];

@@ -71,6 +71,8 @@ namespace GameServer
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendKickClientPacket)packet.Packet), packet.ClientID);
                 case GamePacketListID.RESPONSE_HASH_AUTH_CHECK:
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseHashAuthCheckPacket)packet.Packet), packet.ClientID);
+                case GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseNeedToMakeCharcterPacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
                     return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);

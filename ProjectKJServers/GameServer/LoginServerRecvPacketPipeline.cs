@@ -167,7 +167,7 @@ namespace GameServer
                     new ResponseUserHashInfoPacket(Packet.ClientLoginID, Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL, ++Packet.TimeToLive));
 
             }
-            else if (ErrorCode == GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED)
+            else if (ErrorCode == GeneralErrorCode.ERR_HASH_CODE_ACCOUNT_ID_DUPLICATED)
             {
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
                 // 기존 유저를 짜르고 신규유저가 들어간다

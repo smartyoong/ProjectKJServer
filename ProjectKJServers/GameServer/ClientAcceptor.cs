@@ -149,8 +149,8 @@ namespace GameServer
         {
             if(AuthHashAndAccountIDDictionary.ContainsKey(AccountID))
             {
-                LogManager.GetSingletone.WriteLog("Duplicated");
-                return GeneralErrorCode.ERR_HASH_CODE_NICKNAME_DUPLICATED;
+                LogManager.GetSingletone.WriteLog($"Duplicated {AccountID}");
+                return GeneralErrorCode.ERR_HASH_CODE_ACCOUNT_ID_DUPLICATED;
             }
 
             if(AuthHashAndAccountIDDictionary.TryAdd(AccountID, HashValue))
@@ -160,7 +160,7 @@ namespace GameServer
             return GeneralErrorCode.ERR_AUTH_FAIL;
         }
 
-        public GeneralErrorCode GetAuthHashCode(string AccountID, ref string HashCode)
+        public GeneralErrorCode CheckAuthHashCode(string AccountID, ref string HashCode)
         {
             if (!AuthHashAndAccountIDDictionary.ContainsKey(AccountID))
                 return GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST;
