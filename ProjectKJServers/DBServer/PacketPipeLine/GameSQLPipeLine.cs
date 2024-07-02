@@ -111,12 +111,19 @@ namespace DBServer.PacketPipeLine
         public async void CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
         {
             const int NEED_TO_MAKE_CHARACTER = -1;
-            int ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_READ_CHARACTER.ToString(), Parameters).ConfigureAwait(false);
+            int ReturnValue = 99999;
+            List<List<object>> CharacterInfoList;
+            (ReturnValue, CharacterInfoList) = await SQLWorker.ExecuteSqlSPGetResultListAsync(DB_SP.SP_READ_CHARACTER.ToString(), Parameters).ConfigureAwait(false);
             if (ReturnValue == NEED_TO_MAKE_CHARACTER)
             {
                 // 0번 파라미터가 AccountID임
                 ResponseDBNeedToMakeCharacterPacket MakeCharacterPacket = new ResponseDBNeedToMakeCharacterPacket((string)Parameters[0].Value);
                 GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, MakeCharacterPacket);
+                return;
+            }
+            else
+            {
+                // 추후 캐릭터 정보 구조체 만들어서 넣어야함
                 return;
             }
         }
