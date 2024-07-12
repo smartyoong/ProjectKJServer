@@ -65,13 +65,6 @@ namespace DBServer.PacketPipeLine
                     {
                         switch (item.ID)
                         {
-                            case DB_SP.SP_TEST:
-                                // 여기 이제 리턴값 받고 Send 시키는거 작업해야함
-                                int ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_TEST.ToString(), item.parameters).ConfigureAwait(false);
-                                LogManager.GetSingletone.WriteLog("AccountID : DB서버 입니다. 답장갔나요? NickName : 오른쪽에  있는 값들은 SQL쿼리 응답입니다.");
-                                ResponseDBTestPacket Packet = new ResponseDBTestPacket("DB서버 입니다. 답장갔나요?", "오른쪽에 있는 값들은 SQL쿼리 응답입니다.", ReturnValue, 12321421);
-                                GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_DB_TEST, Packet);
-                                break;
                             case DB_SP.SP_READ_CHARACTER:
                                 CALL_SQL_READ_CHARACTER(item.parameters);
                                 break;

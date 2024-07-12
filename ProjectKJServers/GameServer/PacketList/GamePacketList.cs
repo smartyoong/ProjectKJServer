@@ -184,11 +184,12 @@
     }
 
     [Serializable]
-    public struct RequestCreateCharacter(string AccountID, string HashCode, string NickName, int Gender)
+    public struct RequestCreateCharacter(string AccountID, string HashCode, string NickName, int Gender, int PresetID)
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
         public string NickName { get; set; } = NickName;
         public int Gender { get; set; } = Gender;
+        public int PresetID { get; set; } = PresetID;
     }
 }

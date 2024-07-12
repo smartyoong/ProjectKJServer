@@ -102,7 +102,7 @@ namespace GameServer.PacketPipeLine
         {
             if (Packet is ErrorPacket)
             {
-                ProcessGeneralErrorCode(Packet.ErrorCode, $"LoginPacketProcessor {message}에서 에러 발생");
+                ProcessGeneralErrorCode(Packet.ErrorCode, $"ClientRecvPacketPipeline {message}에서 에러 발생");
                 return true;
             }
             return false;
@@ -138,10 +138,10 @@ namespace GameServer.PacketPipeLine
                     RequestHashAuthCheckPacket? RequestHashAuthCheckPacket = PacketUtils.GetPacketStruct<RequestHashAuthCheckPacket>(ref Data);
                     return RequestHashAuthCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
                         new ClientRecvPacketPipeLineWrapper(RequestHashAuthCheckPacket, Packet.ClientID);
-                case GamePacketListID.RESPONSE_CHAR_BASE_INFO:
-                    ResponseCharBaseInfoPacket? ResponseCharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseCharBaseInfoPacket>(ref Data);
-                    return ResponseCharBaseInfoPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
-                        new ClientRecvPacketPipeLineWrapper(ResponseCharBaseInfoPacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_CHAR_BASE_INFO:
+                    RequestCharBaseInfoPacket? RequestCharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestCharBaseInfoPacket>(ref Data);
+                    return RequestCharBaseInfoPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(RequestCharBaseInfoPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }

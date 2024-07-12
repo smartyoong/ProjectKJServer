@@ -162,7 +162,6 @@ namespace DBServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "RequestDBTest"))
                 return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName}");
             // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
             GameSQLPipeLine.GetSingletone.SQL_DB_TEST(packet.AccountID, packet.NickName);
         }
