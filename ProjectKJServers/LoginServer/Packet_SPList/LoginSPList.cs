@@ -11,6 +11,7 @@ namespace LoginServer.Packet_SPList
         SP_INVALID = 0,
         SP_ID_UNIQUE_CHECK = 1,
         SP_LOGIN = 2,
-        SP_REGIST_ACCOUNT = 3
+        SP_REGIST_ACCOUNT = 3,
+        SP_CREATE_NICKNAME = 4
     }
 }

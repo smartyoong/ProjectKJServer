@@ -142,6 +142,10 @@ namespace GameServer.PacketPipeLine
                     RequestCharBaseInfoPacket? RequestCharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestCharBaseInfoPacket>(ref Data);
                     return RequestCharBaseInfoPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
                         new ClientRecvPacketPipeLineWrapper(RequestCharBaseInfoPacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_CREATE_CHARACTER:
+                    RequestCreateCharacterPacket? RequestCreateCharacterPacket = PacketUtils.GetPacketStruct<RequestCreateCharacterPacket>(ref Data);
+                    return RequestCreateCharacterPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(RequestCreateCharacterPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -159,7 +163,16 @@ namespace GameServer.PacketPipeLine
                 case RequestCharBaseInfoPacket RequestCharBaseInfoPacket:
                     DB_Func_RequestCharacterBaseInfo(RequestCharBaseInfoPacket, Packet.ClientID);
                     break;
+                case RequestCreateCharacterPacket RequestCreateCharacterPacket:
+                    DB_Func_RequestCreateCharacter(RequestCreateCharacterPacket, Packet.ClientID);
+                    break;
             }
+        }
+
+        private void SendAuthFailToClient(string AccountID ,int ClientID)
+        {
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, 
+                new ResponseHashAuthCheckPacket(AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
         }
 
         private void Func_HashAuthCheck(RequestHashAuthCheckPacket Packet, int ClientID)
@@ -214,6 +227,21 @@ namespace GameServer.PacketPipeLine
             // DB에서 캐릭터 정보를 가져온다.
             RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID);
             DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
+        }
+
+        private void DB_Func_RequestCreateCharacter(RequestCreateCharacterPacket Packet, int ClientID)
+        {
+            string HashCode = Packet.HashCode;
+            if (GeneralErrorCode.ERR_AUTH_FAIL == ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
+            {
+                SendAuthFailToClient(Packet.AccountID,ClientID);
+                // 해쉬 코드 인증 실패
+                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+                return;
+            }
+            // DB에다가 캐릭터 생성을 요청한다.
+            RequestDBCreateCharacterPacket DBPacket = new RequestDBCreateCharacterPacket(Packet.AccountID,Packet.Gender,Packet.PresetID);
+            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_CREATE_CHARACTER, DBPacket);
         }
     }
 }

@@ -10,6 +10,7 @@ namespace DBServer.Packet_SPList
     {
         SP_INVALID = 0,
         SP_TEST = 1,
-        SP_READ_CHARACTER = 2
+        SP_READ_CHARACTER = 2,
+        SP_CREATE_CHARACTER = 3
     }
 }

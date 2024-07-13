@@ -135,6 +135,9 @@ namespace DBServer.PacketPipeLine
                 case DBPacketListID.REQUEST_CHAR_BASE_INFO:
                     RequestDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestDBCharBaseInfoPacket>(ref packet);
                     return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
+                case DBPacketListID.REQUEST_CREATE_CHARACTER:
+                    RequestDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<RequestDBCreateCharacterPacket>(ref packet);
+                    return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -151,6 +154,9 @@ namespace DBServer.PacketPipeLine
                     break;
                 case RequestDBCharBaseInfoPacket CharBaseInfoPacket:
                     SP_RequestCharBaseInfo(CharBaseInfoPacket);
+                    break;
+                case RequestDBCreateCharacterPacket CreateCharacterPacket:
+                    SP_ReuquestCreateCharacter(CreateCharacterPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -170,8 +176,14 @@ namespace DBServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "RequestCharBaseInfo"))
                 return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID}");
             GameSQLPipeLine.GetSingletone.SQL_READ_CHARACTER(packet.AccountID);
+        }
+
+        private void SP_ReuquestCreateCharacter(RequestDBCreateCharacterPacket packet)
+        {
+            if (IsErrorPacket(packet, "RequestCreateCharacter"))
+                return;
+            GameSQLPipeLine.GetSingletone.SQL_CREATE_CHARACTER(packet.AccountID, packet.Gender, packet.PresetID);
         }
     }
 }

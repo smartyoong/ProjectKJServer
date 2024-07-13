@@ -9,7 +9,9 @@ namespace LoginServer.Packet_SPList
         REGIST_ACCOUNT_REQUEST = 2,
         REGIST_ACCOUNT_RESPONESE = 3,
         ID_UNIQUE_CHECK_REQUEST = 4,
-        ID_UNIQUE_CHECK_RESPONESE = 5
+        ID_UNIQUE_CHECK_RESPONESE = 5,
+        CREATE_NICKNAME_REQUEST = 6,
+        CREATE_NICKNAME_RESPONESE = 7
     }
 
     public enum LoginGamePacketListID
@@ -90,6 +92,19 @@ namespace LoginServer.Packet_SPList
     public struct IDUniqueCheckResponsePacket(bool IsSuccess)
     {
         public bool IsUnique { get; set; } = IsSuccess;
+    }
+
+    [Serializable]
+    public struct CreateNickNameRequestPacket(string AccountID, string NickName)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
+    }
+
+    [Serializable]
+    public struct CreateNickNameResponsePacket(int ErrorCode)
+    {
+        public int ErrorCode { get; set; } = ErrorCode;
     }
 
 

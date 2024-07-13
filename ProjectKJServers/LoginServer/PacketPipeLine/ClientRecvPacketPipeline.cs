@@ -144,6 +144,9 @@ namespace LoginServer.PacketPipeLine
                 case LoginPacketListID.REGIST_ACCOUNT_REQUEST:
                     RegistAccountRequestPacket? RequestRegistAccountPacket = PacketUtils.GetPacketStruct<RegistAccountRequestPacket>(ref Data);
                     return RequestRegistAccountPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestRegistAccountPacket, Packet.ClientID);
+                case LoginPacketListID.CREATE_NICKNAME_REQUEST:
+                    CreateNickNameRequestPacket? RequestCreateNickNamePacket = PacketUtils.GetPacketStruct<CreateNickNameRequestPacket>(ref Data);
+                    return RequestCreateNickNamePacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestCreateNickNamePacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -163,6 +166,9 @@ namespace LoginServer.PacketPipeLine
                     break;
                 case RegistAccountRequestPacket RequestPacket:
                     SP_RegistAccountRequest(RequestPacket, Packet.ClientID);
+                    break;
+                case CreateNickNameRequestPacket RequestPacket:
+                    SP_CreateNickNameRequest(RequestPacket, Packet.ClientID);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("ClientRecvPipeline ProcessPacket에서 할당되지 않은 패킷이 들어왔습니다.");
@@ -193,6 +199,13 @@ namespace LoginServer.PacketPipeLine
                 AccountSQLManager.GetSingletone.SQL_REGIST_ACCOUNT_REQUEST(packet.AccountID, packet.Password, ClientIPEndPoint.Address.ToString(), ClientID);
             else
                 LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline SP_RegistAccountRequest에서 ClientIPEndPoint가 null입니다.");
+        }
+
+        private void SP_CreateNickNameRequest(CreateNickNameRequestPacket packet, int ClientID)
+        {
+            if (IsErrorPacket(packet, "CreateNickNameRequest"))
+                return;
+            AccountSQLManager.GetSingletone.SQL_CREATE_NICKNAME_REQUEST(packet.AccountID ,packet.NickName, ClientID);
         }
     }
 }

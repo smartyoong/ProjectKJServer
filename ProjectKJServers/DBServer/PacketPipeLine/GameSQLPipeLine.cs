@@ -66,7 +66,10 @@ namespace DBServer.PacketPipeLine
                         switch (item.ID)
                         {
                             case DB_SP.SP_READ_CHARACTER:
-                                CALL_SQL_READ_CHARACTER(item.parameters);
+                                await CALL_SQL_READ_CHARACTER(item.parameters);
+                                break;
+                            case DB_SP.SP_CREATE_CHARACTER:
+                                await CALL_SQL_CREATE_CHARACTER(item.parameters);
                                 break;
                             default:
                                 break;
@@ -101,7 +104,21 @@ namespace DBServer.PacketPipeLine
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_READ_CHARACTER, sqlParameters));
         }
-        public async void CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
+        public void SQL_CREATE_CHARACTER(string AccountID, int Gender, int PrestID)
+        {
+            const int NO_JOB = 0;
+            //닉네임은 따로 가야하는데
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@Job",SqlDbType.Int) {Value = NO_JOB },
+                new SqlParameter("@Gender", SqlDbType.Int) { Value = Gender },
+                new SqlParameter("@PrestID", SqlDbType.Int) { Value = PrestID },
+                new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_CREATE_CHARACTER, sqlParameters));
+        }
+        public async Task CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
         {
             const int NEED_TO_MAKE_CHARACTER = -1;
             int ReturnValue = 99999;
@@ -118,6 +135,23 @@ namespace DBServer.PacketPipeLine
             {
                 // 추후 캐릭터 정보 구조체 만들어서 넣어야함
                 return;
+            }
+        }
+
+        public async Task CALL_SQL_CREATE_CHARACTER(SqlParameter[] Paramters)
+        {
+            const int ERROR = -1;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_CREATE_CHARACTER.ToString(), Paramters).ConfigureAwait(false);
+            //이제 다시 캐릭 생성 여부를 응답하자 일단 닉네임 만들도록 생성 요청부터
+            if(ReturnValue == ERROR)
+            {
+                // 캐릭 생성중 에러 발생 에러 패킷 전송
+
+            }
+            else
+            {
+                // 캐릭 생성 성공 패킷 전송
             }
         }
     }

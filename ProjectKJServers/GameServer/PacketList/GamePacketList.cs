@@ -13,7 +13,8 @@
         RESPONSE_DB_TEST = 1,
         REQUEST_CHAR_BASE_INFO = 2,
         RESPONSE_CHAR_BASE_INFO = 3,
-        RESPONSE_NEED_TO_MAKE_CHARACTER = 4
+        RESPONSE_NEED_TO_MAKE_CHARACTER = 4,
+        REQUEST_CREATE_CHARACTER = 5
     }
 
     public enum GamePacketListID
@@ -26,7 +27,8 @@
         REQUEST_CHAR_BASE_INFO = 5,
         RESPONSE_NEED_TO_MAKE_CHARACTER = 6,
         RESPONSE_CHAR_BASE_INFO = 7,
-        REQUEST_CREATE_CHARACTER = 8
+        REQUEST_CREATE_CHARACTER = 8,
+        RESPONSE_CREATE_CHARACTER = 9
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -135,6 +137,14 @@
         public string AccountID { get; set; } = AccountID;
     }
 
+    [Serializable]
+    public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Gender { get; set; } = Gender;
+        public int PresetID { get; set; } = PresetID;
+    }
+
     /// 클라이언트
     /// 
     [Serializable]
@@ -184,12 +194,17 @@
     }
 
     [Serializable]
-    public struct RequestCreateCharacter(string AccountID, string HashCode, string NickName, int Gender, int PresetID)
+    public struct RequestCreateCharacterPacket(string AccountID, string HashCode, int Gender, int PresetID)
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
-        public string NickName { get; set; } = NickName;
         public int Gender { get; set; } = Gender;
         public int PresetID { get; set; } = PresetID;
+    }
+
+    [Serializable]
+    public struct ResponseCreateCharacterPacket(int ErrorCode)
+    {
+        public int ErrorCode { get; set; } = ErrorCode;
     }
 }

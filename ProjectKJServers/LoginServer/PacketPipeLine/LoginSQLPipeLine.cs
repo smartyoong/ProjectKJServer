@@ -85,6 +85,9 @@ namespace LoginServer.PacketPipeLine
                                 ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_REGIST_ACCOUNT.ToString(), item.parameters).ConfigureAwait(false);
                                 SQL_RESULT_REGIST_ACCOUNT_RESPONSE(ReturnValue, item.ClientID);
                                 break;
+                            case LOGIN_SP.SP_CREATE_NICKNAME:
+                                await CALL_SQL_CREATE_NICKNAME_RESPONSE(item.parameters, item.ClientID).ConfigureAwait(false);
+                                break;
                             default:
                                 break;
                         }
@@ -170,6 +173,27 @@ namespace LoginServer.PacketPipeLine
         {
             RegistAccountResponsePacket RegistPacket = new RegistAccountResponsePacket(ReturnValue);
             ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, ClientID);
+        }
+
+        public void SQL_CREATE_NICKNAME_REQUEST(string AccountID, string NickName, int ClientID)
+        {
+            SqlParameter[] parameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@NickName", SqlDbType.NVarChar, 16) { Value = NickName }
+            ];
+            SQLChannel.Writer.TryWrite((LOGIN_SP.SP_CREATE_NICKNAME, parameters, ClientID));
+        }
+
+        public async Task CALL_SQL_CREATE_NICKNAME_RESPONSE(SqlParameter[] Parameters, int ClientID)
+        {
+            //const int NO_ACCOUNT_ERROR = -1;
+            //const int CREATE_FAIL = -2;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_CREATE_NICKNAME.ToString(), Parameters);
+
+            CreateNickNameResponsePacket Packet = new CreateNickNameResponsePacket(ReturnValue);
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.CREATE_NICKNAME_RESPONESE, Packet, ClientID);
         }
 
     }
