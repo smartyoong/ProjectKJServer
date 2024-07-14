@@ -22,7 +22,7 @@ namespace DBServer.Packet_SPList
         public E PacketID { get; set; } = ID;
         public dynamic Packet { get; set; } = Packet;
     }
-
+    // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
     [Serializable]
     public struct RequestDBTestPacket(string AccountID, string NickName)
     {
@@ -42,6 +42,21 @@ namespace DBServer.Packet_SPList
     public struct RequestDBCharBaseInfoPacket(string AccountID)
     {
         public string AccountID { get; set; } = AccountID;
+    }
+    [Serializable]
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP)
+    {
+        string AccountID { get; set; } = AccountID;
+        int Gender { get; set; } = Gender;
+        int PresetNumber { get; set; } = PresetNumber;
+        int Job { get; set; } = Job;
+        int JobLevel { get; set; } = JobLevel;
+        int MapID { get; set; } = MapID;
+        int X { get; set; } = X;
+        int Y { get; set; } = Y;
+        int Level { get; set; } = Level;
+        int EXP { get; set; } = EXP;
+
     }
     [Serializable]
     public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)

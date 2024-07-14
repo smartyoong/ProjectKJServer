@@ -13,6 +13,7 @@ using CoreUtility.SQLCore;
 using CoreUtility.Utility;
 using LoginServer.SocketConnect;
 using LoginServer.Packet_SPList;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LoginServer.PacketPipeLine
 {
@@ -191,8 +192,7 @@ namespace LoginServer.PacketPipeLine
             //const int CREATE_FAIL = -2;
             int ReturnValue = 99999;
             ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_CREATE_NICKNAME.ToString(), Parameters);
-
-            CreateNickNameResponsePacket Packet = new CreateNickNameResponsePacket(ReturnValue);
+            CreateNickNameResponsePacket Packet = new CreateNickNameResponsePacket((string)Parameters[1].Value,ReturnValue);
             ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.CREATE_NICKNAME_RESPONESE, Packet, ClientID);
         }
 

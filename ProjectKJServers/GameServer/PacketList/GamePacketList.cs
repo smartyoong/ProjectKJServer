@@ -14,7 +14,8 @@
         REQUEST_CHAR_BASE_INFO = 2,
         RESPONSE_CHAR_BASE_INFO = 3,
         RESPONSE_NEED_TO_MAKE_CHARACTER = 4,
-        REQUEST_CREATE_CHARACTER = 5
+        REQUEST_CREATE_CHARACTER = 5,
+        RESPONSE_CREATE_CHARACTER = 6
     }
 
     public enum GamePacketListID
@@ -109,7 +110,14 @@
     }
 
     /// 디비 서버
+    ///  <summary>
+    /// 디비 서버
+    /// </summary>
+    /// <param name="AccountID"></param>
+    /// <param name="NickName"></param>
     /// 
+
+    // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
     [Serializable]
     public struct RequestDBTestPacket(string AccountID, string NickName)
     {
@@ -120,6 +128,7 @@
     [Serializable]
     public struct ResponseDBTestPacket(string AccountID, string NickName, int Level, int Exp)
     {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
         public int Level { get; set; } = Level;
@@ -129,22 +138,51 @@
     [Serializable]
     public struct RequestDBCharBaseInfoPacket(string AccountID)
     {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
     }
     [Serializable]
     public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
     {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
+    }
+    [Serializable]
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP)
+    {
+        string AccountID { get; set; } = AccountID;
+        int Gender { get; set; } = Gender;
+        int PresetNumber { get; set; } = PresetNumber;
+        int Job { get; set; } = Job;
+        int JobLevel { get; set; } = JobLevel;
+        int MapID { get; set; } = MapID;
+        int X { get; set; } = X;
+        int Y { get; set; } = Y;
+        int Level { get; set; } = Level;
+        int EXP { get; set; } = EXP;
+
     }
 
     [Serializable]
     public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID)
     {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
         public int PresetID { get; set; } = PresetID;
     }
 
+    [Serializable]
+    public struct ResponseDBCreateCharacterPacket(string AccountID, int ErrorCode)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// 클라이언트
     /// 
     [Serializable]
@@ -181,15 +219,18 @@
     }
 
     [Serializable]
-    public struct ResponseCharBaseInfoPacket(int Level, int Exp, int Job, int JobLevel, int LastMapID, int LastMapX, int LastMapY)
+    public struct ResponseCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP)
     {
-        public int Level { get; set; } = Level;
-        public int Exp { get; set; } = Exp;
-        public int Job { get; set; } = Job;
-        public int JobLevel { get; set; } = JobLevel;
-        public int LastMapID { get; set; } = LastMapID;
-        public int LastMapX { get; set; } = LastMapX;
-        public int LastMapY { get; set; } = LastMapY;
+        string AccountID { get; set; } = AccountID;
+        int Gender { get; set; } = Gender;
+        int PresetNumber { get; set; } = PresetNumber;
+        int Job { get; set; } = Job;
+        int JobLevel { get; set; } = JobLevel;
+        int MapID { get; set; } = MapID;
+        int X { get; set; } = X;
+        int Y { get; set; } = Y;
+        int Level { get; set; } = Level;
+        int EXP { get; set; } = EXP;
 
     }
 

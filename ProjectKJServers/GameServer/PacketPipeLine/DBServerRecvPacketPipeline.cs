@@ -140,6 +140,9 @@ namespace GameServer.PacketPipeLine
                 case GameDBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
                     ResponseDBNeedToMakeCharacterPacket? NeedToMakeCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBNeedToMakeCharacterPacket>(ref packet);
                     return NeedToMakeCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : NeedToMakeCharacterPacket;
+                case GameDBPacketListID.RESPONSE_CREATE_CHARACTER:
+                    ResponseDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBCreateCharacterPacket>(ref packet);
+                    return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -156,6 +159,9 @@ namespace GameServer.PacketPipeLine
                     break;
                 case ResponseDBNeedToMakeCharacterPacket NeedToMakeCharacterPacket:
                     Func_ResponseNeedToMakeCharacter(NeedToMakeCharacterPacket);
+                    break;
+                case ResponseDBCreateCharacterPacket CreateCharacterPacket:
+                    Func_ResponseCreateCharacter(CreateCharacterPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -183,6 +189,19 @@ namespace GameServer.PacketPipeLine
                 return;
             }
             ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ResponsePacket,
+                ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+        }
+
+        private void Func_ResponseCreateCharacter(ResponseDBCreateCharacterPacket Packet)
+        {
+            const int FAIL = -1;
+            if (IsErrorPacket(Packet, "ResponseCreateCharacter"))
+                return;
+            if (Packet.ErrorCode == FAIL)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseCreateCharacter: {Packet.AccountID}에 캐릭터 생성 실패 ErrorCode: {Packet.ErrorCode}");
+            }
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(Packet.ErrorCode),
                 ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
         }
     }

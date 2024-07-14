@@ -93,17 +93,19 @@ namespace LoginServer.Packet_SPList
     {
         public bool IsUnique { get; set; } = IsSuccess;
     }
-
+    //한글을 지원하기 위한 특수화
     [Serializable]
     public struct CreateNickNameRequestPacket(string AccountID, string NickName)
     {
         public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
+        public string NickName { get; set; } = NickName; // Base64 인코딩된 문자열
     }
-
+    // Encoding.UTF8.GetString(packet.NickName) 이거 사용해서 byte[]를 string으로 변환
+    //Encoding.UTF8.GetBytes((string)Parameters[1].Value) 이거 사용해서 string을 byte[]로 변환
     [Serializable]
-    public struct CreateNickNameResponsePacket(int ErrorCode)
+    public struct CreateNickNameResponsePacket(string NickName, int ErrorCode)
     {
+        public string NickName { get; set; } = NickName;
         public int ErrorCode { get; set; } = ErrorCode;
     }
 

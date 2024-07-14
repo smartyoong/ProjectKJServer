@@ -113,8 +113,7 @@ namespace DBServer.PacketPipeLine
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
                 new SqlParameter("@Job",SqlDbType.Int) {Value = NO_JOB },
                 new SqlParameter("@Gender", SqlDbType.Int) { Value = Gender },
-                new SqlParameter("@PrestID", SqlDbType.Int) { Value = PrestID },
-                new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output }
+                new SqlParameter("@Prest_ID", SqlDbType.Int) { Value = PrestID }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_CREATE_CHARACTER, sqlParameters));
         }
@@ -134,25 +133,19 @@ namespace DBServer.PacketPipeLine
             else
             {
                 // 추후 캐릭터 정보 구조체 만들어서 넣어야함
+                // 자 이제 읽어오자
                 return;
             }
         }
 
-        public async Task CALL_SQL_CREATE_CHARACTER(SqlParameter[] Paramters)
+        public async Task CALL_SQL_CREATE_CHARACTER(SqlParameter[] Parameters)
         {
-            const int ERROR = -1;
             int ReturnValue = 99999;
-            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_CREATE_CHARACTER.ToString(), Paramters).ConfigureAwait(false);
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_CREATE_CHARACTER.ToString(), Parameters).ConfigureAwait(false);
             //이제 다시 캐릭 생성 여부를 응답하자 일단 닉네임 만들도록 생성 요청부터
-            if(ReturnValue == ERROR)
-            {
-                // 캐릭 생성중 에러 발생 에러 패킷 전송
-
-            }
-            else
-            {
-                // 캐릭 생성 성공 패킷 전송
-            }
+            // 캐릭 생성중 에러 발생 에러 패킷 전송(Error는 -1)
+            ResponseDBCreateCharacterPacket Packet = new ResponseDBCreateCharacterPacket((string)Parameters[0].Value, ReturnValue);
+            GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_CREATE_CHARACTER, Packet);
         }
     }
 }
