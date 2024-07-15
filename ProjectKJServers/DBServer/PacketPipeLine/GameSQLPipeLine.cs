@@ -128,13 +128,13 @@ namespace DBServer.PacketPipeLine
                 // 0번 파라미터가 AccountID임
                 ResponseDBNeedToMakeCharacterPacket MakeCharacterPacket = new ResponseDBNeedToMakeCharacterPacket((string)Parameters[0].Value);
                 GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, MakeCharacterPacket);
-                return;
             }
             else
             {
-                // 추후 캐릭터 정보 구조체 만들어서 넣어야함
-                // 자 이제 읽어오자
-                return;
+                ResponseDBCharBaseInfoPacket CharBaseInfoPacket = new ResponseDBCharBaseInfoPacket((string)CharacterInfoList[0][0],
+                    (int)CharacterInfoList[0][1], (int)CharacterInfoList[0][2], (int)CharacterInfoList[0][3], (int)CharacterInfoList[0][4],
+                    (int)CharacterInfoList[0][5], (int)CharacterInfoList[0][6], (int)CharacterInfoList[0][7], (int)CharacterInfoList[0][8], (int)CharacterInfoList[0][9]);
+                GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(DBPacketListID.RESPONSE_CHAR_BASE_INFO, CharBaseInfoPacket);
             }
         }
 

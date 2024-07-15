@@ -46,16 +46,16 @@ namespace DBServer.Packet_SPList
     [Serializable]
     public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP)
     {
-        string AccountID { get; set; } = AccountID;
-        int Gender { get; set; } = Gender;
-        int PresetNumber { get; set; } = PresetNumber;
-        int Job { get; set; } = Job;
-        int JobLevel { get; set; } = JobLevel;
-        int MapID { get; set; } = MapID;
-        int X { get; set; } = X;
-        int Y { get; set; } = Y;
-        int Level { get; set; } = Level;
-        int EXP { get; set; } = EXP;
+        public string AccountID { get; set; } = AccountID;
+        public int Gender { get; set; } = Gender;
+        public int PresetNumber { get; set; } = PresetNumber;
+        public int Job { get; set; } = Job;
+        public int JobLevel { get; set; } = JobLevel;
+        public int MapID { get; set; } = MapID;
+        public int X { get; set; } = X;
+        public int Y { get; set; } = Y;
+        public int Level { get; set; } = Level;
+        public int EXP { get; set; } = EXP;
 
     }
     [Serializable]

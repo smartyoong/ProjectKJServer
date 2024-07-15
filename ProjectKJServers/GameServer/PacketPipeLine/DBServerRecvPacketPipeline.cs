@@ -143,6 +143,9 @@ namespace GameServer.PacketPipeLine
                 case GameDBPacketListID.RESPONSE_CREATE_CHARACTER:
                     ResponseDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBCreateCharacterPacket>(ref packet);
                     return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
+                case GameDBPacketListID.RESPONSE_CHAR_BASE_INFO:
+                    ResponseDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseDBCharBaseInfoPacket>(ref packet);
+                    return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -162,6 +165,9 @@ namespace GameServer.PacketPipeLine
                     break;
                 case ResponseDBCreateCharacterPacket CreateCharacterPacket:
                     Func_ResponseCreateCharacter(CreateCharacterPacket);
+                    break;
+                case ResponseDBCharBaseInfoPacket CharBaseInfoPacket:
+                    Func_ResponseCharBaseInfo(CharBaseInfoPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -203,6 +209,16 @@ namespace GameServer.PacketPipeLine
             }
             ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(Packet.ErrorCode),
                 ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+        }
+
+        private void Func_ResponseCharBaseInfo(ResponseDBCharBaseInfoPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "ResponseCharBaseInfo"))
+                return;
+            ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender,Packet.PresetNumber, Packet.Job, 
+                Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP);
+            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,
+            ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
         }
     }
 }

@@ -73,6 +73,8 @@ namespace DBServer.PacketPipeLine
                     return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBNeedToMakeCharacterPacket)GamePacket.Packet);
                 case DBPacketListID.RESPONSE_CREATE_CHARACTER:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBCreateCharacterPacket)GamePacket.Packet);
+                case DBPacketListID.RESPONSE_CHAR_BASE_INFO:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBCharBaseInfoPacket)GamePacket.Packet);
                 default:
                     LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];
