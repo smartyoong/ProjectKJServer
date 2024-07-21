@@ -83,5 +83,30 @@ namespace GameServer.Resource
                     , Data.Obstacles[0].MeshSize.Z * Data.Obstacles[0].Scale.Z));
             }
         }
+
+        public void LoadCharacterPreset(ref Dictionary<int, CharacterPresetData> MapDataDictionary)
+        {
+            LogManager.GetSingletone.WriteLog("캐릭터 외형 정보를 로드합니다.");
+            foreach (string JsonFile in Directory.GetFiles(Path.Combine(GameServerSettings.Default.ResourceDicrectory, "CharacterPreset"), "*.json"))
+            {
+                string Json = File.ReadAllText(JsonFile);
+                CharacterPresetData? Data;
+                try
+                {
+                    Data = JsonSerializer.Deserialize<CharacterPresetData>(Json);
+                }
+                catch (Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog($"캐릭터 외형 정보를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
+                    LogManager.GetSingletone.WriteLog(e.Message);
+                    continue;
+                }
+
+                if (Data != null)
+                    MapDataDictionary.Add(Data.PresetID,Data);
+                else
+                    LogManager.GetSingletone.WriteLog($"캐릭터 외형 정보를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
+            }
+        }
     }
 }
