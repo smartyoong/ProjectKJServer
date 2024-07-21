@@ -2,5 +2,6 @@
     "PresetID" : 0,
     "PresetName" : "Evan",
     "Gender" : 0,
-    "BlueprintName" : "BP_Evan"
+    "BlueprintName" : "BP_Evan",
+    "PlayerCharacterName" : "BP_PlayerCharacter_Evan"
 }
