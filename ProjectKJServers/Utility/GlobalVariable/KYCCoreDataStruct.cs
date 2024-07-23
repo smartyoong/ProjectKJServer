@@ -53,10 +53,10 @@ namespace CoreUtility.GlobalVariable
         public List<Portal> Portals { get; set; } = Portals;
     }
 
-    public record CharacterPresetData(int PresetID, string PrestName, int Gender, string BlueprintName, string PlayerCharacterName)
+    public record CharacterPresetData(int PresetID, string PresetName, int Gender, string BlueprintName, string PlayerCharacterName)
     {
         public int PresetID { get; set; } = PresetID;
-        public string PresetName { get; set; } = PrestName;
+        public string PresetName { get; set; } = PresetName;
         public int Gender { get; set; } = Gender;
         public string BlueprintName { get; set; } = BlueprintName;
         public string PlayerCharacterName { get; set; } = PlayerCharacterName;

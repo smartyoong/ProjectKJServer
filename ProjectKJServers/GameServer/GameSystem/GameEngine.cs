@@ -58,7 +58,7 @@ namespace GameServer.GameSystem
             ResourceLoader.GetSingletone.LoadCharacterPreset(ref ChracterPresetDictionary);
             foreach (var Data in ChracterPresetDictionary)
             {
-                LogManager.GetSingletone.WriteLog($"캐릭터 ID : {Data.Key}, 캐릭터 이름 : {Data.Value.PrestName}");
+                LogManager.GetSingletone.WriteLog($"캐릭터 ID : {Data.Key}, 캐릭터 이름 : {Data.Value.PresetName}");
                 LogManager.GetSingletone.WriteLog($"캐릭터 성별 : {Data.Value.Gender}");
                 LogManager.GetSingletone.WriteLog($"BP : {Data.Value.BlueprintName}");
                 LogManager.GetSingletone.WriteLog($"캐릭터 메시 : {Data.Value.PlayerCharacterName}");
