@@ -10,13 +10,14 @@ using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using LoginServer.SocketConnect;
 using LoginServer.Packet_SPList;
+using LoginServer.MainUI;
 
 namespace LoginServer.PacketPipeLine
 {
     internal class ClientRecvPacketPipeline
     {
-        private static readonly Lazy<ClientRecvPacketPipeline> instance = new Lazy<ClientRecvPacketPipeline>(() => new ClientRecvPacketPipeline());
-        public static ClientRecvPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<ClientRecvPacketPipeline> instance = new Lazy<ClientRecvPacketPipeline>(() => new ClientRecvPacketPipeline());
+        //public static ClientRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -34,7 +35,7 @@ namespace LoginServer.PacketPipeLine
 
 
 
-        private ClientRecvPacketPipeline()
+        public ClientRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions

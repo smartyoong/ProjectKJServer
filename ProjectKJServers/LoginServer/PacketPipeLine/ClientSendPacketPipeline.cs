@@ -8,13 +8,14 @@ using System.Net.Sockets;
 using CoreUtility.Utility;
 using LoginServer.SocketConnect;
 using LoginServer.Packet_SPList;
+using LoginServer.MainUI;
 
 namespace LoginServer.PacketPipeLine
 {
     internal class ClientSendPacketPipeline
     {
-        private static readonly Lazy<ClientSendPacketPipeline> instance = new Lazy<ClientSendPacketPipeline>(() => new ClientSendPacketPipeline());
-        public static ClientSendPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<ClientSendPacketPipeline> instance = new Lazy<ClientSendPacketPipeline>(() => new ClientSendPacketPipeline());
+        //public static ClientSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -28,7 +29,7 @@ namespace LoginServer.PacketPipeLine
         private TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
         private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
 
-        private ClientSendPacketPipeline()
+        public ClientSendPacketPipeline()
         {
             PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {

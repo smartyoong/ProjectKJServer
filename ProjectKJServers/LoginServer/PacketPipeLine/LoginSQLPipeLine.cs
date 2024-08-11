@@ -23,15 +23,15 @@ namespace LoginServer.PacketPipeLine
 
         private TaskCompletionSource<bool>? SQLReadyEvent;
 
-        private static readonly Lazy<AccountSQLManager> instance = new Lazy<AccountSQLManager>(() => new AccountSQLManager());
-        public static AccountSQLManager GetSingletone => instance.Value;
+        //private static readonly Lazy<AccountSQLManager> instance = new Lazy<AccountSQLManager>(() => new AccountSQLManager());
+        //public static AccountSQLManager GetSingletone => instance.Value;
 
         private Channel<(LOGIN_SP ID, SqlParameter[] parameters, int ClientID)> SQLChannel = Channel.CreateUnbounded<(LOGIN_SP ID, SqlParameter[], int)>();
 
         private CancellationTokenSource SQLCancelToken = new CancellationTokenSource();
 
 
-        private AccountSQLManager()
+        public AccountSQLManager()
         {
             SQLWorker = new SQLExecuter(Settings.Default.SQLDataSoruce, Settings.Default.SQLAccountDataBaseName,
                 Settings.Default.SQLSecurity, Settings.Default.SQLPoolMinSize, Settings.Default.SQLPoolMaxSize, Settings.Default.SQLTimeOut);

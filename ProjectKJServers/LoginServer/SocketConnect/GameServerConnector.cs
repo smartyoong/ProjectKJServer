@@ -5,6 +5,7 @@ using CoreUtility.SocketCore;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using LoginServer.PacketPipeLine;
+using LoginServer.MainUI;
 
 namespace LoginServer.SocketConnect
 {
@@ -19,10 +20,10 @@ namespace LoginServer.SocketConnect
     internal class GameServerConnector : Connector, IDisposable
     {
         private bool IsAlreadyDisposed = false;
-        /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
-        private static readonly Lazy<GameServerConnector> Lazy = new Lazy<GameServerConnector>(() => new GameServerConnector());
 
-        public static GameServerConnector GetSingletone { get { return Lazy.Value; } }
+        //private static readonly Lazy<GameServerConnector> Lazy = new Lazy<GameServerConnector>(() => new GameServerConnector());
+
+        //public static GameServerConnector GetSingletone { get { return Lazy.Value; } }
 
         private CancellationTokenSource CheckProcessToken;
 
@@ -33,7 +34,7 @@ namespace LoginServer.SocketConnect
         /// GameServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private GameServerConnector() : base(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), Settings.Default.GameServerConnectCount, "GameServer")
+        public GameServerConnector() : base(new IPEndPoint(IPAddress.Parse(Settings.Default.GameServerIPAddress), Settings.Default.GameServerPort), Settings.Default.GameServerConnectCount, "GameServer")
         {
             CheckProcessToken = new CancellationTokenSource();
         }

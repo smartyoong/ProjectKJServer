@@ -1,6 +1,7 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.SocketCore;
 using CoreUtility.Utility;
+using LoginServer.MainUI;
 using LoginServer.PacketPipeLine;
 using LoginServer.Properties;
 using LoginServer.SocketConnect;
@@ -143,13 +144,13 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            await AccountSQLManager.GetSingletone.ConnectToSQL(SQLReadyEvent);
+            await MainProxy.GetSingletone.ConnectToAccountSQL(SQLReadyEvent);
             await SQLReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 완료됐습니다.");
-            GameServerConnector.GetSingletone.Start(GameServerReadyEvent);
+            MainProxy.GetSingletone.StartGameServerConnect(GameServerReadyEvent);
             await GameServerReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("게임 서버와 연결이 완료됐습니다.");
-            ClientAcceptor.GetSingletone.Start();
+            MainProxy.GetSingletone.StartClientAcceptor();
             LogManager.GetSingletone.WriteLog("서버를 시작완료");
 
         }
@@ -157,26 +158,26 @@ namespace LoginServer
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
             LogManager.GetSingletone.WriteLog("접속한 유저들과 연결을 끊습니다");
-            await ClientAcceptor.GetSingletone.Stop();
+            await MainProxy.GetSingletone.CloseClientAcceptor();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("유저들의 수신 패킷 파이프라인을 종료합니다");
-            ClientRecvPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopClientRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("유저들의 송신 패킷 파이프라인을 종료합니다");
-            ClientSendPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopClientSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임서버와 연결을 끊습니다");
-            await GameServerConnector.GetSingletone.Stop();
+            await MainProxy.GetSingletone.CloseGameServerConnect();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임서버의 수신 파이프라인을 종료합니다");
-            GameServerRecvPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopGameServerRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임서버의 송신 파이프라인을 종료합니다");
-            GameServerSendPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopGameServerSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임 서버와 연결을 종료했습니다.");
             LogManager.GetSingletone.WriteLog("SQL 서버를 종료합니다.");
-            await AccountSQLManager.GetSingletone.StopSQL();
+            await MainProxy.GetSingletone.CloseAccountSQL();
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 종료됐습니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             await SocketManager.GetSingletone.Cancel();

@@ -18,8 +18,8 @@ namespace LoginServer.SocketConnect
 {
     internal class ClientAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<ClientAcceptor> Lazy = new Lazy<ClientAcceptor>(() => new ClientAcceptor());
-        public static ClientAcceptor GetSingletone { get { return Lazy.Value; } }
+        //private static readonly Lazy<ClientAcceptor> Lazy = new Lazy<ClientAcceptor>(() => new ClientAcceptor());
+        //public static ClientAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
@@ -27,7 +27,7 @@ namespace LoginServer.SocketConnect
 
         private ConcurrentDictionary<Socket, string> SocketAccountIDDictionary = new ConcurrentDictionary<Socket, string>();
 
-        private ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
+        public ClientAcceptor() : base(Settings.Default.ClientAcceptCount, "LoginServerClient")
         {
             CheckCancelToken = new CancellationTokenSource();
         }
