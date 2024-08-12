@@ -81,7 +81,7 @@ namespace LoginServer.PacketPipeLine
         {
             if (data.IsEmpty)
                 return;
-            await GameServerConnector.GetSingletone.Send(data).ConfigureAwait(false);
+            await MainProxy.GetSingletone.SendToGameServer(data).ConfigureAwait(false);
         }
     }
 }

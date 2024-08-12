@@ -14,6 +14,7 @@ using CoreUtility.Utility;
 using LoginServer.SocketConnect;
 using LoginServer.Packet_SPList;
 using static System.Net.Mime.MediaTypeNames;
+using LoginServer.MainUI;
 
 namespace LoginServer.PacketPipeLine
 {
@@ -124,7 +125,7 @@ namespace LoginServer.PacketPipeLine
             string HashCode = string.Empty;
 
             if (Item.ReturnValue == LOGIN_SUCCESS)
-                HashCode = ClientAcceptor.GetSingletone.MakeAuthHashCode(Item.NickName, ClientID);
+                HashCode = MainProxy.GetSingletone.MakeAuthHashCode(Item.NickName, ClientID);
             if (string.IsNullOrEmpty(HashCode))
             {
                 Item.ReturnValue = HASH_CODE_CREATE_FAIL;
@@ -133,14 +134,15 @@ namespace LoginServer.PacketPipeLine
             else
             {
                 // 해시 코드 생성에 성공했다면, 게임 서버한테 전달한다.
-                GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO,
-                    new SendUserHashInfoPacket(AccountID, HashCode, ClientID, ClientAcceptor.GetSingletone.GetIPAddrByClientID(ClientID)));
-                ClientAcceptor.GetSingletone.MappingSocketAccountID(ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!, AccountID);
+                MainProxy.GetSingletone.ProcessSendPacketToGameServer(LoginGamePacketListID.SEND_USER_HASH_INFO,
+                    new SendUserHashInfoPacket(AccountID, HashCode, ClientID, MainProxy.GetSingletone.GetIPAddrByClientID(ClientID)));
+                // 소켓과 클라이언트 ID를 매핑한다 추후 편하게 사용하기 위함.
+                MainProxy.GetSingletone.MappingSocketAccountID(MainProxy.GetSingletone.GetClientSocket(ClientID)!, AccountID);
             }
 
             // 클라이언트한테는 어떻게든 전달한다
             LoginResponsePacket Packet = new LoginResponsePacket(Item.NickName, HashCode, Item.ReturnValue);
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE, Packet, ClientID);
+            MainProxy.GetSingletone.SendToClient(LoginPacketListID.LOGIN_RESPONESE, Packet, ClientID);
         }
 
         public void SQL_ID_UNIQUE_CHECK_REQUEST(string AccountID, int ClientID)
@@ -156,7 +158,7 @@ namespace LoginServer.PacketPipeLine
         {
             bool IsUnique = ReturnValue == 0 ? true : false;
             IDUniqueCheckResponsePacket IDUniquePacket = new IDUniqueCheckResponsePacket(IsUnique);
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, ClientID);
+            MainProxy.GetSingletone.SendToClient(LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, IDUniquePacket, ClientID);
         }
 
         public void SQL_REGIST_ACCOUNT_REQUEST(string AccountID, string AccountPW, string IPAddr, int ClientID)
@@ -173,7 +175,7 @@ namespace LoginServer.PacketPipeLine
         public void SQL_RESULT_REGIST_ACCOUNT_RESPONSE(int ReturnValue, int ClientID)
         {
             RegistAccountResponsePacket RegistPacket = new RegistAccountResponsePacket(ReturnValue);
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, ClientID);
+            MainProxy.GetSingletone.SendToClient(LoginPacketListID.REGIST_ACCOUNT_RESPONESE, RegistPacket, ClientID);
         }
 
         public void SQL_CREATE_NICKNAME_REQUEST(string AccountID, string NickName, int ClientID)
@@ -193,7 +195,7 @@ namespace LoginServer.PacketPipeLine
             int ReturnValue = 99999;
             ReturnValue = await SQLWorker.ExecuteSqlSPAsync(LOGIN_SP.SP_CREATE_NICKNAME.ToString(), Parameters);
             CreateNickNameResponsePacket Packet = new CreateNickNameResponsePacket((string)Parameters[1].Value,ReturnValue);
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.CREATE_NICKNAME_RESPONESE, Packet, ClientID);
+            MainProxy.GetSingletone.SendToClient(LoginPacketListID.CREATE_NICKNAME_RESPONESE, Packet, ClientID);
         }
 
     }

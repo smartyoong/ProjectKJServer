@@ -87,7 +87,7 @@ namespace LoginServer.PacketPipeLine
         {
             if (packet.MemoryData.IsEmpty)
                 return;
-            await ClientAcceptor.GetSingletone.Send(ClientAcceptor.GetSingletone.GetClientSocket(packet.ClientID)!, packet.MemoryData).ConfigureAwait(false);
+            await MainProxy.GetSingletone.SendToClient(MainProxy.GetSingletone.GetClientSocket(packet.ClientID)!, packet.MemoryData).ConfigureAwait(false);
         }
     }
 }

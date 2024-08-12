@@ -181,23 +181,23 @@ namespace LoginServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "LoginRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SQL_LOGIN_REQUEST(packet.AccountID, packet.Password, ClientID);
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLLoginRequest(packet.AccountID, packet.Password, ClientID));
         }
 
         private void SP_IDUniqueCheckRequest(IDUniqueCheckRequestPacket packet, int ClientID)
         {
             if (IsErrorPacket(packet, "IDUniqueCheckRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SQL_ID_UNIQUE_CHECK_REQUEST(packet.AccountID, ClientID);
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLIDUniqueCheckRequest(packet.AccountID, ClientID));
         }
 
         private void SP_RegistAccountRequest(RegistAccountRequestPacket packet, int ClientID)
         {
             if (IsErrorPacket(packet, "RegistAccountRequest"))
                 return;
-            IPEndPoint? ClientIPEndPoint = ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
+            IPEndPoint? ClientIPEndPoint = MainProxy.GetSingletone.GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
             if (ClientIPEndPoint != null)
-                AccountSQLManager.GetSingletone.SQL_REGIST_ACCOUNT_REQUEST(packet.AccountID, packet.Password, ClientIPEndPoint.Address.ToString(), ClientID);
+                MainProxy.GetSingletone.HandleSQLPacket(new SQLRegistAccountRequest(packet.AccountID, packet.Password, ClientIPEndPoint.Address.ToString(), ClientID));
             else
                 LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline SP_RegistAccountRequest에서 ClientIPEndPoint가 null입니다.");
         }
@@ -206,7 +206,7 @@ namespace LoginServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "CreateNickNameRequest"))
                 return;
-            AccountSQLManager.GetSingletone.SQL_CREATE_NICKNAME_REQUEST(packet.AccountID ,packet.NickName, ClientID);
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLCreateNickNameRequest(packet.AccountID, packet.NickName, ClientID));
         }
     }
 }

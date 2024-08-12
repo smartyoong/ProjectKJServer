@@ -147,7 +147,7 @@ namespace LoginServer.SocketConnect
 
         protected override void PushToPipeLine(Memory<byte> Data)
         {
-            GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data);
+            MainProxy.GetSingletone.ProcessRecvPacketFromGameServer(Data);
         }
     }
 }

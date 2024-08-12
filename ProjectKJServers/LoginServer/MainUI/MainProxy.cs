@@ -1,10 +1,12 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using LoginServer.Packet_SPList;
 using LoginServer.PacketPipeLine;
 using LoginServer.SocketConnect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,7 +15,7 @@ namespace LoginServer.MainUI
     internal class MainProxy
     {
         /// <value>지연 생성 및 싱글톤 패턴과 프록시 패턴을 위해 Lazy를 사용합니다.</value>
-        public static readonly Lazy<MainProxy> Instance = new Lazy<MainProxy>(() => new MainProxy());
+        private static readonly Lazy<MainProxy> Instance = new Lazy<MainProxy>(() => new MainProxy());
         public static MainProxy GetSingletone => Instance.Value;
 
         AccountSQLManager AccountSQLClass;
@@ -33,15 +35,43 @@ namespace LoginServer.MainUI
             GameServerRecvPacketPipelineClass = new GameServerRecvPacketPipeline();
             GameServerSendPacketPipelineClass = new GameServerSendPacketPipeline();
         }
+
+
+
         ///////////////////////////////////////////////////////////////////
         public async Task ConnectToAccountSQL(TaskCompletionSource<bool> SQLEvent)
         {
+            //MainThread에서 호출하는 메서드는 ConfigureAwait(false)를 사용하지 않습니다.
             await AccountSQLClass.ConnectToSQL(SQLEvent);
         }
         public async Task CloseAccountSQL()
         {
             await AccountSQLClass.StopSQL();
         }
+
+        public void HandleSQLPacket(ISQLPacket Packet)
+        {
+            switch(Packet)
+            {
+                case SQLLoginRequest SQLPacket:
+                    AccountSQLClass.SQL_LOGIN_REQUEST(SQLPacket.AccountID,SQLPacket.Password,SQLPacket.ClientID);
+                    break;
+                case SQLIDUniqueCheckRequest SQLPacket:
+                    AccountSQLClass.SQL_ID_UNIQUE_CHECK_REQUEST(SQLPacket.AccountID,SQLPacket.ClientID);
+                    break;
+                case SQLRegistAccountRequest SQLPacket:
+                    AccountSQLClass.SQL_REGIST_ACCOUNT_REQUEST(SQLPacket.AccountID,SQLPacket.Password, SQLPacket.IPAddr, SQLPacket.ClientID);
+                    break;
+                case SQLCreateNickNameRequest SQLPacket:
+                    AccountSQLClass.SQL_CREATE_NICKNAME_REQUEST(SQLPacket.AccountID,SQLPacket.NickName,SQLPacket.ClientID);
+                    break;
+                default:
+                    LogManager.GetSingletone.WriteLog("Invalid SQL Packet");
+                    break;
+            }
+        }
+
+
         ///////////////////////////////////////////////////////////////////
         public void StartGameServerConnect(TaskCompletionSource<bool> ServerEvent)
         {
@@ -51,34 +81,123 @@ namespace LoginServer.MainUI
         {
             await GameServerConnectorClass.Stop();
         }
+
+        public async Task SendToGameServer(Memory<byte> Data)
+        {
+            await GameServerConnectorClass.Send(Data).ConfigureAwait(false);
+        }
+
+
         ///////////////////////////////////////////////////////////////////
         public void StartClientAcceptor()
         {
             ClientAcceptorClass.Start();
         }
+        public async Task SendToClient(Socket Socket, Memory<byte> Data)
+        {
+            await ClientAcceptorClass.Send(Socket, Data).ConfigureAwait(false);
+        }
+        public string MakeAuthHashCode(string AccountID, int ClientID)
+        {
+            return ClientAcceptorClass.MakeAuthHashCode(AccountID, ClientID);
+        }
+        public Socket? GetClientSocketByAccountID(string AccountID)
+        {
+           return ClientAcceptorClass.GetClientSocketByAccountID(AccountID);
+        }
+
+        public void MappingSocketAccountID(Socket Sock, string AccountID)
+        {
+            ClientAcceptorClass.MappingSocketAccountID(Sock, AccountID);
+        }
+
+        public void KickClient(Socket Sock)
+        {
+            ClientAcceptorClass.KickClient(Sock);
+        }
+
+        public void KickClientByID(int ClientID)
+        {
+            ClientAcceptorClass.KickClientByID(ClientID);
+        }
+
+        public string GetIPAddrByClientSocket(Socket ClientSock)
+        {
+            return ClientAcceptorClass.GetIPAddrByClientSocket(ClientSock);
+        }
+
+        public string GetIPAddrByClientID(int ClientID)
+        {
+            return ClientAcceptorClass.GetIPAddrByClientID(ClientID);
+        }
+
+        public int GetPortByClientSocket(Socket ClientSock)
+        {
+            return ClientAcceptorClass.GetPortByClientSocket(ClientSock);
+        }
+
+        public int GetPortByClientID(int ClientID)
+        {
+            return ClientAcceptorClass.GetPortByClientID(ClientID);
+        }
+
+        public Socket? GetClientSocket(int ClientID)
+        {
+            return ClientAcceptorClass.GetClientSocket(ClientID);
+        }
+
         public async Task CloseClientAcceptor()
         {
             await ClientAcceptorClass.Stop();
         }
+
+
+
+
         ///////////////////////////////////////////////////////////////////
         public void StopClientRecvPacketPipeline()
         {
             ClientRecvPacketPipelineClass.Cancel();
         }
+
+        public void ProcessRecvPacketFromClient(Memory<byte> Data, int ClientID)
+        {
+            ClientRecvPacketPipelineClass.PushToPacketPipeline(Data, ClientID);
+        }
+
+
         ///////////////////////////////////////////////////////////////////
+
         public void StopClientSendPacketPipeline()
         {
             ClientSendPacketPipelineClass.Cancel();
         }
+
+        public void SendToClient(LoginPacketListID ID, dynamic Packet, int ClientID)
+        {
+            ClientSendPacketPipelineClass.PushToPacketPipeline(ID, Packet, ClientID);
+        }
+
+
         ///////////////////////////////////////////////////////////////////
         public void StopGameServerRecvPacketPipeline()
         {
             GameServerRecvPacketPipelineClass.Cancel();
         }
+
+        public void ProcessRecvPacketFromGameServer(Memory<byte> Data)
+        {
+            GameServerRecvPacketPipelineClass.PushToPacketPipeline(Data);
+        }
+
         ///////////////////////////////////////////////////////////////////
         public void StopGameServerSendPacketPipeline()
         {
             GameServerSendPacketPipelineClass.Cancel();
+        }
+        public void ProcessSendPacketToGameServer(LoginGamePacketListID ID, dynamic packet)
+        {
+            GameServerSendPacketPipelineClass.PushToPacketPipeline(ID, packet);
         }
     }
 }

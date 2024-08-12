@@ -1,5 +1,6 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using LoginServer.MainUI;
 using LoginServer.Packet_SPList;
 using LoginServer.SocketConnect;
 using System;
@@ -180,7 +181,7 @@ namespace LoginServer.PacketPipeLine
             }
             else if (Packet.ErrorCode == (int)GeneralErrorCode.ERR_AUTH_FAIL)
             {
-                string HashCode = ClientAcceptor.GetSingletone.MakeAuthHashCode(Packet.NickName, Packet.ClientLoginID);
+                string HashCode = MainProxy.GetSingletone.MakeAuthHashCode(Packet.NickName, Packet.ClientLoginID);
                 int ReturnValue = (int)GeneralErrorCode.ERR_AUTH_RETRY;
                 if (string.IsNullOrEmpty(HashCode))
                 {
@@ -189,13 +190,12 @@ namespace LoginServer.PacketPipeLine
                 }
                 else
                 {
-                    GameServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginGamePacketListID.SEND_USER_HASH_INFO,
+                    MainProxy.GetSingletone.ProcessSendPacketToGameServer(LoginGamePacketListID.SEND_USER_HASH_INFO,
                         new SendUserHashInfoPacket(Packet.NickName, HashCode, Packet.ClientLoginID,
-                        ClientAcceptor.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
+                        MainProxy.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
                 }
                 // 클라이언트한테는 어떻게든 전달한다
-                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(LoginPacketListID.LOGIN_RESPONESE,
-                    new LoginResponsePacket(Packet.NickName, HashCode, ReturnValue), Packet.ClientLoginID);
+                MainProxy.GetSingletone.SendToClient(LoginPacketListID.LOGIN_RESPONESE, new LoginResponsePacket(Packet.NickName, HashCode, ReturnValue), Packet.ClientLoginID);
             }
         }
 
@@ -203,13 +203,13 @@ namespace LoginServer.PacketPipeLine
         {
             if (IsErrorPacket(Packet, "RequestKickUser"))
                 return;
-            Socket? ClientSocket = ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID);
+            Socket? ClientSocket = MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID);
             if (ClientSocket == null)
             {
                 return;
             }
             LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {Packet.IPAddr} {Packet.AccountID}");
-            ClientAcceptor.GetSingletone.KickClient(ClientSocket);
+            MainProxy.GetSingletone.KickClient(ClientSocket);
         }
     }
 }

@@ -130,12 +130,14 @@ namespace LoginServer
         // MiddleWare 패턴 같이 처리안된 모든 에러를 처리
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            MessageBox.Show((e.ExceptionObject as Exception)?.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show((e.ExceptionObject as Exception)?.Message, "Login Server Domain Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show((e.ExceptionObject as Exception)?.StackTrace, "Login Server Domain Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
         {
-            MessageBox.Show(e.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(e.Exception.Message, "LoginServer Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(e.Exception.StackTrace, "LoginServer Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         // UI와 작동하는 스레드 이기때문에 ConfigureAwait(false)를 사용하지 않습니다.
