@@ -13,4 +13,21 @@ namespace DBServer.Packet_SPList
         SP_READ_CHARACTER = 2,
         SP_CREATE_CHARACTER = 3
     }
+
+    public interface IGameSQLPacket
+    {
+        public string AccountID { get; set; }
+    }
+
+    public record GameSQLReadCharacterPacket(string AccountID) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+    }
+
+    public record GameSQLCreateCharacterPacket(string AccountID, int Gender, int PresetID) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Gender { get; set; } = Gender;
+        public int PresetID { get; set; } = PresetID;
+    }
 }

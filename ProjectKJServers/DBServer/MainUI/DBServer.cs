@@ -3,6 +3,7 @@ using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using DBServer.SocketConnect;
 using DBServer.PacketPipeLine;
+using DBServer.MainUI;
 
 namespace DBServer
 {
@@ -88,11 +89,11 @@ namespace DBServer
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
             LogManager.GetSingletone.WriteLog("서버를 가동합니다.");
-            await GameSQLPipeLine.GetSingletone.ConnectToSQL(SQLReadyEvent);
+            await MainProxy.GetSingletone.ConnectToSQLServer(SQLReadyEvent);
             await SQLReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결되었습니다.");
             LogManager.GetSingletone.WriteLog("게임 서버의 연결의 대기합니다.");
-            GameServerAcceptor.GetSingletone.Start(GameServerReadyEvent);
+            MainProxy.GetSingletone.StartAcceptGameServer(GameServerReadyEvent);
             await GameServerReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("게임 서버와 연결되었습니다.");
         }
@@ -101,18 +102,18 @@ namespace DBServer
         {
             ServerStopButton.Enabled = false;
             LogManager.GetSingletone.WriteLog("서버를 중지합니다.");
-            await GameSQLPipeLine.GetSingletone.StopSQL();
+            await MainProxy.GetSingletone.DisconnectSQLServer();
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결을 중단했습니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
-            await GameServerAcceptor.GetSingletone.Stop();
+            await MainProxy.GetSingletone.StopAcceptGameServer();
             LogManager.GetSingletone.WriteLog("게임 서버와의 연결을 중단했습니다.");
             await SocketManager.GetSingletone.Cancel();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임 서버 송신 파이프라인을 중단합니다");
-            GameServerSendPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopGameServerSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("게임 서버 수신 파이프라인을 중단합니다.");
-            GameServerRecvPacketPipeline.GetSingletone.Cancel();
+            MainProxy.GetSingletone.StopGameServerRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));

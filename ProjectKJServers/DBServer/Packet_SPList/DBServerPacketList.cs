@@ -24,21 +24,6 @@ namespace DBServer.Packet_SPList
     }
     // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
     [Serializable]
-    public struct RequestDBTestPacket(string AccountID, string NickName)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-    }
-
-    [Serializable]
-    public struct ResponseDBTestPacket(string AccountID, string NickName, int Level, int Exp)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-        public int Level { get; set; } = Level;
-        public int Exp { get; set; } = Exp;
-    }
-    [Serializable]
     public struct RequestDBCharBaseInfoPacket(string AccountID)
     {
         public string AccountID { get; set; } = AccountID;

@@ -9,13 +9,14 @@ using Windows.Security.DataProtection;
 using CoreUtility.SocketCore;
 using CoreUtility.GlobalVariable;
 using DBServer.PacketPipeLine;
+using DBServer.MainUI;
 
 namespace DBServer.SocketConnect
 {
     internal class GameServerAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<GameServerAcceptor> Lazy = new Lazy<GameServerAcceptor>(() => new GameServerAcceptor());
-        public static GameServerAcceptor GetSingletone { get { return Lazy.Value; } }
+        //private static readonly Lazy<GameServerAcceptor> Lazy = new Lazy<GameServerAcceptor>(() => new GameServerAcceptor());
+        //public static GameServerAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
@@ -23,7 +24,7 @@ namespace DBServer.SocketConnect
 
         TaskCompletionSource<bool>? ServerReadeyEvent;
 
-        private GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount, "GameServer")
+        public GameServerAcceptor() : base(DBServerSettings.Default.GameServerAcceptCount, "GameServer")
         {
             CheckCancelToken = new CancellationTokenSource();
         }
@@ -91,7 +92,7 @@ namespace DBServer.SocketConnect
 
         protected override void PushToPipeLine(Memory<byte> Data)
         {
-            GameServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data);
+            MainProxy.GetSingletone.ProcessPacketFromGameServer(Data);
         }
 
         protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)

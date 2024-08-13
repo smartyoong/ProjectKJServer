@@ -2,14 +2,15 @@
 using System.Threading.Tasks.Dataflow;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using DBServer.MainUI;
 using DBServer.Packet_SPList;
 
 namespace DBServer.PacketPipeLine
 {
     internal class GameServerRecvPacketPipeline
     {
-        private static readonly Lazy<GameServerRecvPacketPipeline> instance = new Lazy<GameServerRecvPacketPipeline>(() => new GameServerRecvPacketPipeline());
-        public static GameServerRecvPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<GameServerRecvPacketPipeline> instance = new Lazy<GameServerRecvPacketPipeline>(() => new GameServerRecvPacketPipeline());
+        //public static GameServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -27,7 +28,7 @@ namespace DBServer.PacketPipeLine
 
 
 
-        private GameServerRecvPacketPipeline()
+        public GameServerRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
@@ -126,12 +127,6 @@ namespace DBServer.PacketPipeLine
 
             switch (ID)
             {
-                case DBPacketListID.REQUEST_DB_TEST:
-                    RequestDBTestPacket? TestPacket = PacketUtils.GetPacketStruct<RequestDBTestPacket>(ref packet);
-                    if (TestPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return TestPacket;
                 case DBPacketListID.REQUEST_CHAR_BASE_INFO:
                     RequestDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestDBCharBaseInfoPacket>(ref packet);
                     return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
@@ -149,9 +144,6 @@ namespace DBServer.PacketPipeLine
                 return;
             switch (Packet)
             {
-                case RequestDBTestPacket TestPacket:
-                    SP_DBTest(TestPacket);
-                    break;
                 case RequestDBCharBaseInfoPacket CharBaseInfoPacket:
                     SP_RequestCharBaseInfo(CharBaseInfoPacket);
                     break;
@@ -164,26 +156,20 @@ namespace DBServer.PacketPipeLine
             }
         }
 
-        private void SP_DBTest(RequestDBTestPacket packet)
-        {
-            if (IsErrorPacket(packet, "RequestDBTest"))
-                return;
-            // 유저 Socket 정보를 들고 있는 Map이 필요할듯? 그러면 Socket을 매개변수로 넘길필요가 없을 수도 있음 (Client 파이프라인에서)
-            GameSQLPipeLine.GetSingletone.SQL_DB_TEST(packet.AccountID, packet.NickName);
-        }
-
         private void SP_RequestCharBaseInfo(RequestDBCharBaseInfoPacket packet)
         {
             if (IsErrorPacket(packet, "RequestCharBaseInfo"))
                 return;
-            GameSQLPipeLine.GetSingletone.SQL_READ_CHARACTER(packet.AccountID);
+            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID);
+            MainProxy.GetSingletone.HandleSQLPacket(ReadCharacterPacket);
         }
 
         private void SP_ReuquestCreateCharacter(RequestDBCreateCharacterPacket packet)
         {
             if (IsErrorPacket(packet, "RequestCreateCharacter"))
                 return;
-            GameSQLPipeLine.GetSingletone.SQL_CREATE_CHARACTER(packet.AccountID, packet.Gender, packet.PresetID);
+            GameSQLCreateCharacterPacket CreateCharacterPacket = new GameSQLCreateCharacterPacket(packet.AccountID, packet.Gender, packet.PresetID);
+            MainProxy.GetSingletone.HandleSQLPacket(CreateCharacterPacket);
         }
     }
 }

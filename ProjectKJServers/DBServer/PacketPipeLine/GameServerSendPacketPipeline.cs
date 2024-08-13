@@ -1,4 +1,5 @@
 ﻿using CoreUtility.Utility;
+using DBServer.MainUI;
 using DBServer.Packet_SPList;
 using DBServer.SocketConnect;
 using System;
@@ -12,8 +13,8 @@ namespace DBServer.PacketPipeLine
 {
     internal class GameServerSendPacketPipeline
     {
-        private static readonly Lazy<GameServerSendPacketPipeline> instance = new Lazy<GameServerSendPacketPipeline>(() => new GameServerSendPacketPipeline());
-        public static GameServerSendPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<GameServerSendPacketPipeline> instance = new Lazy<GameServerSendPacketPipeline>(() => new GameServerSendPacketPipeline());
+        //public static GameServerSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -27,7 +28,7 @@ namespace DBServer.PacketPipeLine
         private TransformBlock<GameServerSendPipeLineWrapper<DBPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
 
-        private GameServerSendPacketPipeline()
+        public GameServerSendPacketPipeline()
         {
             PacketToMemoryBlock = new TransformBlock<GameServerSendPipeLineWrapper<DBPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
@@ -67,8 +68,6 @@ namespace DBServer.PacketPipeLine
         {
             switch (GamePacket.PacketID)
             {
-                case DBPacketListID.RESPONSE_DB_TEST:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBTestPacket)GamePacket.Packet);
                 case DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseDBNeedToMakeCharacterPacket)GamePacket.Packet);
                 case DBPacketListID.RESPONSE_CREATE_CHARACTER:
@@ -85,7 +84,7 @@ namespace DBServer.PacketPipeLine
         {
             if (data.IsEmpty)
                 return;
-            await GameServerAcceptor.GetSingletone.Send(data).ConfigureAwait(false);
+            await MainProxy.GetSingletone.SendDataToGameServer(data).ConfigureAwait(false);
         }
     }
 }
