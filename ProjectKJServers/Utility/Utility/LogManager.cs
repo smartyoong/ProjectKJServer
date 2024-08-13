@@ -31,8 +31,6 @@ namespace CoreUtility.Utility
         private static readonly Lazy<LogManager> Lazy = new Lazy<LogManager>(() => new LogManager());
         public static LogManager GetSingletone { get { return Lazy.Value; } }
 
-
-
         /// <summary>
         /// LoginManager 생성자입니다.
         /// 클래스 생성중 파일 디렉토리 관련 에러가 발생하면 프로그램이 종료됩니다.
