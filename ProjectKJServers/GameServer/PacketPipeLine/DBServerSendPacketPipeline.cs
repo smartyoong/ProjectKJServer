@@ -12,8 +12,8 @@ namespace GameServer.PacketPipeLine
 {
     internal class DBServerSendPacketPipeline
     {
-        private static readonly Lazy<DBServerSendPacketPipeline> instance = new Lazy<DBServerSendPacketPipeline>(() => new DBServerSendPacketPipeline());
-        public static DBServerSendPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<DBServerSendPacketPipeline> instance = new Lazy<DBServerSendPacketPipeline>(() => new DBServerSendPacketPipeline());
+        //public static DBServerSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -27,7 +27,7 @@ namespace GameServer.PacketPipeLine
         private TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
 
-        private DBServerSendPacketPipeline()
+        public DBServerSendPacketPipeline()
         {
             PacketToMemoryBlock = new TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {

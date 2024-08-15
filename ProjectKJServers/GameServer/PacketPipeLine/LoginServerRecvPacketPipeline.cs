@@ -14,8 +14,8 @@ namespace GameServer.PacketPipeLine
 {
     internal class LoginServerRecvPacketPipeline
     {
-        private static readonly Lazy<LoginServerRecvPacketPipeline> instance = new Lazy<LoginServerRecvPacketPipeline>(() => new LoginServerRecvPacketPipeline());
-        public static LoginServerRecvPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<LoginServerRecvPacketPipeline> instance = new Lazy<LoginServerRecvPacketPipeline>(() => new LoginServerRecvPacketPipeline());
+        //public static LoginServerRecvPacketPipeline GetSingletone => instance.Value;
 
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
@@ -31,9 +31,7 @@ namespace GameServer.PacketPipeLine
         private ActionBlock<dynamic> PacketProcessBlock;
 
 
-
-
-        private LoginServerRecvPacketPipeline()
+        public LoginServerRecvPacketPipeline()
         {
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions

@@ -17,11 +17,11 @@ namespace GameServer.SocketConnect
     /// </summary>
     internal class DBServerConnector : Connector, IDisposable
     {
-        private bool IsAlreadyDisposed = false;
+        //private bool IsAlreadyDisposed = false;
         /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
-        private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
+        //private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
 
-        public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
+        //public static DBServerConnector GetSingletone { get { return Lazy.Value; } }
 
         private CancellationTokenSource CheckProcessToken;
 
@@ -32,7 +32,7 @@ namespace GameServer.SocketConnect
         /// GameServer 클래스의 생성자입니다.
         /// 소켓 연결 갯수만큼 클래스를 생성하고, 초기화시킵니다.
         /// </summary>
-        private DBServerConnector() : base(new IPEndPoint(IPAddress.Parse(GameServerSettings.Default.DBServerIPAdress), GameServerSettings.Default.DBServerConnectPort), GameServerSettings.Default.DBServerConnectCount, "DBServer")
+        public DBServerConnector() : base(new IPEndPoint(IPAddress.Parse(GameServerSettings.Default.DBServerIPAdress), GameServerSettings.Default.DBServerConnectPort), GameServerSettings.Default.DBServerConnectCount, "DBServer")
         {
             CheckProcessToken = new CancellationTokenSource();
         }

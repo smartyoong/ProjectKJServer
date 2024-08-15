@@ -13,8 +13,8 @@ namespace GameServer.PacketPipeLine
 {
     internal class LoginServerSendPacketPipeline
     {
-        private static readonly Lazy<LoginServerSendPacketPipeline> instance = new Lazy<LoginServerSendPacketPipeline>(() => new LoginServerSendPacketPipeline());
-        public static LoginServerSendPacketPipeline GetSingletone => instance.Value;
+        //private static readonly Lazy<LoginServerSendPacketPipeline> instance = new Lazy<LoginServerSendPacketPipeline>(() => new LoginServerSendPacketPipeline());
+        //public static LoginServerSendPacketPipeline GetSingletone => instance.Value;
         private CancellationTokenSource CancelToken = new CancellationTokenSource();
         private ExecutionDataflowBlockOptions ProcessorOptions = new ExecutionDataflowBlockOptions
         {
@@ -28,7 +28,7 @@ namespace GameServer.PacketPipeLine
         private TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
 
-        private LoginServerSendPacketPipeline()
+        public LoginServerSendPacketPipeline()
         {
             PacketToMemoryBlock = new TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {

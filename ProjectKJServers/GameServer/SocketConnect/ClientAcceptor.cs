@@ -17,8 +17,8 @@ namespace GameServer.SocketConnect
 {
     internal class ClientAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<ClientAcceptor> Lazy = new Lazy<ClientAcceptor>(() => new ClientAcceptor());
-        public static ClientAcceptor GetSingletone { get { return Lazy.Value; } }
+        //private static readonly Lazy<ClientAcceptor> Lazy = new Lazy<ClientAcceptor>(() => new ClientAcceptor());
+        //public static ClientAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
@@ -29,7 +29,7 @@ namespace GameServer.SocketConnect
         private ConcurrentDictionary<Socket, string> SocketAccountIDDictionary = new ConcurrentDictionary<Socket, string>();
 
 
-        private ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
+        public ClientAcceptor() : base(GameServerSettings.Default.ClientAcceptCount, "GameServerClient")
         {
             CheckCancelToken = new CancellationTokenSource();
         }

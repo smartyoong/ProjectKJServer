@@ -2,6 +2,7 @@ using CoreUtility.GlobalVariable;
 using CoreUtility.SocketCore;
 using CoreUtility.Utility;
 using GameServer.GameSystem;
+using GameServer.MainUI;
 using GameServer.PacketPipeLine;
 using GameServer.SocketConnect;
 using System.Net.Sockets;
@@ -13,6 +14,12 @@ namespace GameServer
         private int CurrentUserCount = 0;
         private TaskCompletionSource<bool> LoginServerReadyEvent = new TaskCompletionSource<bool>();
         private TaskCompletionSource<bool> DBServerReadyEvent = new TaskCompletionSource<bool>();
+
+        private delegate void DelegateWriteLog(string Log);
+        private delegate void DelegateWriteErrorLog(Exception ex);
+        private DelegateWriteLog WriteFileLog = LogManager.GetSingletone.WriteLog;
+        private DelegateWriteErrorLog WriteErrorLog = LogManager.GetSingletone.WriteLog;
+
         public GameServer()
         {
             InitializeComponent();
@@ -128,58 +135,58 @@ namespace GameServer
 
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
-            LogManager.GetSingletone.WriteLog("게임 서버를 시작합니다.");
+            WriteFileLog("게임 서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
-            LogManager.GetSingletone.WriteLog("게임 엔진을 시작합니다.");
-            GameEngine.GetSingletone.Start();
-            LogManager.GetSingletone.WriteLog("로그인 서버의 연결을 대기합니다.");
-            LoginServerAcceptor.GetSingletone.Start(LoginServerReadyEvent);
+            WriteFileLog("게임 엔진을 시작합니다.");
+            MainProxy.GetSingletone.StartGameEngine();
+            WriteFileLog("로그인 서버의 연결을 대기합니다.");
+            MainProxy.GetSingletone.StartAcceptLoginServer(LoginServerReadyEvent);
             await LoginServerReadyEvent.Task;
-            LogManager.GetSingletone.WriteLog("로그인 서버와 연결되었습니다.");
-            LogManager.GetSingletone.WriteLog("DB 서버의 연결을 대기합니다.");
-            DBServerConnector.GetSingletone.Start(DBServerReadyEvent);
+            WriteFileLog("로그인 서버와 연결되었습니다.");
+            WriteFileLog("DB 서버의 연결을 대기합니다.");
+            MainProxy.GetSingletone.ConnectToDBServer(DBServerReadyEvent);
             await DBServerReadyEvent.Task;
-            LogManager.GetSingletone.WriteLog("DB 서버와 연결되었습니다.");
-            LogManager.GetSingletone.WriteLog("클라이언트의 연결을 받겠습니다..");
-            ClientAcceptor.GetSingletone.Start();
+            WriteFileLog("DB 서버와 연결되었습니다.");
+            WriteFileLog("클라이언트의 연결을 받겠습니다..");
+            MainProxy.GetSingletone.StartAcceptClient();
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)
         {
-            LogManager.GetSingletone.WriteLog("게임 서버를 중단합니다.");
-            GameEngine.GetSingletone.Stop();
+            WriteFileLog("게임 서버를 중단합니다.");
+            MainProxy.GetSingletone.StopGameEngine();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("로그인 서버와 연결을 중단합니다.");
-            await LoginServerAcceptor.GetSingletone.Stop();
+            WriteFileLog("로그인 서버와 연결을 중단합니다.");
+            await MainProxy.GetSingletone.StopAcceptLoginServer();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("로그인 서버 송신 파이프라인을 중단합니다.");
-            LoginServerSendPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("로그인 서버 송신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopLoginServerSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("로그인 서버 수신 파이프라인을 중단합니다.");
-            LoginServerRecvPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("로그인 서버 수신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopLoginServerRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("DB 서버와 연결을 중단합니다.");
-            await DBServerConnector.GetSingletone.Stop();
+            WriteFileLog("DB 서버와 연결을 중단합니다.");
+            await MainProxy.GetSingletone.StopConnectToDBServer();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("DB 서버 송신 파이프라인을 중단합니다.");
-            DBServerSendPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("DB 서버 송신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopDBServerSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("DB 서버 수신 파이프라인을 중단합니다.");
-            DBServerRecvPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("DB 서버 수신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopDBServerRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("클라이언트와 연결을 중단합니다.");
-            await ClientAcceptor.GetSingletone.Stop();
+            WriteFileLog("클라이언트와 연결을 중단합니다.");
+            await MainProxy.GetSingletone.StopAcceptClient();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("클라이언트 송신 파이프라인을 중단합니다.");
-            ClientSendPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("클라이언트 송신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopClientSendPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("클라이언트 수신 파이프라인을 중단합니다.");
-            ClientRecvPacketPipeline.GetSingletone.Cancel();
+            WriteFileLog("클라이언트 수신 파이프라인을 중단합니다.");
+            MainProxy.GetSingletone.StopClientRecvPacketPipeline();
             await Task.Delay(TimeSpan.FromSeconds(2));
-            LogManager.GetSingletone.WriteLog("연결중인 모든 소켓을 중단합니다.");
+            WriteFileLog("연결중인 모든 소켓을 중단합니다.");
             await SocketManager.GetSingletone.Cancel();
-            LogManager.GetSingletone.WriteLog("잠시후 로그 매니저를 종료하고 게임 서버를 종료합니다.");
+            WriteFileLog("잠시후 로그 매니저를 종료하고 게임 서버를 종료합니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));

@@ -13,15 +13,15 @@ namespace GameServer.GameSystem
     {
         const int MINIMUM_UPDATE_INTERVAL = 1000 / 60;
         private int LastTickCount = 0;
-        private static Lazy<GameEngine> instance = new Lazy<GameEngine>(() => new GameEngine());
-        public static GameEngine GetSingletone { get { return instance.Value; } }
+        //private static Lazy<GameEngine> instance = new Lazy<GameEngine>(() => new GameEngine());
+        //public static GameEngine GetSingletone { get { return instance.Value; } }
 
         private bool IsAlreadyDisposed = false;
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
 
-        private GameEngine()
+        public GameEngine()
         {
         }
         public void Start()

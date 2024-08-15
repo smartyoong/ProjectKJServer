@@ -15,8 +15,8 @@ namespace GameServer.SocketConnect
 {
     internal class LoginServerAcceptor : Acceptor, IDisposable
     {
-        private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
-        public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
+        //private static readonly Lazy<LoginServerAcceptor> Lazy = new Lazy<LoginServerAcceptor>(() => new LoginServerAcceptor());
+        //public static LoginServerAcceptor GetSingletone { get { return Lazy.Value; } }
 
         private bool IsAlreadyDisposed = false;
 
@@ -26,7 +26,7 @@ namespace GameServer.SocketConnect
 
         // 추후 파이프 라인 추가하자
 
-        private LoginServerAcceptor() : base(GameServerSettings.Default.LoginServerAcceptCount, "LoginServer")
+        public LoginServerAcceptor() : base(GameServerSettings.Default.LoginServerAcceptCount, "LoginServer")
         {
             CheckCancelToken = new CancellationTokenSource();
         }
