@@ -1,5 +1,6 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 using GameServer.PacketList;
 using GameServer.SocketConnect;
 using System;
@@ -177,7 +178,7 @@ namespace GameServer.PacketPipeLine
             if (IsErrorPacket(packet, "ResponseDBTest"))
                 return;
             LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} {packet.Level} {packet.Exp}");
-            LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO, new ResponseLoginTestPacket(packet.AccountID, packet.NickName, packet.Level, packet.Exp));
+            MainProxy.GetSingletone.SendToLoginServer(GameLoginPacketListID.RESPONSE_USER_HASH_INFO, new ResponseLoginTestPacket(packet.AccountID, packet.NickName, packet.Level, packet.Exp));
         }
 
         private void Func_ResponseNeedToMakeCharacter(ResponseDBNeedToMakeCharacterPacket Packet)
@@ -186,13 +187,12 @@ namespace GameServer.PacketPipeLine
                 return;
             const int NEED_TO_MAKE_CHARACTER = 1;
             ResponseNeedToMakeCharcterPacket ResponsePacket = new ResponseNeedToMakeCharcterPacket(NEED_TO_MAKE_CHARACTER);
-            if (ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) == null)
+            if (MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) == null)
             {
                 LogManager.GetSingletone.WriteLog($"Func_ResponseNeedToMakeCharacter: {Packet.AccountID}에 해당하는 클라이언트 소켓이 없습니다.");
                 return;
             }
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ResponsePacket,
-                ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ResponsePacket, Packet.AccountID);
         }
 
         private void Func_ResponseCreateCharacter(ResponseDBCreateCharacterPacket Packet)
@@ -204,8 +204,7 @@ namespace GameServer.PacketPipeLine
             {
                 LogManager.GetSingletone.WriteLog($"Func_ResponseCreateCharacter: {Packet.AccountID}에 캐릭터 생성 실패 ErrorCode: {Packet.ErrorCode}");
             }
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(Packet.ErrorCode),
-                ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(Packet.ErrorCode), Packet.AccountID);
         }
 
         private void Func_ResponseCharBaseInfo(ResponseDBCharBaseInfoPacket Packet)
@@ -214,8 +213,7 @@ namespace GameServer.PacketPipeLine
                 return;
             ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender,Packet.PresetNumber, Packet.Job, 
                 Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP);
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,
-            ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,Packet.AccountID);
         }
     }
 }

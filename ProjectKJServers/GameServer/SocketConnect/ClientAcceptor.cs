@@ -11,6 +11,7 @@ using ABI.System.Collections.Generic;
 using CoreUtility.GlobalVariable;
 using CoreUtility.SocketCore;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 using GameServer.PacketPipeLine;
 
 namespace GameServer.SocketConnect
@@ -91,8 +92,7 @@ namespace GameServer.SocketConnect
         // 클라이언트를 Accept할 때에는 아래의 함수를 재정의 해야한다
         protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)
         {
-            // int로 형변환
-            ClientRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data, GetClientID(Sock));
+            MainProxy.GetSingletone.ProcessClientRecvPacket(Data, Sock);
         }
 
         protected override void PushToPipeLine(Memory<byte> Data)
