@@ -12,7 +12,7 @@ namespace GameServer {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.10.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.11.0.0")]
     internal sealed partial class GameServerSettings : global::System.Configuration.ApplicationSettingsBase {
         
         private static GameServerSettings defaultInstance = ((GameServerSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new GameServerSettings())));

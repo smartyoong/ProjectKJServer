@@ -17,8 +17,8 @@ namespace GameServer
 
         private delegate void DelegateWriteLog(string Log);
         private delegate void DelegateWriteErrorLog(Exception ex);
-        private DelegateWriteLog WriteFileLog = LogManager.GetSingletone.WriteLog;
-        private DelegateWriteErrorLog WriteErrorLog = LogManager.GetSingletone.WriteLog;
+        private DelegateWriteLog WriteFileLog;
+        private DelegateWriteErrorLog WriteErrorLog;
 
         public GameServer()
         {
@@ -119,6 +119,8 @@ namespace GameServer
             CurrentUserCountTextBox.ReadOnly = true;
             CurrentUserCountTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
+            WriteFileLog = LogManager.GetSingletone.WriteLog;
+            WriteErrorLog = LogManager.GetSingletone.WriteLog;
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

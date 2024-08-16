@@ -21,8 +21,8 @@ namespace GameServer.MainUI
 
         private delegate void DelegateWriteLog(string Log);
         private delegate void DelegateWriteErrorLog(Exception ex);
-        private DelegateWriteLog WriteFileLog = LogManager.GetSingletone.WriteLog;
-        private DelegateWriteErrorLog WriteErrorLog = LogManager.GetSingletone.WriteLog;
+        private DelegateWriteLog WriteFileLog;
+        private DelegateWriteErrorLog WriteErrorLog;
 
         private GameEngine GameEngineClass;
         private LoginServerAcceptor LoginServerAcceptorClass;
@@ -47,6 +47,8 @@ namespace GameServer.MainUI
             DBServerRecvPacketPipelineClass = new DBServerRecvPacketPipeline();
             ClientSendPacketPipelineClass = new ClientSendPacketPipeline();
             ClientRecvPacketPipelineClass = new ClientRecvPacketPipeline();
+            WriteFileLog = LogManager.GetSingletone.WriteLog;
+            WriteErrorLog = LogManager.GetSingletone.WriteLog;
         }
         ////////////////////////////////////////////////////////////////////////
         public void StartGameEngine()

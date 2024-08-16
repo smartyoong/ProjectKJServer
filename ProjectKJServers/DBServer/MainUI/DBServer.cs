@@ -14,8 +14,8 @@ namespace DBServer
 
         delegate void DelegateWriteLog(string Log);
         delegate void DelegateWriteErrorLog(Exception ex);
-        DelegateWriteLog WriteFileLog = LogManager.GetSingletone.WriteLog;
-        DelegateWriteErrorLog WriteErrorLog = LogManager.GetSingletone.WriteLog;
+        DelegateWriteLog WriteFileLog;
+        DelegateWriteErrorLog WriteErrorLog;
 
         public DBServer()
         {
@@ -31,6 +31,8 @@ namespace DBServer
             ServerStatusTextBox.ReadOnly = true;
             ServerStatusTextBox.GotFocus += (s, e) => { LogListBox.Focus(); };
             SubscribeAllEvent();
+            WriteFileLog = LogManager.GetSingletone.WriteLog;
+            WriteErrorLog = LogManager.GetSingletone.WriteLog;
         }
 
         private void SubscribeAllEvent()
@@ -92,6 +94,7 @@ namespace DBServer
         // UI와 작동하는 스레드이기 때문에 ConfigureAwait(false)를 사용하지 않습니다.
         private async void ServerStartButton_Click(object sender, EventArgs e)
         {
+
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
             WriteFileLog("서버를 가동합니다.");

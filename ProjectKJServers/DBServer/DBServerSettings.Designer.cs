@@ -12,7 +12,7 @@ namespace DBServer {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.9.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.11.0.0")]
     internal sealed partial class DBServerSettings : global::System.Configuration.ApplicationSettingsBase {
         
         private static DBServerSettings defaultInstance = ((DBServerSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new DBServerSettings())));
