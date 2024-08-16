@@ -1,4 +1,5 @@
 ﻿using CoreUtility.Utility;
+using GameServer.MainUI;
 using GameServer.PacketList;
 using GameServer.SocketConnect;
 using System;
@@ -83,7 +84,7 @@ namespace GameServer.PacketPipeLine
         {
             if (data.IsEmpty)
                 return;
-            await DBServerConnector.GetSingletone.Send(data).ConfigureAwait(false);
+            await MainProxy.GetSingletone.SendToDBServer(data).ConfigureAwait(false);
         }
     }
 }

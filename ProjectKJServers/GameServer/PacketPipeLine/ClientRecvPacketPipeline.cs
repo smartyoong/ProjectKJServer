@@ -9,6 +9,7 @@ using GameServer.SocketConnect;
 using GameServer.PacketList;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 
 namespace GameServer.PacketPipeLine
 {
@@ -169,7 +170,7 @@ namespace GameServer.PacketPipeLine
 
         private void SendAuthFailToClient(string AccountID ,int ClientID)
         {
-            ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, 
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, 
                 new ResponseHashAuthCheckPacket(AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
         }
 
@@ -177,20 +178,20 @@ namespace GameServer.PacketPipeLine
         {
             string HashCode = string.Empty;
             // 닉네임이 최초에는 전부 Guest인데,,, 소켓은 이거 인증 못받으면 닉네임이랑 매핑안됨
-            GeneralErrorCode ErrorCode = ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode);
+            GeneralErrorCode ErrorCode = MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode);
             switch (ErrorCode)
             {
                 case GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST:
-                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                    MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                         new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST), ClientID);
                     //LogManager.GetSingletone.WriteLog($"해시 코드 등록전입니다. {Packet.AccountID} {Packet.HashCode}");
                     break;
                 case GeneralErrorCode.ERR_AUTH_SUCCESS:
                     if (Packet.HashCode == HashCode)
                     {
-                        ClientAcceptor.GetSingletone.MappingSocketAccountID(ClientAcceptor.GetSingletone.GetClientSocket(ClientID)!, Packet.AccountID);
+                        MainProxy.GetSingletone.MappingSocketAccountID(MainProxy.GetSingletone.GetClientSocket(ClientID)!, Packet.AccountID);
 
-                        ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                        MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                             new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_SUCCESS), ClientID);
 
                         //LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드 인증 성공 {Packet.HashCode}");
@@ -200,12 +201,12 @@ namespace GameServer.PacketPipeLine
                         if (HashCode == "NONEHASH")
                             LogManager.GetSingletone.WriteLog($"{Packet.AccountID} 해시코드가 없습니다. {Packet.HashCode}");
 
-                        ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                        MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                             new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
                     }
                     break;
                 case GeneralErrorCode.ERR_AUTH_FAIL:
-                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
+                    MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
                         new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
                     break;
 
@@ -215,22 +216,22 @@ namespace GameServer.PacketPipeLine
         private void DB_Func_RequestCharacterBaseInfo(RequestCharBaseInfoPacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
+            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
             {
-                ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
+                MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
                 // 해쉬 코드 인증 실패
                 LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
                 return;
             }
             // DB에서 캐릭터 정보를 가져온다.
             RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID);
-            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
+            MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
         }
 
         private void DB_Func_RequestCreateCharacter(RequestCreateCharacterPacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == ClientAcceptor.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
+            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
             {
                 SendAuthFailToClient(Packet.AccountID,ClientID);
                 // 해쉬 코드 인증 실패
@@ -239,7 +240,7 @@ namespace GameServer.PacketPipeLine
             }
             // DB에다가 캐릭터 생성을 요청한다.
             RequestDBCreateCharacterPacket DBPacket = new RequestDBCreateCharacterPacket(Packet.AccountID,Packet.Gender,Packet.PresetID);
-            DBServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameDBPacketListID.REQUEST_CREATE_CHARACTER, DBPacket);
+            MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CREATE_CHARACTER, DBPacket);
         }
     }
 }

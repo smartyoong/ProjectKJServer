@@ -67,6 +67,7 @@ namespace GameServer.GameSystem
 
         public void Run()
         {
+            LastTickCount = Environment.TickCount;
             while (!GameEngineCancleToken.IsCancellationRequested)
             {
                 MapSystem.GetSingletone.Update();

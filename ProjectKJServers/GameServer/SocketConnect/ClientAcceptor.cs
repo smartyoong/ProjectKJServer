@@ -92,7 +92,7 @@ namespace GameServer.SocketConnect
         // 클라이언트를 Accept할 때에는 아래의 함수를 재정의 해야한다
         protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)
         {
-            MainProxy.GetSingletone.ProcessClientRecvPacket(Data, Sock);
+            MainProxy.GetSingletone.ProcessRecvPacketFromClient(Data, Sock);
         }
 
         protected override void PushToPipeLine(Memory<byte> Data)

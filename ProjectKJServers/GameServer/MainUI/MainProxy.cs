@@ -1,4 +1,5 @@
-﻿using CoreUtility.Utility;
+﻿using CoreUtility.GlobalVariable;
+using CoreUtility.Utility;
 using GameServer.GameSystem;
 using GameServer.PacketList;
 using GameServer.PacketPipeLine;
@@ -70,6 +71,11 @@ namespace GameServer.MainUI
             await LoginServerAcceptorClass.Stop();
         }
 
+        public async Task SendToLoginServer(Memory<byte> Data)
+        {
+            await LoginServerAcceptorClass.Send(Data).ConfigureAwait(false);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void ConnectToDBServer(TaskCompletionSource<bool> DBServerReadyEvent)
@@ -80,6 +86,11 @@ namespace GameServer.MainUI
         public async Task StopConnectToDBServer()
         {
             await DBServerConnectorClass.Stop();
+        }
+
+        public async Task SendToDBServer(Memory<byte> Data)
+        {
+            await DBServerConnectorClass.Send(Data).ConfigureAwait(false);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -149,11 +160,31 @@ namespace GameServer.MainUI
             return ClientAcceptorClass.GetClientID(ClientSock);
         }
 
+        public GeneralErrorCode AddHashCodeAndAccountID(string AccountID, string HashCode)
+        {
+            return ClientAcceptorClass.AddHashCodeAndAccountID(AccountID, HashCode);
+        }
+
+        public void RemoveHashCodeByAccountID(string AccountID)
+        {
+            ClientAcceptorClass.RemoveHashCodeByAccountID(AccountID);
+        }
+
+        public GeneralErrorCode CheckAuthHashCode(string AccountID, ref string HashCode)
+        {
+            return ClientAcceptorClass.CheckAuthHashCode(AccountID, ref HashCode);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StopLoginServerRecvPacketPipeline()
         {
             LoginServerRecvPacketPipelineClass.Cancel();
+        }
+
+        public void ProcessRecvPacketFromLoginServer(Memory<byte> Data)
+        {
+            LoginServerRecvPacketPipelineClass.PushToPacketPipeline(Data);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -173,12 +204,21 @@ namespace GameServer.MainUI
         {
             DBServerRecvPacketPipelineClass.Cancel();
         }
+        public void ProcessRecvPacketFromDBServer(Memory<byte> Data)
+        {
+            DBServerRecvPacketPipelineClass.PushToPacketPipeline(Data);
+        }
 
         ////////////////////////////////////////////////////////////////////////
 
         public void StopDBServerSendPacketPipeline()
         {
             DBServerSendPacketPipelineClass.Cancel();
+        }
+
+        public void SendToDBServer(GameDBPacketListID ID, dynamic Packet)
+        {
+            DBServerSendPacketPipelineClass.PushToPacketPipeline(ID, Packet);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -188,7 +228,7 @@ namespace GameServer.MainUI
             ClientRecvPacketPipelineClass.Cancel();
         }
 
-        public void ProcessClientRecvPacket(Memory<byte> Data, Socket Sock)
+        public void ProcessRecvPacketFromClient(Memory<byte> Data, Socket Sock)
         {
             // int로 형변환
             ClientRecvPacketPipelineClass.PushToPacketPipeline(Data, GetClientID(Sock));

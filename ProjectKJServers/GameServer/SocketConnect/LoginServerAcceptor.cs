@@ -10,6 +10,7 @@ using GameServer.PacketPipeLine;
 using CoreUtility.SocketCore;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 
 namespace GameServer.SocketConnect
 {
@@ -93,7 +94,7 @@ namespace GameServer.SocketConnect
 
         protected override void PushToPipeLine(Memory<byte> Data)
         {
-            LoginServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(Data);
+            MainProxy.GetSingletone.ProcessRecvPacketFromLoginServer(Data);
         }
 
         protected override void PushToPipeLine(Memory<byte> Data, Socket Sock)

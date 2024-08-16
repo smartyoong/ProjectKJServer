@@ -9,6 +9,7 @@ using GameServer.SocketConnect;
 using GameServer.PacketList;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 
 namespace GameServer.PacketPipeLine
 {
@@ -158,11 +159,11 @@ namespace GameServer.PacketPipeLine
             if (IsErrorPacket(Packet, "SendUserHashInfo"))
                 return;
 
-            var ErrorCode = ClientAcceptor.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);
+            var ErrorCode = MainProxy.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);
 
             if (ErrorCode == GeneralErrorCode.ERR_AUTH_FAIL)
             {
-                LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.RESPONSE_USER_HASH_INFO,
+                MainProxy.GetSingletone.SendToLoginServer(GameLoginPacketListID.RESPONSE_USER_HASH_INFO,
                     new ResponseUserHashInfoPacket(Packet.ClientLoginID, Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL, ++Packet.TimeToLive));
 
             }
@@ -170,19 +171,18 @@ namespace GameServer.PacketPipeLine
             {
                 // 이미 로그인한 계정이라면 어캐하지? 나중에 처리할까?
                 // 기존 유저를 짜르고 신규유저가 들어간다
-                if (ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) != null)
+                if (MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) != null)
                 {
 
-                    LoginServerSendPacketPipeline.GetSingletone.PushToPacketPipeline(GameLoginPacketListID.REQUEST_KICK_USER,
-                        new RequestKickUserPacket(ClientAcceptor.GetSingletone.GetIPAddrByClientSocket(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!),
+                    MainProxy.GetSingletone.SendToLoginServer(GameLoginPacketListID.REQUEST_KICK_USER,
+                        new RequestKickUserPacket(MainProxy.GetSingletone.GetIPAddrByClientSocket(MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!),
                         Packet.AccountID));
 
-                    ClientSendPacketPipeline.GetSingletone.PushToPacketPipeline(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN),
-                        ClientAcceptor.GetSingletone.GetClientID(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!));
+                    MainProxy.GetSingletone.SendToClient(GamePacketListID.KICK_CLIENT, new SendKickClientPacket((int)KickReason.DUPLICATED_LOGIN), Packet.AccountID);
                     Task.Delay(TimeSpan.FromSeconds(3)).Wait(); // 이러면 해결은 될건데 매우 안좋은 방향인데
-                    ClientAcceptor.GetSingletone.KickClient(ClientAcceptor.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!);
-                    ClientAcceptor.GetSingletone.RemoveHashCodeByAccountID(Packet.AccountID);
-                    ClientAcceptor.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);
+                    MainProxy.GetSingletone.KickClient(MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID)!);
+                    MainProxy.GetSingletone.RemoveHashCodeByAccountID(Packet.AccountID);
+                    MainProxy.GetSingletone.AddHashCodeAndAccountID(Packet.AccountID, Packet.HashCode);
                 }
                 // 만약 NickName으로 소켓을 못 얻어온다는 것은 아직 게임서버에게 로그인 시도를 요청 안했다는 것
                 // 왠만해선 클라가 바로 게임서버로 로그인 요청을 보낼거니까 특수한 상황 혹은 디버그 상황에서만 가능

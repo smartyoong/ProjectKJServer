@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using GameServer.SocketConnect;
 using GameServer.PacketList;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 
 namespace GameServer.PacketPipeLine
 {
@@ -82,7 +83,7 @@ namespace GameServer.PacketPipeLine
         {
             if (data.IsEmpty)
                 return;
-            await LoginServerAcceptor.GetSingletone.Send(data).ConfigureAwait(false);
+            await MainProxy.GetSingletone.SendToLoginServer(data).ConfigureAwait(false);
         }
     }
 }

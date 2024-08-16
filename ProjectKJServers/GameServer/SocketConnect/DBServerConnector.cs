@@ -4,6 +4,7 @@ using GameServer.PacketPipeLine;
 using CoreUtility.SocketCore;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 
 namespace GameServer.SocketConnect
 {
@@ -17,7 +18,7 @@ namespace GameServer.SocketConnect
     /// </summary>
     internal class DBServerConnector : Connector, IDisposable
     {
-        //private bool IsAlreadyDisposed = false;
+        private bool IsAlreadyDisposed = false;
         /// <value>지연 생성 및 싱글톤 패턴을 사용합니다.</value>
         //private static readonly Lazy<DBServerConnector> Lazy = new Lazy<DBServerConnector>(() => new DBServerConnector());
 
@@ -145,7 +146,7 @@ namespace GameServer.SocketConnect
 
         protected override void PushToPipeLine(Memory<byte> DataBuffer)
         {
-            DBServerRecvPacketPipeline.GetSingletone.PushToPacketPipeline(DataBuffer);
+            MainProxy.GetSingletone.ProcessRecvPacketFromDBServer(DataBuffer);
         }
     }
 }
