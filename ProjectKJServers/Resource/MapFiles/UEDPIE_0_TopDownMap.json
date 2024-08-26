@@ -1,6 +1,6 @@
 {
 	"MapID": 0,
-	"MapName": "UEDPIE_0_TopDownMap",
+	"MapName": "TopDownMap",
 	"Obstacles": [
 		{"Location": {"X": 2400.000000, "Y": 500.000000, "Z": 0.000000}, "Scale": {"X": 2.000000, "Y": 2.000000, "Z": 2.000000}, "MeshSize": {"X": 50.000008, "Y": 49.999985, "Z": 99.999992}, "MeshName": "SM_QuarterCylinder"},
 		{"Location": {"X": 2600.000000, "Y": 3000.000000, "Z": 0.000000}, "Scale": {"X": 1.000000, "Y": 1.000000, "Z": 3.000000}, "MeshSize": {"X": 99.999969, "Y": 99.999939, "Z": 100.000000}, "MeshName": "SM_Cylinder"},

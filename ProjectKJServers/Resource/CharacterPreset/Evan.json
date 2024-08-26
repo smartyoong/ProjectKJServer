@@ -3,5 +3,5 @@
     "PresetName" : "Evan",
     "Gender" : 0,
     "BlueprintName" : "BP_Evan",
-    "PlayerCharacterName" : "BP_PlayerCharacter_Evan"
+    "PlayerCharacterName" : "/Game/Characters/PlayerCharacter/BP_PlayerCharacter_Evan.BP_PlayerCharacter_Evan_C"
 }
