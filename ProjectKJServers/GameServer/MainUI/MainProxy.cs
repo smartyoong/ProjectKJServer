@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using GameServer.Component;
 
 namespace GameServer.MainUI
 {
@@ -59,6 +60,11 @@ namespace GameServer.MainUI
         public void StopGameEngine()
         {
             GameEngineClass.Stop();
+        }
+
+        public void AddUniformVelocityMovementComponent(UniformVelocityMovementComponent Component)
+        {
+            GameEngineClass.AddUniformVelocityMovementComponentToSystem(Component);
         }
 
         ////////////////////////////////////////////////////////////////////////

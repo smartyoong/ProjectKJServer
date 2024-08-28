@@ -11,9 +11,7 @@ namespace GameServer.Resource
 {
     internal class ResourceLoader
     {
-        private static Lazy<ResourceLoader> instance = new Lazy<ResourceLoader>(() => new ResourceLoader());
-        public static ResourceLoader GetSingletone { get { return instance.Value; } }
-        private ResourceLoader()
+        public ResourceLoader()
         {
         }
         public void LoadMapData(ref Dictionary<int, MapData> MapDataDictionary)

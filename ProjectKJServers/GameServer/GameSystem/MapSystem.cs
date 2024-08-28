@@ -12,12 +12,9 @@ namespace GameServer.GameSystem
 {
     internal class MapSystem : IComponentSystem
     {
-        private static Lazy<MapSystem> instance = new Lazy<MapSystem>(() => new MapSystem());
-        public static MapSystem GetSingletone { get { return instance.Value; } }
-
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
 
-        private MapSystem()
+        public MapSystem()
         {
         }
 
