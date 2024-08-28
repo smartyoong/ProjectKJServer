@@ -1,4 +1,5 @@
-﻿using GameServer.MainUI;
+﻿using GameServer.GameSystem;
+using GameServer.MainUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +11,92 @@ namespace GameServer.Component
 {
     internal class UniformVelocityMovementComponent
     {
-        private int LastUpdateTick = 0;
-        private int Speed { get; set; }
-        private Vector3 Position { get; set; }
-        private Vector3 TargetPosition { get; set; }
-        public bool IsMoving { get; private set; }
+        private readonly object _lock = new object();
+        //외부에서 호출될 가능성이 높은 변수들을 Lock을 반드시 걸어준다.
+        //프로퍼티만 락을 잡아주면된다, lock이 크리티컬 섹션이니까 매우 빠르게 돌아갈듯
+        public int LastUpdateTick
+        {
+            get
+            {
+                lock (_lock) { return LastUpdateTick; }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    LastUpdateTick = value;
+                }
+            }
+        }
+        public int Speed
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return Speed;
+                }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    Speed = value;
+                }
+
+            }
+        }
+        public Vector3 Position 
+        { 
+            get
+            {
+                lock (_lock)
+                {
+                    return Position;
+                }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    Position = value;
+                }
+            }
+        }
+        public Vector3 TargetPosition
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return TargetPosition;
+                }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    TargetPosition = value;
+                }
+            }
+        }
+        public bool IsMoving
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return IsMoving;
+                }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    IsMoving = value;
+                }
+            }
+        }
 
         public UniformVelocityMovementComponent()
         {
@@ -22,12 +104,11 @@ namespace GameServer.Component
             Position = Vector3.Zero;
             TargetPosition = Vector3.Zero;
             IsMoving = false;
-            MainProxy.GetSingletone.AddUniformVelocityMovementComponent(this);
         }
 
         public bool UpdateCheck()
         {
-            if(Environment.TickCount - LastUpdateTick >= 16.67) // 60FPS
+            if(Environment.TickCount - LastUpdateTick >= GameEngine.FPS_60_UPDATE_INTERVAL) // 60FPS
             {
                 LastUpdateTick = Environment.TickCount;
                 return true;
@@ -37,6 +118,7 @@ namespace GameServer.Component
 
         public void MoveToLocation(Vector3 Target)
         {
+            // 추후 CanMove로 가능 여부 체크해보자 이때 같은 맵에 있는 다른 유저에게도 이동 패킷 보내야 할 듯
             TargetPosition = Target;
             IsMoving = true;
         }
@@ -47,9 +129,14 @@ namespace GameServer.Component
             IsMoving = false;
         }
 
-        public bool CheckArrive()
+        public void UpdatePosition(Vector3 NewPosition)
         {
-            if (Vector3.Distance(Position, TargetPosition) <= Speed * 0.1f) // 10% 범위까지는 도착으로 판정
+            Position = NewPosition;
+        }
+
+        public bool CheckArrive(Vector3 NewPos)
+        {
+            if (Vector3.Distance(NewPos, TargetPosition) <= Speed * GameEngine.FPS_60_UPDATE_INTERVAL)
             {
                 return true;
             }

@@ -12,7 +12,7 @@ namespace GameServer.GameSystem
 {
     internal class GameEngine : IDisposable
     {
-        const int MINIMUM_UPDATE_INTERVAL = 1000 / 60;
+        public const int FPS_60_UPDATE_INTERVAL = 17; // 60FPS (16.67 반올림)
         private int LastTickCount = 0;
         //private static Lazy<GameEngine> instance = new Lazy<GameEngine>(() => new GameEngine());
         //public static GameEngine GetSingletone { get { return instance.Value; } }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GameServer.Resource;
 using CoreUtility.GlobalVariable;
-using CoreUtility.Utility;
+using CoreUtility.Utility;  
 //using System.Numerics;
 
 namespace GameServer.GameSystem
