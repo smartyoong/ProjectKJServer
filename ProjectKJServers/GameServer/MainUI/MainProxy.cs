@@ -67,6 +67,15 @@ namespace GameServer.MainUI
             GameEngineClass.AddUniformVelocityMovementComponentToSystem(Component);
         }
 
+        public bool CanMove(int MapID, System.Numerics.Vector3 Position)
+        {
+            Vector3 NewPosition = new Vector3();
+            NewPosition.X = Position.X;
+            NewPosition.Y = Position.Y;
+            NewPosition.Z = Position.Z;
+            return GameEngineClass.CanMove(MapID, NewPosition);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StartAcceptLoginServer(TaskCompletionSource<bool> LoginServerReadyEvent)

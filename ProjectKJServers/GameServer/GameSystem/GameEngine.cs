@@ -84,5 +84,9 @@ namespace GameServer.GameSystem
             UniformVelocityMovementSystem.AddComponent(Component);
         }
 
+        public bool CanMove(int MapID, Vector3 Position)
+        {
+            return MapSystem.CanMove(MapID, Position);
+        }
     }
 }

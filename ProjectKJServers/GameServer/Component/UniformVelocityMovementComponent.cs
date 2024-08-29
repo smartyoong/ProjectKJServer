@@ -116,11 +116,14 @@ namespace GameServer.Component
             return false;
         }
 
-        public void MoveToLocation(Vector3 Target)
+        public void MoveToLocation(int MapID, Vector3 Target)
         {
             // 추후 CanMove로 가능 여부 체크해보자 이때 같은 맵에 있는 다른 유저에게도 이동 패킷 보내야 할 듯
-            TargetPosition = Target;
-            IsMoving = true;
+            if (MainProxy.GetSingletone.CanMove(MapID, Target))
+            {
+                TargetPosition = Target;
+                IsMoving = true;
+            }
         }
 
         public void SetArrived()
