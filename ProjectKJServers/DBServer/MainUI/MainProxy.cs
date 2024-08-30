@@ -44,7 +44,7 @@ namespace DBServer.MainUI
             switch (Packet)
             {
                 case GameSQLReadCharacterPacket ReadCharacterPacket:
-                    SQLPipeLineClass.SQL_READ_CHARACTER(ReadCharacterPacket.AccountID);
+                    SQLPipeLineClass.SQL_READ_CHARACTER(ReadCharacterPacket.AccountID,ReadCharacterPacket.NickName);
                     break;
                 case GameSQLCreateCharacterPacket CreateCharacterPacket:
                     SQLPipeLineClass.SQL_CREATE_CHARACTER(CreateCharacterPacket.AccountID, CreateCharacterPacket.Gender, CreateCharacterPacket.PresetID);

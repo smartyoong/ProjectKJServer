@@ -160,7 +160,7 @@ namespace DBServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "RequestCharBaseInfo"))
                 return;
-            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID);
+            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID,packet.NickName);
             MainProxy.GetSingletone.HandleSQLPacket(ReadCharacterPacket);
         }
 

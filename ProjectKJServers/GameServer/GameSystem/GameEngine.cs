@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,21 +7,23 @@ using System.Threading.Tasks;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using GameServer.Component;
+using GameServer.Object;
 using GameServer.Resource;
+using GameServer.PacketList;
+using GameServer.MainUI;
 
 namespace GameServer.GameSystem
 {
     internal class GameEngine : IDisposable
     {
-        public const int FPS_60_UPDATE_INTERVAL = 17; // 60FPS (16.67 반올림)
-        private int LastTickCount = 0;
-        //private static Lazy<GameEngine> instance = new Lazy<GameEngine>(() => new GameEngine());
-        //public static GameEngine GetSingletone { get { return instance.Value; } }
+        public static readonly int UPDATE_INTERVAL_20PERSEC = 50;
 
         private bool IsAlreadyDisposed = false;
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
+        private ConcurrentDictionary<string,PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
+        private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string,string>();
 
         MapSystem MapSystem;
         UniformVelocityMovementSystem UniformVelocityMovementSystem;
@@ -48,10 +51,17 @@ namespace GameServer.GameSystem
 
         private void Run()
         {
-            LastTickCount = Environment.TickCount;
             while (!GameEngineCancleToken.IsCancellationRequested)
             {
-                MapSystem.Update();
+                try
+                {
+                    MapSystem.Update();
+                    UniformVelocityMovementSystem.Update();
+                }
+                catch (Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog(e.Message);
+                }
             }
         }
 
@@ -87,6 +97,61 @@ namespace GameServer.GameSystem
         public bool CanMove(int MapID, Vector3 Position)
         {
             return MapSystem.CanMove(MapID, Position);
+        }
+
+        public void AddNickName(string AccountID, string NickName)
+        {
+            NickNameMap.TryAdd(AccountID, NickName);
+        }
+
+        public void RemoveNickName(string AccountID, out string? NickName)
+        {
+            if(NickNameMap.TryRemove(AccountID, out NickName))
+            {
+                LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 닉네임 {NickName}을 제거했습니다.");
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 닉네임을 찾을 수 없습니다.");
+            }
+        }
+
+        public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
+        {
+            try
+            {
+                PlayerCharacter NewCharacter = new PlayerCharacter();
+                NewCharacter.AccountInfo.AccountID = Info.AccountID;
+                NewCharacter.AccountInfo.NickName = Info.NickName;
+                NewCharacter.CurrentPosition.MapID = Info.MapID;
+                NewCharacter.CurrentPosition.Position = new System.Numerics.Vector3(Info.X, Info.Y, 0);
+                NewCharacter.JobInfo.Job = Info.Job;
+                NewCharacter.JobInfo.Level = Info.JobLevel;
+                NewCharacter.LevelInfo.Level = Info.Level;
+                NewCharacter.LevelInfo.CurrentExp = Info.EXP;
+                NewCharacter.AppearanceInfo.PresetNumber = Info.PresetNumber;
+                NewCharacter.AppearanceInfo.Gender = Info.Gender;
+                if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
+                    LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
+                MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
+                //NewCharacter.SetMovement(300, new System.Numerics.Vector3(Info.X, Info.Y, 0));
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message);
+            }
+        }
+
+        public void RemoveCharacter(string AccountID)
+        {
+            if(OnlineCharacterDictionary.TryRemove(AccountID, out _))
+            {
+                LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 제거했습니다.");
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 찾을 수 없습니다.");
+            }
         }
     }
 }

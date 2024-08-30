@@ -192,7 +192,7 @@ namespace GameServer.PacketPipeLine
                 }
             }
 
-            // 성공했다면 딱히 처리할 로직이 없다.
+            // 성공했다면 클라이언트 ID와 닉네임을 매핑 시키자 혹시 모르니까 맵을 너무 많이 사용하는듯 한데. 다른데에서 부여하자
             //LogManager.GetSingletone.WriteLog($"Func_SendUserHashInfo: {Packet.AccountID}에게 HashCode {Packet.HashCode}를 부여했습니다.");
         }
 

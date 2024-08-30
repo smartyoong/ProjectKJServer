@@ -19,9 +19,10 @@ namespace DBServer.Packet_SPList
         public string AccountID { get; set; }
     }
 
-    public record GameSQLReadCharacterPacket(string AccountID) : IGameSQLPacket
+    public record GameSQLReadCharacterPacket(string AccountID, string NickName) : IGameSQLPacket
     {
         public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
     }
 
     public record GameSQLCreateCharacterPacket(string AccountID, int Gender, int PresetID) : IGameSQLPacket

@@ -136,10 +136,11 @@
     }
 
     [Serializable]
-    public struct RequestDBCharBaseInfoPacket(string AccountID)
+    public struct RequestDBCharBaseInfoPacket(string AccountID, string NickName)
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
     }
     [Serializable]
     public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
@@ -148,7 +149,7 @@
         public string AccountID { get; set; } = AccountID;
     }
     [Serializable]
-    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP)
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName)
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -160,7 +161,7 @@
         public int Y { get; set; } = Y;
         public int Level { get; set; } = Level;
         public int EXP { get; set; } = EXP;
-
+        public string NickName { get; set; } = NickName;
     }
 
     [Serializable]
@@ -206,10 +207,11 @@
     }
 
     [Serializable]
-    public struct RequestCharBaseInfoPacket(string AccountID, string HashCode)
+    public struct RequestCharBaseInfoPacket(string AccountID, string HashCode, string NickName)
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
+        public string NickName { get; set; } = NickName;
     }
 
     [Serializable]

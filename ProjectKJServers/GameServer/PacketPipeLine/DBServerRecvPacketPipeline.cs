@@ -213,6 +213,7 @@ namespace GameServer.PacketPipeLine
                 return;
             ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender,Packet.PresetNumber, Packet.Job, 
                 Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP);
+            MainProxy.GetSingletone.CreateCharacter(Packet);
             MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,Packet.AccountID);
         }
     }

@@ -87,11 +87,12 @@ namespace DBServer.PacketPipeLine
                 }
             }
         }
-        public void SQL_READ_CHARACTER(string AccountID)
+        public void SQL_READ_CHARACTER(string AccountID, string NickName)
         {
             SqlParameter[] sqlParameters =
             [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID }
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@NickName", SqlDbType.VarChar, 50) { Value = NickName }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_READ_CHARACTER, sqlParameters));
         }
@@ -112,8 +113,12 @@ namespace DBServer.PacketPipeLine
         {
             const int NEED_TO_MAKE_CHARACTER = -1;
             int ReturnValue = 99999;
+            //닉네임을 어떻게든 전달하기 위한 꼼수임 닉네임은 1번 파라미터이고 사용 안함
+            SqlParameter[] NewParameters = new SqlParameter[Parameters.Length - 1];
+            Array.Copy(Parameters, NewParameters, Parameters.Length - 1);
+
             List<List<object>> CharacterInfoList;
-            (ReturnValue, CharacterInfoList) = await SQLWorker.ExecuteSqlSPGetResultListAsync(DB_SP.SP_READ_CHARACTER.ToString(), Parameters).ConfigureAwait(false);
+            (ReturnValue, CharacterInfoList) = await SQLWorker.ExecuteSqlSPGetResultListAsync(DB_SP.SP_READ_CHARACTER.ToString(), NewParameters).ConfigureAwait(false);
             if (ReturnValue == NEED_TO_MAKE_CHARACTER)
             {
                 // 0번 파라미터가 AccountID임
@@ -124,7 +129,8 @@ namespace DBServer.PacketPipeLine
             {
                 ResponseDBCharBaseInfoPacket CharBaseInfoPacket = new ResponseDBCharBaseInfoPacket((string)CharacterInfoList[0][0],
                     (int)CharacterInfoList[0][1], (int)CharacterInfoList[0][2], (int)CharacterInfoList[0][3], (int)CharacterInfoList[0][4],
-                    (int)CharacterInfoList[0][5], (int)CharacterInfoList[0][6], (int)CharacterInfoList[0][7], (int)CharacterInfoList[0][8], (int)CharacterInfoList[0][9]);
+                    (int)CharacterInfoList[0][5], (int)CharacterInfoList[0][6], (int)CharacterInfoList[0][7], (int)CharacterInfoList[0][8], (int)CharacterInfoList[0][9],
+                    (string)Parameters[1].Value);
                 MainProxy.GetSingletone.SendToGameServer(DBPacketListID.RESPONSE_CHAR_BASE_INFO, CharBaseInfoPacket);
             }
         }

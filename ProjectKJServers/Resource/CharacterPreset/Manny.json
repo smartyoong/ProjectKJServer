@@ -1,0 +1,7 @@
+{
+    "PresetID" : 1,
+    "PresetName" : "Manny",
+    "Gender" : 0,
+    "BlueprintName" : "BP_Manny",
+    "PlayerCharacterName" : "/Game/Characters/PlayerCharacter/BP_PlayerCharacter_Manny.BP_PlayerCharacter_Manny_C"
+}

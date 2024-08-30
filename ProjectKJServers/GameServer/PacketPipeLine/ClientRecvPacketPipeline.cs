@@ -224,7 +224,7 @@ namespace GameServer.PacketPipeLine
                 return;
             }
             // DB에서 캐릭터 정보를 가져온다.
-            RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID);
+            RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID, Packet.NickName);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
         }
 

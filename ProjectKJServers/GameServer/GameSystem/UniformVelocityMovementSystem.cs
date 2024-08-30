@@ -13,7 +13,7 @@ namespace GameServer.GameSystem
     internal class UniformVelocityMovementSystem : IComponentSystem
     {
         ConcurrentBag<UniformVelocityMovementComponent> Components;
-        private object _lock = new object();
+        long LastTickCount = 0;
         public UniformVelocityMovementSystem()
         {
             Components = new ConcurrentBag<UniformVelocityMovementComponent>();
@@ -26,17 +26,25 @@ namespace GameServer.GameSystem
 
         public void Update()
         {
+            long CurrentTickCount = Environment.TickCount64;
             //병렬로 위치 업데이트를 시킨다
+            if (CurrentTickCount - LastTickCount < GameEngine.UPDATE_INTERVAL_20PERSEC)
+            {
+                return;
+            }
+            float DeltaTime = (CurrentTickCount - LastTickCount) / 1000;
             Parallel.ForEach(Components, (Component) =>
             {
-                if (Component.UpdateCheck() && Component.IsMoving)
+                if (Component.IsMoving)
                 {
-                    UpdatePosition(Component);
+                    UpdatePosition(Component,DeltaTime);
                 }
             });
+
+            LastTickCount = CurrentTickCount;
         }
 
-        private void UpdatePosition(UniformVelocityMovementComponent Component)
+        private void UpdatePosition(UniformVelocityMovementComponent Component, float DeltaTime)
         {
             // 주의!!! 멀티스레드로 돌아갑니다 이 메서드를 다른 곳에서 호출하지 마세요.
             System.Numerics.Vector3 CurrentPos = Component.Position;
@@ -45,10 +53,10 @@ namespace GameServer.GameSystem
 
             System.Numerics.Vector3 Direction = System.Numerics.Vector3.Normalize(TargetPos-CurrentPos);
 
-            System.Numerics.Vector3 NewLocation = CurrentPos + Direction * Component.Speed * GameEngine.FPS_60_UPDATE_INTERVAL; // 16.67ms에 해당하는 시간
+            System.Numerics.Vector3 NewLocation = CurrentPos + Direction * Component.Speed * DeltaTime;
 
             // 목표 위치에 도달했는지 확인
-            if (Component.CheckArrive(NewLocation))
+            if (System.Numerics.Vector3.Distance(NewLocation, Component.TargetPosition) <= Component.Speed * DeltaTime)
             {
                 Component.SetArrived();
             }

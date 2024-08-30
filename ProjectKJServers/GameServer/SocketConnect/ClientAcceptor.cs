@@ -132,7 +132,13 @@ namespace GameServer.SocketConnect
                 if (!string.IsNullOrEmpty(AccountID))
                 {
                     AuthHashAndAccountIDDictionary.TryRemove(AccountID, out _);
-                    LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 로그아웃 했습니다.");
+                    MainProxy.GetSingletone.RemoveCharacter(AccountID);
+                    string? NickName;
+                    MainProxy.GetSingletone.RemoveNickName(AccountID,out NickName);
+                    if(!string.IsNullOrEmpty(NickName))
+                        LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID} {NickName}이/가 로그아웃 했습니다.");
+                    else
+                        LogManager.GetSingletone.WriteLog($"클라이언트 {AccountID}가 로그아웃 했습니다.");
                 }
             }
 

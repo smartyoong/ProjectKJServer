@@ -76,6 +76,26 @@ namespace GameServer.MainUI
             return GameEngineClass.CanMove(MapID, NewPosition);
         }
 
+        public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
+        {
+            GameEngineClass.CreateCharacter(Info);
+        }
+
+        public void RemoveCharacter(string AccountID)
+        {
+            GameEngineClass.RemoveCharacter(AccountID);
+        }
+
+        public void AddNickName(string AccountID, string NickName)
+        {
+            GameEngineClass.AddNickName(AccountID, NickName);
+        }
+
+        public void RemoveNickName(string AccountID, out string? NickName)
+        {
+            GameEngineClass.RemoveNickName(AccountID, out NickName);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StartAcceptLoginServer(TaskCompletionSource<bool> LoginServerReadyEvent)
