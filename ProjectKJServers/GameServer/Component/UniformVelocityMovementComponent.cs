@@ -114,6 +114,7 @@ namespace GameServer.Component
         {
             Position = TargetPosition;
             IsMoving = false;
+            LogManager.GetSingletone.WriteLog($"이동 완료 {Position}");
         }
 
         public void UpdatePosition(Vector3 NewPosition)
