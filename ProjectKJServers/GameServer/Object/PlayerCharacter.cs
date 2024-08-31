@@ -1,11 +1,6 @@
 ﻿using GameServer.Component;
 using GameServer.MainUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GameServer.Object
 {
@@ -49,7 +44,7 @@ namespace GameServer.Object
             JobInfo = new CharacterJobInfo();
             AppearanceInfo = new ChracterAppearanceInfo();
             LevelInfo = new CharacterLevelInfo();
-            //MovementComponent = new UniformVelocityMovementComponent();
+            MovementComponent = new UniformVelocityMovementComponent();
         }
 
         public void SetMovement(int Speed, Vector3 Position)

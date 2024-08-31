@@ -14,20 +14,24 @@ namespace GameServer.Component
         private readonly object _lock = new object();
         //외부에서 호출될 가능성이 높은 변수들을 Lock을 반드시 걸어준다.
         //프로퍼티만 락을 잡아주면된다, lock이 크리티컬 섹션이니까 매우 빠르게 돌아갈듯
+        private int _Speed;
+        private Vector3 _Position;
+        private Vector3 _TargetPosition;
+        private bool _IsMoving;
         public int Speed
         {
             get
             {
                 lock (_lock)
                 {
-                    return Speed;
+                    return _Speed;
                 }
             }
             private set
             {
                 lock (_lock)
                 {
-                    Speed = value;
+                    _Speed = value;
                 }
 
             }
@@ -38,14 +42,14 @@ namespace GameServer.Component
             {
                 lock (_lock)
                 {
-                    return Position;
+                    return _Position;
                 }
             }
             private set
             {
                 lock (_lock)
                 {
-                    Position = value;
+                    _Position = value;
                 }
             }
         }
@@ -55,14 +59,14 @@ namespace GameServer.Component
             {
                 lock (_lock)
                 {
-                    return TargetPosition;
+                    return _TargetPosition;
                 }
             }
             private set
             {
                 lock (_lock)
                 {
-                    TargetPosition = value;
+                    _TargetPosition = value;
                 }
             }
         }
@@ -72,14 +76,14 @@ namespace GameServer.Component
             {
                 lock (_lock)
                 {
-                    return IsMoving;
+                    return _IsMoving;
                 }
             }
             private set
             {
                 lock (_lock)
                 {
-                    IsMoving = value;
+                    _IsMoving = value;
                 }
             }
         }

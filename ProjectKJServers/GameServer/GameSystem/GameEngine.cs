@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CoreUtility.GlobalVariable;
+﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using GameServer.Component;
-using GameServer.Object;
-using GameServer.Resource;
-using GameServer.PacketList;
 using GameServer.MainUI;
+using GameServer.Object;
+using GameServer.PacketList;
+using GameServer.Resource;
+using System.Collections.Concurrent;
 
 namespace GameServer.GameSystem
 {
@@ -22,8 +17,8 @@ namespace GameServer.GameSystem
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
-        private ConcurrentDictionary<string,PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
-        private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string,string>();
+        private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
+        private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
 
         MapSystem MapSystem;
         UniformVelocityMovementSystem UniformVelocityMovementSystem;
@@ -106,7 +101,7 @@ namespace GameServer.GameSystem
 
         public void RemoveNickName(string AccountID, out string? NickName)
         {
-            if(NickNameMap.TryRemove(AccountID, out NickName))
+            if (NickNameMap.TryRemove(AccountID, out NickName))
             {
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 닉네임 {NickName}을 제거했습니다.");
             }
@@ -118,33 +113,28 @@ namespace GameServer.GameSystem
 
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
         {
-            try
-            {
-                PlayerCharacter NewCharacter = new PlayerCharacter();
-                NewCharacter.AccountInfo.AccountID = Info.AccountID;
-                NewCharacter.AccountInfo.NickName = Info.NickName;
-                NewCharacter.CurrentPosition.MapID = Info.MapID;
-                NewCharacter.CurrentPosition.Position = new System.Numerics.Vector3(Info.X, Info.Y, 0);
-                NewCharacter.JobInfo.Job = Info.Job;
-                NewCharacter.JobInfo.Level = Info.JobLevel;
-                NewCharacter.LevelInfo.Level = Info.Level;
-                NewCharacter.LevelInfo.CurrentExp = Info.EXP;
-                NewCharacter.AppearanceInfo.PresetNumber = Info.PresetNumber;
-                NewCharacter.AppearanceInfo.Gender = Info.Gender;
-                if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
-                    LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
-                MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
-                //NewCharacter.SetMovement(300, new System.Numerics.Vector3(Info.X, Info.Y, 0));
-            }
-            catch (Exception e)
-            {
-                LogManager.GetSingletone.WriteLog(e.Message);
-            }
+
+            PlayerCharacter NewCharacter = new PlayerCharacter();
+            NewCharacter.AccountInfo.AccountID = Info.AccountID;
+            NewCharacter.AccountInfo.NickName = Info.NickName;
+            NewCharacter.CurrentPosition.MapID = Info.MapID;
+            NewCharacter.CurrentPosition.Position = new System.Numerics.Vector3(Info.X, Info.Y, 0);
+            NewCharacter.JobInfo.Job = Info.Job;
+            NewCharacter.JobInfo.Level = Info.JobLevel;
+            NewCharacter.LevelInfo.Level = Info.Level;
+            NewCharacter.LevelInfo.CurrentExp = Info.EXP;
+            NewCharacter.AppearanceInfo.PresetNumber = Info.PresetNumber;
+            NewCharacter.AppearanceInfo.Gender = Info.Gender;
+            if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
+                LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
+            MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
+            NewCharacter.SetMovement(300, new System.Numerics.Vector3(Info.X, Info.Y, 0));
+
         }
 
         public void RemoveCharacter(string AccountID)
         {
-            if(OnlineCharacterDictionary.TryRemove(AccountID, out _))
+            if (OnlineCharacterDictionary.TryRemove(AccountID, out _))
             {
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 제거했습니다.");
             }
