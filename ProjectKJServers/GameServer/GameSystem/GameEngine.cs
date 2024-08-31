@@ -6,6 +6,7 @@ using GameServer.Object;
 using GameServer.PacketList;
 using GameServer.Resource;
 using System.Collections.Concurrent;
+using Windows.ApplicationModel.VoiceCommands;
 
 namespace GameServer.GameSystem
 {
@@ -41,6 +42,7 @@ namespace GameServer.GameSystem
         {
             LogManager.GetSingletone.WriteLog("리소스를 로드합니다.");
             ResourceLoader.LoadMapData(ref MapDataDictionary);
+            MapSystem.SetMapData(ref MapDataDictionary);
             ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
         }
 
@@ -99,6 +101,18 @@ namespace GameServer.GameSystem
             NickNameMap.TryAdd(AccountID, NickName);
         }
 
+        public string GetNickName(string AccountID)
+        {
+            if (NickNameMap.TryGetValue(AccountID, out string? NickName))
+            {
+                return NickName;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
         public void RemoveNickName(string AccountID, out string? NickName)
         {
             if (NickNameMap.TryRemove(AccountID, out NickName))
@@ -130,6 +144,18 @@ namespace GameServer.GameSystem
             MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
             NewCharacter.SetMovement(300, new System.Numerics.Vector3(Info.X, Info.Y, 0));
 
+        }
+
+        public PlayerCharacter? GetCharacterByAccountID(string AccountID)
+        {
+            if(OnlineCharacterDictionary.TryGetValue(AccountID, out PlayerCharacter? Character))
+            {
+                return Character;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void RemoveCharacter(string AccountID)

@@ -29,7 +29,9 @@
         RESPONSE_NEED_TO_MAKE_CHARACTER = 6,
         RESPONSE_CHAR_BASE_INFO = 7,
         REQUEST_CREATE_CHARACTER = 8,
-        RESPONSE_CREATE_CHARACTER = 9
+        RESPONSE_CREATE_CHARACTER = 9,
+        REQUEST_MOVE = 10,
+        RESPONSE_MOVE = 11
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -247,6 +249,22 @@
 
     [Serializable]
     public struct ResponseCreateCharacterPacket(int ErrorCode)
+    {
+        public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+    [Serializable]
+    public struct RequestMovePacket(string AccountID, string HashCode, int MapID, int X, int Y)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashCode;
+        public int MapID { get; set; } = MapID;
+        public int X { get; set; } = X;
+        public int Y { get; set; } = Y;
+    }
+
+    [Serializable]
+    public struct ResponseMovePacket(int ErrorCode)
     {
         public int ErrorCode { get; set; } = ErrorCode;
     }

@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using GameServer.Component;
+using GameServer.Object;
 
 namespace GameServer.MainUI
 {
@@ -81,6 +82,11 @@ namespace GameServer.MainUI
             GameEngineClass.CreateCharacter(Info);
         }
 
+        public PlayerCharacter? GetPlayerCharacter(string AccountID)
+        {
+            return GameEngineClass.GetCharacterByAccountID(AccountID);
+        }
+
         public void RemoveCharacter(string AccountID)
         {
             GameEngineClass.RemoveCharacter(AccountID);
@@ -89,6 +95,11 @@ namespace GameServer.MainUI
         public void AddNickName(string AccountID, string NickName)
         {
             GameEngineClass.AddNickName(AccountID, NickName);
+        }
+
+        public string GetNickName(string AccountID)
+        {
+            return GameEngineClass.GetNickName(AccountID);
         }
 
         public void RemoveNickName(string AccountID, out string? NickName)

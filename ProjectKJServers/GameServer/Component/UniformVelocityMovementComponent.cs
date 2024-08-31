@@ -1,4 +1,5 @@
-﻿using GameServer.GameSystem;
+﻿using CoreUtility.Utility;
+using GameServer.GameSystem;
 using GameServer.MainUI;
 using System;
 using System.Collections.Generic;
@@ -96,14 +97,17 @@ namespace GameServer.Component
             IsMoving = false;
         }
 
-        public void MoveToLocation(int MapID, Vector3 Target)
+        public bool MoveToLocation(int MapID, Vector3 Target)
         {
             // 추후 CanMove로 가능 여부 체크해보자 이때 같은 맵에 있는 다른 유저에게도 이동 패킷 보내야 할 듯
             if (MainProxy.GetSingletone.CanMove(MapID, Target))
             {
                 TargetPosition = Target;
                 IsMoving = true;
+                LogManager.GetSingletone.WriteLog($"이동 목표지점 설정 완료 {TargetPosition}");
+                return true;
             }
+            return false;
         }
 
         public void SetArrived()

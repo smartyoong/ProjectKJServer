@@ -79,6 +79,8 @@ namespace GameServer.PacketPipeLine
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseCreateCharacterPacket)packet.Packet), packet.ClientID);
                 case GamePacketListID.RESPONSE_CHAR_BASE_INFO:
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseCharBaseInfoPacket)packet.Packet), packet.ClientID);
+                case GamePacketListID.RESPONSE_MOVE:
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseMovePacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
                     return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);

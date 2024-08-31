@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using GameServer.Resource;
 using CoreUtility.GlobalVariable;
-using CoreUtility.Utility;  
+using CoreUtility.Utility;
+using Windows.ApplicationModel.VoiceCommands;
 //using System.Numerics;
 
 namespace GameServer.GameSystem
@@ -16,6 +17,11 @@ namespace GameServer.GameSystem
 
         public MapSystem()
         {
+        }
+
+        public void SetMapData(ref Dictionary<int, MapData> MapDataDictionary)
+        {
+            this.MapDataDictionary = MapDataDictionary;
         }
 
         public void Update()
@@ -32,11 +38,20 @@ namespace GameServer.GameSystem
             }
             MapData Data = MapDataDictionary[MapID];
             if (Position.X < 0 || Position.X > Data.MapBoundX)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 X축 경계를 벗어났습니다. {Position.X}");
                 return false;
+            }
             if (Position.Y < 0 || Position.Y > Data.MapBoundY)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 Y축 경계를 벗어났습니다. {Position.Y}");
                 return false;
+            }
             if (Position.Z < 0 || Position.Z > Data.MapBoundZ)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 Z축 경계를 벗어났습니다. {Position.Z}");
                 return false;
+            }
 
             // Z축은 사용하지 않는다고 가정
             foreach (Obstacle ObstacleData in Data.Obstacles)
@@ -45,6 +60,7 @@ namespace GameServer.GameSystem
                 {
                     if (Position.Y >= ObstacleData.Location.Y && Position.Y <= ObstacleData.Location.Y + ObstacleData.Scale.Y * ObstacleData.MeshSize.Y)
                     {
+                        LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다. {Position} {ObstacleData}");
                         return false;
                     }
                 }

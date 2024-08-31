@@ -10,6 +10,7 @@ using GameServer.PacketList;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using GameServer.MainUI;
+using GameServer.Object;
 
 namespace GameServer.PacketPipeLine
 {
@@ -145,6 +146,10 @@ namespace GameServer.PacketPipeLine
                     RequestCreateCharacterPacket? RequestCreateCharacterPacket = PacketUtils.GetPacketStruct<RequestCreateCharacterPacket>(ref Data);
                     return RequestCreateCharacterPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
                         new ClientRecvPacketPipeLineWrapper(RequestCreateCharacterPacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_MOVE:
+                    RequestMovePacket? RequestMovePacket = PacketUtils.GetPacketStruct<RequestMovePacket>(ref Data);
+                    return RequestMovePacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(RequestMovePacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -164,6 +169,9 @@ namespace GameServer.PacketPipeLine
                     break;
                 case RequestCreateCharacterPacket RequestCreateCharacterPacket:
                     DB_Func_RequestCreateCharacter(RequestCreateCharacterPacket, Packet.ClientID);
+                    break;
+                case RequestMovePacket RequestMovePacket:
+                    Func_RequestMove(RequestMovePacket, Packet.ClientID);
                     break;
             }
         }
@@ -241,6 +249,35 @@ namespace GameServer.PacketPipeLine
             // DB에다가 캐릭터 생성을 요청한다.
             RequestDBCreateCharacterPacket DBPacket = new RequestDBCreateCharacterPacket(Packet.AccountID,Packet.Gender,Packet.PresetID);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CREATE_CHARACTER, DBPacket);
+        }
+
+        private void Func_RequestMove(RequestMovePacket Packet, int ClientID)
+        {
+            string HashCode = Packet.HashCode;
+            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
+            {
+                SendAuthFailToClient(Packet.AccountID, ClientID);
+                // 해쉬 코드 인증 실패
+                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+                return;
+            }
+            // 이동 패킷을 처리한다.
+            PlayerCharacter? Character = MainProxy.GetSingletone.GetPlayerCharacter(Packet.AccountID);
+            if (Character == null)
+            {
+                LogManager.GetSingletone.WriteLog($"캐릭터가 없습니다. {Packet.AccountID}");
+                MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_MOVE, new ResponseMovePacket(1/*실패*/), ClientID);
+                return;
+            }
+            // 이동 패킷을 처리한다.
+            if(Character.MoveToLocation(new System.Numerics.Vector3(Packet.X, Packet.Y, 0)))
+            {
+                MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_MOVE, new ResponseMovePacket(0/*성공*/), ClientID);
+            }
+            else
+            {
+                MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_MOVE, new ResponseMovePacket(1/*실패*/), ClientID);
+            }
         }
     }
 }

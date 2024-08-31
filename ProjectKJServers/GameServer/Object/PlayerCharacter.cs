@@ -1,6 +1,8 @@
-﻿using GameServer.Component;
+﻿using CoreUtility.Utility;
+using GameServer.Component;
 using GameServer.MainUI;
 using System.Numerics;
+using Windows.ApplicationModel.VoiceCommands;
 
 namespace GameServer.Object
 {
@@ -51,6 +53,12 @@ namespace GameServer.Object
         {
             MainProxy.GetSingletone.AddUniformVelocityMovementComponent(MovementComponent);
             MovementComponent.InitMovementComponent(Speed, Position);
+        }
+
+        public bool MoveToLocation(Vector3 Position)
+        {
+            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Position}으로 이동합니다.");
+            return MovementComponent.MoveToLocation(CurrentPosition.MapID,Position);
         }
     }
 }
