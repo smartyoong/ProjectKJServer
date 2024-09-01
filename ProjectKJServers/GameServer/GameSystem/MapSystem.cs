@@ -7,10 +7,12 @@ using GameServer.Resource;
 using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using Windows.ApplicationModel.VoiceCommands;
-//using System.Numerics;
+using System.Numerics;
 
 namespace GameServer.GameSystem
 {
+    using Vector3 = System.Numerics.Vector3;
+    using CustomVector3 = CoreUtility.GlobalVariable.Vector3;
     internal class MapSystem : IComponentSystem
     {
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
@@ -29,8 +31,14 @@ namespace GameServer.GameSystem
             // 만약 장애물 관련 업데이트가 필요할 경우 여기서 진행함
         }
 
-        public bool CanMove(int MapID, Vector3 Position)
+        public bool CanMove(int MapID, CustomVector3 Position)
         {
+            if(MapDataDictionary == null)
+            {
+                LogManager.GetSingletone.WriteLog("맵 데이터가 없습니다.");
+                return false;
+            }
+
             if (!MapDataDictionary.ContainsKey(MapID))
             {
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
@@ -47,20 +55,23 @@ namespace GameServer.GameSystem
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 Y축 경계를 벗어났습니다. {Position.Y}");
                 return false;
             }
-            if (Position.Z < 0 || Position.Z > Data.MapBoundZ)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 Z축 경계를 벗어났습니다. {Position.Z}");
-                return false;
-            }
 
             // Z축은 사용하지 않는다고 가정
-            foreach (Obstacle ObstacleData in Data.Obstacles)
+            foreach (ConvertObstacles ObstacleData in Data.Obstacles)
             {
-                if (Position.X >= ObstacleData.Location.X && Position.X <= ObstacleData.Location.X + ObstacleData.Scale.X * ObstacleData.MeshSize.X)
+                if (ObstacleData.MeshName == "SM_Floor")
                 {
-                    if (Position.Y >= ObstacleData.Location.Y && Position.Y <= ObstacleData.Location.Y + ObstacleData.Scale.Y * ObstacleData.MeshSize.Y)
+                    continue;
+                }
+
+                foreach(var Vertex in ObstacleData.Points)
+                {
+                    // 충돌 체크 범위가 올바른지 확인
+                    LogManager.GetSingletone.WriteLog($"변환된 포지션 {Position} {Vertex} {ObstacleData.MeshName}");
+                    if (Position.X >= Vertex.X && Position.X <= Vertex.X &&
+                        Position.Y >= Vertex.Y && Position.Y <= Vertex.Y)
                     {
-                        LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다. {Position} {ObstacleData}");
+                        LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다.{ObstacleData}");
                         return false;
                     }
                 }

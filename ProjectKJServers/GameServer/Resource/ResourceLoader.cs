@@ -34,7 +34,9 @@ namespace GameServer.Resource
                 }
 
                 if (MapData != null)
+                {
                     MapResourceList.Add(MapData);
+                }
                 else
                     LogManager.GetSingletone.WriteLog($"맵 정보를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
             }
@@ -62,23 +64,33 @@ namespace GameServer.Resource
                     LogManager.GetSingletone.WriteLog($"포탈 정보를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
             }
 
-            // 이제 MapPortalResourceList에는 MapID, MapName, LinkToMapID, Location, Bound(BoxSize) 정보가 들어있습니다.
-            for (int i = 0; i < MapResourceList.Count; ++i)
-            {
-                MapResourceList[i].Obstacles = MapResourceList[i].Obstacles.AsParallel()
-                               .OrderByDescending(o => o.Scale.X * o.MeshSize.X + o.Scale.Y * o.MeshSize.Y + o.Scale.Z * o.MeshSize.Z)
-                               .ToList();
-            }
-
             // 이제 변환하자
             LogManager.GetSingletone.WriteLog("맵 정보를 변환합니다.");
 
             foreach (MapDataForResourceLoader Data in MapResourceList)
             {
-                MapDataDictionary.Add(Data.MapID, new MapData(Data.MapID, Data.MapName, Data.Obstacles, MapPortalResourceList.Where(p => p.MapID == Data.MapID).ToList()
-                    , Data.Obstacles[0].MeshSize.X * Data.Obstacles[0].Scale.X
-                    , Data.Obstacles[0].MeshSize.Y * Data.Obstacles[0].Scale.Y
-                    , Data.Obstacles[0].MeshSize.Z * Data.Obstacles[0].Scale.Z));
+                var FloorObstacle = Data.Obstacles.FirstOrDefault(o => o.MeshName == "SM_Floor");
+                if (FloorObstacle == null)
+                {
+                    LogManager.GetSingletone.WriteLog($"맵 ID {Data.MapID}에 바닥이 없습니다.");
+                    continue;
+                }
+                List<ConvertObstacles> ConvertObstacles = new List<ConvertObstacles>();
+                foreach(var Obs in Data.Obstacles)
+                {
+                    switch(Obs.MeshName)
+                    {
+                        case "SM_Floor":
+                            break;
+                        default:
+                            ConvertObstacles.Add(ConvertMathUtility.CalculateSquareVertex(Obs,Obs.MeshName));
+                            break;
+                    }
+                }
+                MapDataDictionary.Add(Data.MapID, new MapData(Data.MapID, Data.MapName, ConvertObstacles, MapPortalResourceList.Where(p => p.MapID == Data.MapID).ToList()
+                    , FloorObstacle.MeshSize.X * FloorObstacle.Scale.X
+                    , FloorObstacle.MeshSize.Y * FloorObstacle.Scale.Y
+                    , FloorObstacle.MeshSize.Z * FloorObstacle.Scale.Z));
             }
         }
 

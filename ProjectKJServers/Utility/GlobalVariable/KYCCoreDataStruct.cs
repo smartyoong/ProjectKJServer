@@ -13,11 +13,26 @@ namespace CoreUtility.GlobalVariable
         public float Z { get; set; }
     }
 
-    public record Obstacle(Vector3 Location, Vector3 Scale, Vector3 MeshSize, string MeshName)
+    public record Rotation
+    {
+        public float Pitch { get; set; }
+        public float Yaw { get; set; }
+        public float Roll { get; set; }
+    }
+
+    public record Obstacle(Vector3 Location, Rotation Rotation, Vector3 Scale, Vector3 MeshSize, string MeshName)
     {
         public Vector3 Location { get; set; } = Location;
+        public Rotation Rotation { get; set; } = Rotation;
         public Vector3 Scale { get; set; } = Scale;
         public Vector3 MeshSize { get; set; } = MeshSize;
+        public string MeshName { get; set; } = MeshName;
+    }
+
+    public record ConvertObstacles(int Type, List<System.Numerics.Vector3> Points, string MeshName)
+    {
+        public int Type { get; set; } = Type; // 0은 사각형 , 1은 원 , 2는 삼각형, 3은 실린더
+        public List<System.Numerics.Vector3> Points { get; set; } = Points;
         public string MeshName { get; set; } = MeshName;
     }
 
@@ -27,11 +42,12 @@ namespace CoreUtility.GlobalVariable
         public string MapName { get; set; } = MapName;
         public List<Obstacle> Obstacles { get; set; } = Obstacles;
     }
-    public record MapData(int MapID, string MapName, List<Obstacle> Obstacles, List<MapPortalData> Portals, float MapBoundX, float MapBoundY, float MapBoundZ)
+
+    public record MapData(int MapID, string MapName, List<ConvertObstacles> Obstacles, List<MapPortalData> Portals, float MapBoundX, float MapBoundY, float MapBoundZ)
     {
         public int MapID { get; set; } = MapID;
         public string MapName { get; set; } = MapName;
-        public List<Obstacle> Obstacles { get; set; } = Obstacles;
+        public List<ConvertObstacles> Obstacles { get; set; } = Obstacles;
         public List<MapPortalData> Portals { get; set; } = Portals;
         public float MapBoundX { get; set; } = MapBoundX;
         public float MapBoundY { get; set; } = MapBoundY;
