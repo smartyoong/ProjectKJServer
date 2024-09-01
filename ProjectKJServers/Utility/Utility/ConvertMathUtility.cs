@@ -25,6 +25,15 @@ namespace CoreUtility.Utility
         {
             return Quaternion.CreateFromYawPitchRoll(ToRadian(Rotation.Yaw), ToRadian(Rotation.Pitch), ToRadian(Rotation.Roll));
         }
+        private static Vector2 RotateVector(Vector2 vector, float angle)
+        {
+            float cos = (float)Math.Cos(angle);
+            float sin = (float)Math.Sin(angle);
+            return new Vector2(
+                vector.X * cos - vector.Y * sin,
+                vector.X * sin + vector.Y * cos
+            );
+        }
 
         public static ConvertObstacles CalculateSquareVertex(Obstacle Obs, string MeshName)
         {
@@ -36,30 +45,24 @@ namespace CoreUtility.Utility
 
             Vector2[] Vertices =
             [
-                new Vector2(MeshSize.X / 2, MeshSize.Y / 2),
-                new Vector2(-MeshSize.X / 2, MeshSize.Y / 2),
-                new Vector2(MeshSize.X / 2, -MeshSize.Y / 2),
-                new Vector2(-MeshSize.X / 2, -MeshSize.Y / 2),
+                new Vector2(0, 0),
+                new Vector2(MeshSize.X, 0),
+                new Vector2(0, MeshSize.Y),
+                new Vector2(MeshSize.X, MeshSize.Y),
             ];
             ConvertObstacles ConvertObstacles = new ConvertObstacles(0, new List<Vector3>(), MeshName);
             for (int i = 0; i < Vertices.Length; i++)
             {
                 // 스케일 적용
                 Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
-
+                Vector2 WorldVertex = ScaledVertex + Location;
                 // 2D 회전 적용
-                Vector2 RotatedVertex = new Vector2(
-                    ScaledVertex.X * (float)Math.Cos(Rotation) - ScaledVertex.Y * (float)Math.Sin(Rotation),
-                    ScaledVertex.X * (float)Math.Sin(Rotation) + ScaledVertex.Y * (float)Math.Cos(Rotation)
-                );
-
-                // 위치 적용
-                Vector2 FinalVertex = RotatedVertex + Location;
+                Vector2 RotatedVertex = RotateVector(WorldVertex - Location, Rotation) + Location;
 
                 // 결과를 3D Vector로 변환 (Z = 0)
-                ConvertObstacles.Points.Add(new Vector3(FinalVertex.X, FinalVertex.Y, 0));
+                ConvertObstacles.Points.Add(new Vector3(RotatedVertex.X, RotatedVertex.Y, 0));
 
-                LogManager.GetSingletone.WriteLog($" 변환중 {FinalVertex} {ScaledVertex} {RotatedVertex} {Location}");
+                //LogManager.GetSingletone.WriteLog($" 변환중 {WorldVertex} {ScaledVertex} {RotatedVertex} {Location}");
             }
             return ConvertObstacles;
         }

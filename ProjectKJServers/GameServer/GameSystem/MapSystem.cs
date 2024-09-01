@@ -63,17 +63,17 @@ namespace GameServer.GameSystem
                 {
                     continue;
                 }
-
-                foreach(var Vertex in ObstacleData.Points)
+                //사각형이라면,,
+                float MinX = ObstacleData.Points.Min(x => x.X);
+                float MaxX = ObstacleData.Points.Max(x => x.X);
+                float MinY = ObstacleData.Points.Min(x => x.Y);
+                float MaxY = ObstacleData.Points.Max(x => x.Y);
+                // 충돌 체크 범위가 올바른지 확인
+                if (Position.X >= MinX && Position.X <= MaxX &&
+                    Position.Y >= MinY && Position.Y <= MaxY)
                 {
-                    // 충돌 체크 범위가 올바른지 확인
-                    LogManager.GetSingletone.WriteLog($"변환된 포지션 {Position} {Vertex} {ObstacleData.MeshName}");
-                    if (Position.X >= Vertex.X && Position.X <= Vertex.X &&
-                        Position.Y >= Vertex.Y && Position.Y <= Vertex.Y)
-                    {
-                        LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다.{ObstacleData}");
-                        return false;
-                    }
+                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다.{MinX} {MinY} {MaxX} {MaxY} {ObstacleData.MeshName}");
+                    return false;
                 }
             }
             return true;
