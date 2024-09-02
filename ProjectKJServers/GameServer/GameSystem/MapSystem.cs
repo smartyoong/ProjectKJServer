@@ -59,11 +59,12 @@ namespace GameServer.GameSystem
             // Z축은 사용하지 않는다고 가정
             foreach (ConvertObstacles ObstacleData in Data.Obstacles)
             {
+                //바닥은 건너뛰자
                 if (ObstacleData.MeshName == "SM_Floor")
                 {
                     continue;
                 }
-                //사각형이라면,,
+                //사각형, 실린더, 구까지는 각 X,Y 꼭짓점을 구하도록 작업했음 그래서 영역체크는 이걸로 가능 (충돌 일때는 Radius 사용할 예정)
                 float MinX = ObstacleData.Points.Min(x => x.X);
                 float MaxX = ObstacleData.Points.Max(x => x.X);
                 float MinY = ObstacleData.Points.Min(x => x.Y);

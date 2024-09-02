@@ -20,20 +20,26 @@ namespace CoreUtility.GlobalVariable
         public float Roll { get; set; }
     }
 
-    public record Obstacle(Vector3 Location, Rotation Rotation, Vector3 Scale, Vector3 MeshSize, string MeshName)
+    public record Obstacle(Vector3 Location, Rotation Rotation, Vector3 Scale, Vector3 MeshSize, string MeshName, float CylinderRadius, float CylinderHeight, float SphereRadius)
     {
         public Vector3 Location { get; set; } = Location;
         public Rotation Rotation { get; set; } = Rotation;
         public Vector3 Scale { get; set; } = Scale;
         public Vector3 MeshSize { get; set; } = MeshSize;
         public string MeshName { get; set; } = MeshName;
+        public float CylinderRadius { get; set; } = CylinderRadius;
+        public float CylinderHeight { get; set; } = CylinderHeight;
+        public float SphereRadius { get; set; } = SphereRadius;
     }
 
-    public record ConvertObstacles(int Type, List<System.Numerics.Vector3> Points, string MeshName)
+    public record ConvertObstacles(int Type, List<System.Numerics.Vector3> Points, string MeshName, float CylinderRadius, float CylinderHeight, float SphereRadius)
     {
-        public int Type { get; set; } = Type; // 0은 사각형 , 1은 원 , 2는 삼각형, 3은 실린더
+        public int Type { get; set; } = Type; // 0은 사각형 , 1은 원 , 2는 실린더
         public List<System.Numerics.Vector3> Points { get; set; } = Points;
         public string MeshName { get; set; } = MeshName;
+        public float CylinderRadius { get; set; } = CylinderRadius;
+        public float CylinderHeight { get; set; } = CylinderHeight;
+        public float SphereRadius { get; set; } = SphereRadius;
     }
 
     public record MapDataForResourceLoader(int MapID, string MapName, List<Obstacle> Obstacles)

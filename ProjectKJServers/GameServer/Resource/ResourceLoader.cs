@@ -82,6 +82,12 @@ namespace GameServer.Resource
                     {
                         case "SM_Floor":
                             break;
+                        case "SM_Cylinder":
+                            ConvertObstacles.Add(ConvertMathUtility.CalculateCylinderVertex(Obs, Obs.MeshName));
+                            break;
+                        case "SM_Sphere":
+                            ConvertObstacles.Add(ConvertMathUtility.CalculateSphereVertex(Obs, Obs.MeshName));
+                            break;
                         default:
                             ConvertObstacles.Add(ConvertMathUtility.CalculateSquareVertex(Obs,Obs.MeshName));
                             break;
