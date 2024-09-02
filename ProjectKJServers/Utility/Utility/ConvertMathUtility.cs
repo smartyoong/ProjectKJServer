@@ -71,11 +71,10 @@ namespace CoreUtility.Utility
         {
             const int Sphere = 1;
             Vector2 Location = new Vector2(Obs.Location.X, Obs.Location.Y);
-            Vector2 Scale = new Vector2(Obs.Scale.X, Obs.Scale.Y);
-            Vector2 MeshSize = new Vector2(Obs.MeshSize.X, Obs.MeshSize.Y);
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
-            LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.SphereRadius}");
+            //LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.SphereRadius}");
+            //반지름은 이미 스케일 적용이 되어있음 그리고 0,0이 로컬 중심 좌표이므로 바로 월드 좌표를 계산해도됨
             Vector2[] Vertices =
             [
                 new Vector2(Location.X - Obs.SphereRadius, Location.Y - Obs.SphereRadius),
@@ -87,17 +86,14 @@ namespace CoreUtility.Utility
             ConvertObstacles ConvertObstacles = new ConvertObstacles(Sphere, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
-                LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
-                // 스케일 적용
-                Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
-                Vector2 WorldVertex = ScaledVertex + Location;
+                //LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
                 // 2D 회전 적용
-                Vector2 RotatedVertex = RotateVector(WorldVertex - Location, RotationAngle) + Location;
+                Vector2 RotatedVertex = RotateVector(Vertices[i], RotationAngle) + Location;
 
                 // 결과를 3D Vector로 변환 (Z = 0)
                 ConvertObstacles.Points.Add(new Vector3(RotatedVertex.X, RotatedVertex.Y, 0));
 
-                LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
+                //LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
             }
             return ConvertObstacles;
         }
@@ -106,12 +102,11 @@ namespace CoreUtility.Utility
         {
             const int Cylinder = 2;
             Vector2 Location = new Vector2(Obs.Location.X, Obs.Location.Y);
-            Vector2 Scale = new Vector2(Obs.Scale.X, Obs.Scale.Y);
-            Vector2 MeshSize = new Vector2(Obs.MeshSize.X, Obs.MeshSize.Y);
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
             // Cylinder의 꼭지점 좌표 계산 (Z축 무시이므로 사실상 X,Y좌표에 반지름 +-해주는것)
-            LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.CylinderRadius}");
+            //반지름은 이미 스케일 적용이 되어있음 그리고 0,0이 로컬 중심 좌표이므로 바로 월드 좌표를 계산해도됨
+            //LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.CylinderRadius}");
             Vector2[] Vertices =
             [
                 new Vector2(Location.X - Obs.CylinderRadius, Location.Y - Obs.CylinderRadius),
@@ -123,17 +118,14 @@ namespace CoreUtility.Utility
             ConvertObstacles ConvertObstacles = new ConvertObstacles(Cylinder, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
-                LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
-                // 스케일 적용
-                Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
-                Vector2 WorldVertex = ScaledVertex + Location;
+                //LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
                 // 2D 회전 적용
-                Vector2 RotatedVertex = RotateVector(WorldVertex - Location, RotationAngle) + Location;
+                Vector2 RotatedVertex = RotateVector(Vertices[i], RotationAngle);
 
                 // 결과를 3D Vector로 변환 (Z = 0)
                 ConvertObstacles.Points.Add(new Vector3(RotatedVertex.X, RotatedVertex.Y, 0));
 
-                LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
+                //LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
             }
             return ConvertObstacles;
         }
