@@ -75,7 +75,7 @@ namespace CoreUtility.Utility
             Vector2 MeshSize = new Vector2(Obs.MeshSize.X, Obs.MeshSize.Y);
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
-            // Cylinder의 꼭지점 좌표 계산 (Z축 무시이므로 사실상 X,Y좌표에 반지름 +-해주는것)
+            LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.SphereRadius}");
             Vector2[] Vertices =
             [
                 new Vector2(Location.X - Obs.SphereRadius, Location.Y - Obs.SphereRadius),
@@ -87,6 +87,7 @@ namespace CoreUtility.Utility
             ConvertObstacles ConvertObstacles = new ConvertObstacles(Sphere, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
+                LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
                 // 스케일 적용
                 Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
                 Vector2 WorldVertex = ScaledVertex + Location;
@@ -96,7 +97,7 @@ namespace CoreUtility.Utility
                 // 결과를 3D Vector로 변환 (Z = 0)
                 ConvertObstacles.Points.Add(new Vector3(RotatedVertex.X, RotatedVertex.Y, 0));
 
-                //LogManager.GetSingletone.WriteLog($" 변환중 {WorldVertex} {ScaledVertex} {RotatedVertex} {Location}");
+                LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
             }
             return ConvertObstacles;
         }
@@ -110,6 +111,7 @@ namespace CoreUtility.Utility
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
             // Cylinder의 꼭지점 좌표 계산 (Z축 무시이므로 사실상 X,Y좌표에 반지름 +-해주는것)
+            LogManager.GetSingletone.WriteLog($" 변환중 {Location} {Obs.CylinderRadius}");
             Vector2[] Vertices =
             [
                 new Vector2(Location.X - Obs.CylinderRadius, Location.Y - Obs.CylinderRadius),
@@ -121,6 +123,7 @@ namespace CoreUtility.Utility
             ConvertObstacles ConvertObstacles = new ConvertObstacles(Cylinder, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
+                LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
                 // 스케일 적용
                 Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
                 Vector2 WorldVertex = ScaledVertex + Location;
@@ -130,7 +133,7 @@ namespace CoreUtility.Utility
                 // 결과를 3D Vector로 변환 (Z = 0)
                 ConvertObstacles.Points.Add(new Vector3(RotatedVertex.X, RotatedVertex.Y, 0));
 
-                //LogManager.GetSingletone.WriteLog($" 변환중 {WorldVertex} {ScaledVertex} {RotatedVertex} {Location}");
+                LogManager.GetSingletone.WriteLog($" 변환후 {RotatedVertex}");
             }
             return ConvertObstacles;
         }
