@@ -13,9 +13,12 @@ namespace GameServer.GameSystem
 {
     using Vector3 = System.Numerics.Vector3;
     using CustomVector3 = CoreUtility.GlobalVariable.Vector3;
+    using static System.Runtime.InteropServices.JavaScript.JSType;
+
     internal class MapSystem : IComponentSystem
     {
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
+        private List<List<string>>? MapUserList;
 
         public MapSystem()
         {
@@ -24,6 +27,7 @@ namespace GameServer.GameSystem
         public void SetMapData(ref Dictionary<int, MapData> MapDataDictionary)
         {
             this.MapDataDictionary = MapDataDictionary;
+            MapUserList = new List<List<string>>(MapDataDictionary.Keys.Max()+1);
         }
 
         public void Update()
@@ -31,9 +35,48 @@ namespace GameServer.GameSystem
             // 만약 장애물 관련 업데이트가 필요할 경우 여기서 진행함
         }
 
-        public bool CanMove(int MapID, CustomVector3 Position)
+        public void AddUser(int MapID, string AccountID)
         {
-            if(MapDataDictionary == null)
+            if (MapUserList == null)
+            {
+                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                return;
+            }
+            if (MapUserList.Count <= MapID)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
+                return;
+            }
+            if (MapUserList[MapID] == null)
+            {
+                MapUserList[MapID] = new List<string>();
+            }
+            MapUserList[MapID].Add(AccountID);
+        }
+
+        public void RemoveUser(int MapID, string AccountID)
+        {
+            if (MapUserList == null)
+            {
+                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                return;
+            }
+            if (MapUserList.Count <= MapID)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
+                return;
+            }
+            if (MapUserList[MapID] == null)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
+                return;
+            }
+            MapUserList[MapID].Remove(AccountID);
+        }
+
+        private bool ValidMapIDCheck(int MapID)
+        {
+            if (MapDataDictionary == null)
             {
                 LogManager.GetSingletone.WriteLog("맵 데이터가 없습니다.");
                 return false;
@@ -44,6 +87,11 @@ namespace GameServer.GameSystem
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
                 return false;
             }
+            return true;
+        }
+
+        private bool BoundaryCheck(int MapID, ref readonly CustomVector3 Position)
+        {
             MapData Data = MapDataDictionary[MapID];
             if (Position.X < 0 || Position.X > Data.MapBoundX)
             {
@@ -55,7 +103,11 @@ namespace GameServer.GameSystem
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 Y축 경계를 벗어났습니다. {Position.Y}");
                 return false;
             }
+            return true;
+        }
 
+        private bool PositionAABBCheck(in int MapID, ref readonly MapData Data, ref readonly CustomVector3 Position)
+        {
             // Z축은 사용하지 않는다고 가정
             foreach (ConvertObstacles ObstacleData in Data.Obstacles)
             {
@@ -76,6 +128,24 @@ namespace GameServer.GameSystem
                     LogManager.GetSingletone.WriteLog($"맵 ID {MapID}의 장애물에 부딪혔습니다.{MinX} {MinY} {MaxX} {MaxY} {ObstacleData.MeshName}");
                     return false;
                 }
+            }
+            return true;
+        }
+
+        public bool CanMove(int MapID, CustomVector3 Position)
+        {
+            if(!ValidMapIDCheck(MapID))
+            {
+                return false;
+            }
+            if (!BoundaryCheck(MapID, ref Position))
+            {
+                return false;
+            }
+            MapData Data = MapDataDictionary[MapID];
+            if (!PositionAABBCheck(MapID, ref Data, ref Position))
+            {
+                return false;
             }
             return true;
         }

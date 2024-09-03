@@ -68,6 +68,16 @@ namespace GameServer.MainUI
             GameEngineClass.AddUniformVelocityMovementComponentToSystem(Component);
         }
 
+        public void AddUserToMap(int MapID, string AccountID)
+        {
+            GameEngineClass.AddUserToMap(MapID, AccountID);
+        }
+
+        public void RemoveUserFromMap(int MapID, string AccountID)
+        {
+            GameEngineClass.RemoveUserFromMap(MapID, AccountID);
+        }
+
         public bool CanMove(int MapID, System.Numerics.Vector3 Position)
         {
             Vector3 NewPosition = new Vector3();

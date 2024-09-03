@@ -91,6 +91,16 @@ namespace GameServer.GameSystem
             UniformVelocityMovementSystem.AddComponent(Component);
         }
 
+        public void AddUserToMap(int MapID, string AccountID)
+        {
+            MapSystem.AddUser(MapID, AccountID);
+        }
+
+        public void RemoveUserFromMap(int MapID, string AccountID)
+        {
+            MapSystem.RemoveUser(MapID, AccountID);
+        }
+
         public bool CanMove(int MapID, Vector3 Position)
         {
             return MapSystem.CanMove(MapID, Position);
