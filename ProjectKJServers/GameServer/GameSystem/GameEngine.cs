@@ -22,13 +22,13 @@ namespace GameServer.GameSystem
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
 
         MapSystem MapSystem;
-        UniformVelocityMovementSystem UniformVelocityMovementSystem;
+        KinematicMoveSystem KinematicMovementSystem;
         ResourceLoader ResourceLoader;
 
         public GameEngine()
         {
             MapSystem = new MapSystem();
-            UniformVelocityMovementSystem = new UniformVelocityMovementSystem();
+            KinematicMovementSystem = new KinematicMoveSystem();
             ResourceLoader = new ResourceLoader();
         }
 
@@ -53,7 +53,7 @@ namespace GameServer.GameSystem
                 try
                 {
                     MapSystem.Update();
-                    UniformVelocityMovementSystem.Update();
+                    KinematicMovementSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -86,9 +86,9 @@ namespace GameServer.GameSystem
             IsAlreadyDisposed = true;
         }
 
-        public void AddUniformVelocityMovementComponentToSystem(UniformVelocityMovementComponent Component)
+        public void AddKinematicComponentToSystem(KinematicComponent Component)
         {
-            UniformVelocityMovementSystem.AddComponent(Component);
+            KinematicMovementSystem.AddComponent(Component);
         }
 
         public void AddUserToMap(int MapID, string AccountID)
@@ -142,7 +142,6 @@ namespace GameServer.GameSystem
             NewCharacter.AccountInfo.AccountID = Info.AccountID;
             NewCharacter.AccountInfo.NickName = Info.NickName;
             NewCharacter.CurrentPosition.MapID = Info.MapID;
-            NewCharacter.CurrentPosition.Position = new System.Numerics.Vector3(Info.X, Info.Y, 0);
             NewCharacter.JobInfo.Job = Info.Job;
             NewCharacter.JobInfo.Level = Info.JobLevel;
             NewCharacter.LevelInfo.Level = Info.Level;

@@ -63,9 +63,9 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
-        public void AddUniformVelocityMovementComponent(UniformVelocityMovementComponent Component)
+        public void AddKinematicMoveComponent(KinematicComponent Component)
         {
-            GameEngineClass.AddUniformVelocityMovementComponentToSystem(Component);
+            GameEngineClass.AddKinematicComponentToSystem(Component);
         }
 
         public void AddUserToMap(int MapID, string AccountID)

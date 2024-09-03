@@ -14,7 +14,6 @@ namespace GameServer.Object
     struct CharacterPosition
     {
         public int MapID { get; set; }
-        public Vector3 Position { get; set; }
     }
     struct CharacterJobInfo
     {
@@ -38,7 +37,7 @@ namespace GameServer.Object
         public CharacterJobInfo JobInfo;
         public ChracterAppearanceInfo AppearanceInfo;
         public CharacterLevelInfo LevelInfo;
-        private UniformVelocityMovementComponent MovementComponent;
+        private KinematicComponent MovementComponent;
         public PlayerCharacter()
         {
             AccountInfo = new CharacterAccountInfo();
@@ -46,13 +45,13 @@ namespace GameServer.Object
             JobInfo = new CharacterJobInfo();
             AppearanceInfo = new ChracterAppearanceInfo();
             LevelInfo = new CharacterLevelInfo();
-            MovementComponent = new UniformVelocityMovementComponent();
+            MovementComponent = new KinematicComponent();
         }
 
         public void SetMovement(int Speed, Vector3 Position)
         {
-            MainProxy.GetSingletone.AddUniformVelocityMovementComponent(MovementComponent);
-            MovementComponent.InitMovementComponent(Speed, Position);
+            MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
+            MovementComponent.InitMovementComponent(Speed,1f,Position);
         }
 
         public bool MoveToLocation(Vector3 Position)

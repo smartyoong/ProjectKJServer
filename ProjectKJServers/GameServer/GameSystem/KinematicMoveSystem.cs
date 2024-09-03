@@ -10,16 +10,16 @@ using System.Numerics;
 
 namespace GameServer.GameSystem
 {
-    internal class UniformVelocityMovementSystem : IComponentSystem
+    internal class KinematicMoveSystem : IComponentSystem
     {
-        ConcurrentBag<UniformVelocityMovementComponent> Components;
+        ConcurrentBag<KinematicComponent> Components;
         long LastTickCount = 0;
-        public UniformVelocityMovementSystem()
+        public KinematicMoveSystem()
         {
-            Components = new ConcurrentBag<UniformVelocityMovementComponent>();
+            Components = new ConcurrentBag<KinematicComponent>();
         }
 
-        public void AddComponent(UniformVelocityMovementComponent Component)
+        public void AddComponent(KinematicComponent Component)
         {
             Components.Add(Component);
         }
@@ -44,7 +44,7 @@ namespace GameServer.GameSystem
             LastTickCount = CurrentTickCount;
         }
 
-        private void UpdatePosition(UniformVelocityMovementComponent Component, float DeltaTime)
+        private void UpdatePosition(KinematicComponent Component, float DeltaTime)
         {
             // 주의!!! 멀티스레드로 돌아갑니다 이 메서드를 다른 곳에서 호출하지 마세요.
             System.Numerics.Vector3 CurrentPos = Component.Position;
