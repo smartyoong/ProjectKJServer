@@ -17,6 +17,7 @@ namespace GameServer.GameSystem
 
     internal class MapSystem : IComponentSystem
     {
+        private readonly object _lock = new object();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private List<List<string>>? MapUserList;
 
@@ -37,41 +38,47 @@ namespace GameServer.GameSystem
 
         public void AddUser(int MapID, string AccountID)
         {
-            if (MapUserList == null)
+            lock(_lock)
             {
-                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
-                return;
+                if (MapUserList == null)
+                {
+                    LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                    return;
+                }
+                if (MapUserList.Count <= MapID)
+                {
+                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
+                    return;
+                }
+                if (MapUserList[MapID] == null)
+                {
+                    MapUserList[MapID] = new List<string>();
+                }
+                MapUserList[MapID].Add(AccountID);
             }
-            if (MapUserList.Count <= MapID)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
-                return;
-            }
-            if (MapUserList[MapID] == null)
-            {
-                MapUserList[MapID] = new List<string>();
-            }
-            MapUserList[MapID].Add(AccountID);
         }
 
         public void RemoveUser(int MapID, string AccountID)
         {
-            if (MapUserList == null)
+            lock(_lock)
             {
-                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
-                return;
+                if (MapUserList == null)
+                {
+                    LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                    return;
+                }
+                if (MapUserList.Count <= MapID)
+                {
+                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
+                    return;
+                }
+                if (MapUserList[MapID] == null)
+                {
+                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
+                    return;
+                }
+                MapUserList[MapID].Remove(AccountID);
             }
-            if (MapUserList.Count <= MapID)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
-                return;
-            }
-            if (MapUserList[MapID] == null)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
-                return;
-            }
-            MapUserList[MapID].Remove(AccountID);
         }
 
         private bool ValidMapIDCheck(int MapID)
