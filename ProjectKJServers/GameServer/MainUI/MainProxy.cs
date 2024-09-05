@@ -63,19 +63,24 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
-        public void AddKinematicMoveComponent(KinematicComponent Component)
+        public void AddKinematicMoveComponent(KinematicHandle Handle, KinematicComponent Component)
         {
-            GameEngineClass.AddKinematicComponentToSystem(Component);
+            GameEngineClass.AddKinematicComponentToSystem(Handle,Component);
         }
 
-        public void AddUserToMap(int MapID, string AccountID)
+        public void RemoveKinematicMoveComponent(KinematicHandle Handle, KinematicComponent Component, int Count)
         {
-            GameEngineClass.AddUserToMap(MapID, AccountID);
+            GameEngineClass.RemoveKinematicComponentFromSystem(Handle, Component,Count);
         }
 
-        public void RemoveUserFromMap(int MapID, string AccountID)
+        public void AddUserToMap(MapComponent Component)
         {
-            GameEngineClass.RemoveUserFromMap(MapID, AccountID);
+            GameEngineClass.AddUserToMap(Component);
+        }
+
+        public void RemoveUserFromMap(MapComponent Component)
+        {
+            GameEngineClass.RemoveUserFromMap(Component);
         }
 
         public bool CanMove(int MapID, System.Numerics.Vector3 Position)
@@ -110,11 +115,6 @@ namespace GameServer.MainUI
         public string GetNickName(string AccountID)
         {
             return GameEngineClass.GetNickName(AccountID);
-        }
-
-        public void RemoveNickName(string AccountID, out string? NickName)
-        {
-            GameEngineClass.RemoveNickName(AccountID, out NickName);
         }
 
         ////////////////////////////////////////////////////////////////////////

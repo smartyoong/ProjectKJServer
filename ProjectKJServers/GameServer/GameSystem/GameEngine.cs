@@ -86,19 +86,24 @@ namespace GameServer.GameSystem
             IsAlreadyDisposed = true;
         }
 
-        public void AddKinematicComponentToSystem(KinematicComponent Component)
+        public void AddKinematicComponentToSystem(KinematicHandle Handle,KinematicComponent Component)
         {
-            KinematicMovementSystem.AddComponent(Component);
+            KinematicMovementSystem.AddComponent(Handle, Component);
         }
 
-        public void AddUserToMap(int MapID, string AccountID)
+        public void RemoveKinematicComponentFromSystem(KinematicHandle Handle,KinematicComponent Component, int Count)
         {
-            MapSystem.AddUser(MapID, AccountID);
+            KinematicMovementSystem.RemoveComponent(Handle, Component, Count);
         }
 
-        public void RemoveUserFromMap(int MapID, string AccountID)
+        public void AddUserToMap(MapComponent Component)
         {
-            MapSystem.RemoveUser(MapID, AccountID);
+            MapSystem.AddUser(Component);
+        }
+
+        public void RemoveUserFromMap(MapComponent Component)
+        {
+            MapSystem.RemoveUser(Component);
         }
 
         public bool CanMove(int MapID, Vector3 Position)
@@ -123,8 +128,9 @@ namespace GameServer.GameSystem
             }
         }
 
-        public void RemoveNickName(string AccountID, out string? NickName)
+        public void RemoveNickName(string AccountID)
         {
+            string? NickName;
             if (NickNameMap.TryRemove(AccountID, out NickName))
             {
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 닉네임 {NickName}을 제거했습니다.");
@@ -169,12 +175,19 @@ namespace GameServer.GameSystem
 
         public void RemoveCharacter(string AccountID)
         {
-            if (OnlineCharacterDictionary.TryRemove(AccountID, out _))
+            PlayerCharacter? TempChar;
+            RemoveNickName(AccountID);
+            if (OnlineCharacterDictionary.TryRemove(AccountID, out TempChar))
             {
+                if(TempChar != null)
+                {
+                    TempChar.RemoveCharacter();
+                }
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 제거했습니다.");
             }
             else
             {
+                //캐릭터 생성안하고 종료하면 이렇게될 수도
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 찾을 수 없습니다.");
             }
         }

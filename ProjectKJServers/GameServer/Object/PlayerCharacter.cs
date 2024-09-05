@@ -38,6 +38,8 @@ namespace GameServer.Object
         public ChracterAppearanceInfo AppearanceInfo;
         public CharacterLevelInfo LevelInfo;
         private KinematicComponent MovementComponent;
+        private MapComponent MapComponent;
+        private KinematicHandle KinematicHandle;
         public PlayerCharacter()
         {
             AccountInfo = new CharacterAccountInfo();
@@ -46,18 +48,25 @@ namespace GameServer.Object
             AppearanceInfo = new ChracterAppearanceInfo();
             LevelInfo = new CharacterLevelInfo();
             MovementComponent = new KinematicComponent();
+            MapComponent = new MapComponent(1); // 일단 임시로 대충
+            KinematicHandle = new KinematicHandle();
         }
 
         public void SetMovement(int Speed, Vector3 Position)
         {
-            MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
-            MovementComponent.InitMovementComponent(Speed,1f,Position);
+            MainProxy.GetSingletone.AddKinematicMoveComponent(KinematicHandle,MovementComponent);
         }
 
         public bool MoveToLocation(Vector3 Position)
         {
             LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Position}으로 이동합니다.");
             return MovementComponent.MoveToLocation(CurrentPosition.MapID,Position);
+        }
+
+        public void RemoveCharacter()
+        {
+            MainProxy.GetSingletone.RemoveUserFromMap(MapComponent);
+            MainProxy.GetSingletone.RemoveKinematicMoveComponent(KinematicHandle, MovementComponent,0);
         }
     }
 }

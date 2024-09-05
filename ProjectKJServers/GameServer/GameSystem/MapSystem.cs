@@ -8,18 +8,19 @@ using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using Windows.ApplicationModel.VoiceCommands;
 using System.Numerics;
+using GameServer.Component;
 
 namespace GameServer.GameSystem
 {
     using Vector3 = System.Numerics.Vector3;
     using CustomVector3 = CoreUtility.GlobalVariable.Vector3;
-    using static System.Runtime.InteropServices.JavaScript.JSType;
 
     internal class MapSystem : IComponentSystem
     {
         private readonly object _lock = new object();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
-        private List<List<string>>? MapUserList;
+        //ConCurrentBag는 편의성 좋은 메서드가 하나도 없네, AddRemove때만 Lock을 잘 걸자
+        private List<List<MapComponent>>? MapUserList;
 
         public MapSystem()
         {
@@ -28,7 +29,7 @@ namespace GameServer.GameSystem
         public void SetMapData(ref Dictionary<int, MapData> MapDataDictionary)
         {
             this.MapDataDictionary = MapDataDictionary;
-            MapUserList = new List<List<string>>(MapDataDictionary.Keys.Max()+1);
+            MapUserList = new List<List<MapComponent>>(MapDataDictionary.Keys.Max()+1);
         }
 
         public void Update()
@@ -36,7 +37,7 @@ namespace GameServer.GameSystem
             // 만약 장애물 관련 업데이트가 필요할 경우 여기서 진행함
         }
 
-        public void AddUser(int MapID, string AccountID)
+        public void AddUser(MapComponent Component)
         {
             lock(_lock)
             {
@@ -45,6 +46,7 @@ namespace GameServer.GameSystem
                     LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
                     return;
                 }
+                int MapID = Component.GetCurrentMapID();
                 if (MapUserList.Count <= MapID)
                 {
                     LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
@@ -52,13 +54,13 @@ namespace GameServer.GameSystem
                 }
                 if (MapUserList[MapID] == null)
                 {
-                    MapUserList[MapID] = new List<string>();
+                    MapUserList[MapID] = new List<MapComponent>();
                 }
-                MapUserList[MapID].Add(AccountID);
+                MapUserList[MapID].Add(Component);
             }
         }
 
-        public void RemoveUser(int MapID, string AccountID)
+        public void RemoveUser(MapComponent Component)
         {
             lock(_lock)
             {
@@ -67,6 +69,7 @@ namespace GameServer.GameSystem
                     LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
                     return;
                 }
+                int MapID = Component.GetCurrentMapID();
                 if (MapUserList.Count <= MapID)
                 {
                     LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
@@ -77,7 +80,7 @@ namespace GameServer.GameSystem
                     LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
                     return;
                 }
-                MapUserList[MapID].Remove(AccountID);
+                MapUserList[MapID].Remove(Component);
             }
         }
 

@@ -10,19 +10,19 @@ namespace GameServer.Component
     {
         private object _lock = new object();
         private int MapID;
-        private bool NeedUpdate = false;
-        MapComponent(int MapID)
+        private int MapBufferID;
+        private int MapDebuffID;
+
+        public MapComponent(int MapID)
         {
             this.MapID = MapID;
+            MapBufferID = 0;
+            MapDebuffID = 0;
         }
 
         public void Update()
         {
             // 맵 관련 업데이트가 필요할 경우 여기서 진행함
-            if (NeedUpdate)
-            {
-                NeedUpdate = false;
-            }
         }
 
         public void MoveToAnotherMap(int MapID)
@@ -31,7 +31,14 @@ namespace GameServer.Component
             lock (_lock)
             {
                 this.MapID = MapID;
-                NeedUpdate = true;
+            }
+        }
+
+        public int GetCurrentMapID()
+        {
+            lock (_lock)
+            {
+                return MapID;
             }
         }
     }
