@@ -49,7 +49,6 @@ namespace GameServer.Object
             LevelInfo = new CharacterLevelInfo();
             MovementComponent = new KinematicComponent();
             MapComponent = new MapComponent(1); // 일단 임시로 대충
-            KinematicHandle = new KinematicHandle();
         }
 
         public void SetMovement(int Speed, Vector3 Position)

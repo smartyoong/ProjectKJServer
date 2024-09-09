@@ -25,6 +25,7 @@ namespace GameServer.Component
         float Rotation; // 회전 속도
         float MaxSpeed;
         float MaxRotation;
+        KinematicHandle Handle;
 
         public KinematicComponent(float MaxSpeed, float MaxRotation, Vector3 Position)
         {
@@ -34,6 +35,12 @@ namespace GameServer.Component
             Rotation = 0;
             this.MaxRotation = MaxRotation;
             this.MaxSpeed = MaxSpeed;
+            Handle = new KinematicHandle();
+        }
+
+        KinematicHandle GetHandle()
+        {
+            return Handle;
         }
 
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
