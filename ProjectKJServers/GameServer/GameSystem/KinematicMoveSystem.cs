@@ -46,19 +46,27 @@ namespace GameServer.GameSystem
 
         public void Update()
         {
-            long CurrentTickCount = Environment.TickCount64;
-            //병렬로 위치 업데이트를 시킨다
-            if (CurrentTickCount - LastTickCount < GameEngine.UPDATE_INTERVAL_20PERSEC)
+            try
             {
-                return;
-            }
-            float DeltaTime = (CurrentTickCount - LastTickCount) / 1000;
-            Parallel.ForEach(Components, (Component) =>
-            {
-                Component.Update(DeltaTime);
-            });
+                long CurrentTickCount = Environment.TickCount64;
+                //병렬로 위치 업데이트를 시킨다
+                if (CurrentTickCount - LastTickCount < GameEngine.UPDATE_INTERVAL_20PERSEC)
+                {
+                    return;
+                }
+                //시간 간격을 구한다 자료형 문제가 있는거 같은데
+                float DeltaTime = (CurrentTickCount - LastTickCount);
+                Parallel.ForEach(Components, (Component) =>
+                {
+                    Component.Update(DeltaTime);
+                });
 
-            LastTickCount = CurrentTickCount;
+                LastTickCount = CurrentTickCount;
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message);
+            }
         }
     }
 }

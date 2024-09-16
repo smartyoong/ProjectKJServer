@@ -66,6 +66,7 @@ namespace GameServer.Component
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
         public void Update(float DeltaTime)
         {
+            DeltaTime /= 1000;
             lock (_lock)
             {
                 // 위치 업데이트
@@ -78,6 +79,10 @@ namespace GameServer.Component
                 Data.Orientation += SteeringHandle.Angular * DeltaTime;
             }
             LogManager.GetSingletone.WriteLog($"위치 업데이트 완료 {Data.Position}");
+            LogManager.GetSingletone.WriteLog($"방위 업데이트 완료 {Data.Orientation}");
+            LogManager.GetSingletone.WriteLog($"속도 업데이트 완료 {Handle.Velocity}");
+            LogManager.GetSingletone.WriteLog($"회전 속도 업데이트 완료 {Handle.Rotation}");
+            LogManager.GetSingletone.WriteLog($" 시간 체크 {DeltaTime}");
         }
 
         float NewOrientation(float Current, Vector3 Velocity)
