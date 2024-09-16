@@ -23,6 +23,8 @@ namespace GameServer.Component
         public void Update()
         {
             // 맵 관련 업데이트가 필요할 경우 여기서 진행함
+            MapBufferID = 0;
+            MapDebuffID = 0;
         }
 
         public void MoveToAnotherMap(int MapID)

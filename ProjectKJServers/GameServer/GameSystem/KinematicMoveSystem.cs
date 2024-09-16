@@ -60,28 +60,5 @@ namespace GameServer.GameSystem
 
             LastTickCount = CurrentTickCount;
         }
-
-        private void UpdatePosition(KinematicComponent Component, float DeltaTime)
-        {
-            // 주의!!! 멀티스레드로 돌아갑니다 이 메서드를 다른 곳에서 호출하지 마세요.
-            System.Numerics.Vector3 CurrentPos = Component.Position;
-
-            System.Numerics.Vector3 TargetPos = Component.TargetPosition;
-
-            System.Numerics.Vector3 Direction = System.Numerics.Vector3.Normalize(TargetPos-CurrentPos);
-
-            System.Numerics.Vector3 NewLocation = CurrentPos + Direction * Component.Speed * DeltaTime;
-
-            // 목표 위치에 도달했는지 확인
-            if (System.Numerics.Vector3.Distance(NewLocation, Component.TargetPosition) <= Component.Speed * DeltaTime)
-            {
-                Component.SetArrived();
-            }
-            else
-            {
-                Component.UpdatePosition(NewLocation);
-            }
-            Console.WriteLine($"Current Location: {Component.Position}");
-        }
     }
 }
