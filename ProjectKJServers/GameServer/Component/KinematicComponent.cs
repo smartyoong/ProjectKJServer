@@ -38,13 +38,13 @@ namespace GameServer.Component
             Handle = new KinematicHandle();
         }
 
-        KinematicHandle GetHandle()
+        public KinematicHandle GetHandle()
         {
             return Handle;
         }
 
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
-        public void Update(KinematicHandle Handle,float DeltaTime)
+        public void Update(float DeltaTime)
         {
             lock (_lock)
             {

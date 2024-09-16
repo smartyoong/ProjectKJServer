@@ -86,14 +86,14 @@ namespace GameServer.GameSystem
             IsAlreadyDisposed = true;
         }
 
-        public void AddKinematicComponentToSystem(KinematicHandle Handle,KinematicComponent Component)
+        public void AddKinematicComponentToSystem(KinematicComponent Component)
         {
-            KinematicMovementSystem.AddComponent(Handle, Component);
+            KinematicMovementSystem.AddComponent(Component);
         }
 
-        public void RemoveKinematicComponentFromSystem(KinematicHandle Handle,KinematicComponent Component, int Count)
+        public void RemoveKinematicComponentFromSystem(KinematicComponent Component, int Count)
         {
-            KinematicMovementSystem.RemoveComponent(Handle, Component, Count);
+            KinematicMovementSystem.RemoveComponent(Component, Count);
         }
 
         public void AddUserToMap(MapComponent Component)
@@ -144,20 +144,13 @@ namespace GameServer.GameSystem
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
         {
 
-            PlayerCharacter NewCharacter = new PlayerCharacter();
-            NewCharacter.AccountInfo.AccountID = Info.AccountID;
-            NewCharacter.AccountInfo.NickName = Info.NickName;
-            NewCharacter.CurrentPosition.MapID = Info.MapID;
-            NewCharacter.JobInfo.Job = Info.Job;
-            NewCharacter.JobInfo.Level = Info.JobLevel;
-            NewCharacter.LevelInfo.Level = Info.Level;
-            NewCharacter.LevelInfo.CurrentExp = Info.EXP;
-            NewCharacter.AppearanceInfo.PresetNumber = Info.PresetNumber;
-            NewCharacter.AppearanceInfo.Gender = Info.Gender;
+            PlayerCharacter NewCharacter = new PlayerCharacter(Info.AccountID, Info.NickName, Info.MapID, Info.Job, 
+                Info.JobLevel, Info.Level, Info.EXP, Info.PresetNumber, Info.Gender, new System.Numerics.Vector3(Info.X, Info.Y, 0));
+
             if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
                 LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
+
             MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
-            NewCharacter.SetMovement(300, new System.Numerics.Vector3(Info.X, Info.Y, 0));
 
         }
 

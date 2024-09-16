@@ -14,21 +14,18 @@ namespace GameServer.GameSystem
     internal class KinematicMoveSystem : IComponentSystem
     {
         ConcurrentBag<KinematicComponent> Components;
-        ConcurrentDictionary<KinematicComponent,KinematicHandle> KinematicHandles;
         long LastTickCount = 0;
         public KinematicMoveSystem()
         {
             Components = new ConcurrentBag<KinematicComponent>();
-            KinematicHandles = new ConcurrentDictionary<KinematicComponent, KinematicHandle>();
         }
 
-        public void AddComponent(KinematicHandle Handle, KinematicComponent Component)
+        public void AddComponent(KinematicComponent Component)
         {
             Components.Add(Component);
-            KinematicHandles.TryAdd(Component, Handle);
         }
 
-        public void RemoveComponent(KinematicHandle Handle,KinematicComponent? Component, int Count)
+        public void RemoveComponent(KinematicComponent? Component, int Count)
         {
             if(Component == null)
             {
@@ -43,11 +40,8 @@ namespace GameServer.GameSystem
             {
                 LogManager.GetSingletone.WriteLog("컴포넌트 제거 실패 잠시후 재시도");
                 Task.Delay(TimeSpan.FromSeconds(1));
-                RemoveComponent(Handle,Component,Count++);
+                RemoveComponent(Component,Count++);
             }
-            KinematicHandle TempHandle;
-            if(Component != null)
-                KinematicHandles.TryRemove(Component, out TempHandle);
         }
 
         public void Update()
@@ -61,7 +55,7 @@ namespace GameServer.GameSystem
             float DeltaTime = (CurrentTickCount - LastTickCount) / 1000;
             Parallel.ForEach(Components, (Component) =>
             {
-                KinematicHandle Handle = KinematicHandles[Component];
+                Component.Update(DeltaTime);
             });
 
             LastTickCount = CurrentTickCount;

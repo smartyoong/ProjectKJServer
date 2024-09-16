@@ -36,10 +36,7 @@ namespace GameServer.Component
 
         public int GetCurrentMapID()
         {
-            lock (_lock)
-            {
-                return MapID;
-            }
+            return MapID;
         }
     }
 }

@@ -63,14 +63,14 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
-        public void AddKinematicMoveComponent(KinematicHandle Handle, KinematicComponent Component)
+        public void AddKinematicMoveComponent(KinematicComponent Component)
         {
-            GameEngineClass.AddKinematicComponentToSystem(Handle,Component);
+            GameEngineClass.AddKinematicComponentToSystem(Component);
         }
 
-        public void RemoveKinematicMoveComponent(KinematicHandle Handle, KinematicComponent Component, int Count)
+        public void RemoveKinematicMoveComponent(KinematicComponent Component, int Count)
         {
-            GameEngineClass.RemoveKinematicComponentFromSystem(Handle, Component,Count);
+            GameEngineClass.RemoveKinematicComponentFromSystem(Component,Count);
         }
 
         public void AddUserToMap(MapComponent Component)

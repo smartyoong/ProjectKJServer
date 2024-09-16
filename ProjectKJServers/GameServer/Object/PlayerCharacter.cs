@@ -1,71 +1,61 @@
 ﻿using CoreUtility.Utility;
 using GameServer.Component;
 using GameServer.MainUI;
+using Microsoft.VisualBasic.Logging;
 using System.Numerics;
 using Windows.ApplicationModel.VoiceCommands;
 
 namespace GameServer.Object
 {
-    struct CharacterAccountInfo
+    struct CharacterAccountInfo(string AccountID, string NickName)
     {
-        public string AccountID { get; set; }
-        public string NickName { get; set; }
+        public string AccountID { get; set; } = AccountID;
+        public string NickName { get; set; } = NickName;
     }
-    struct CharacterPosition
+    struct CharacterJobInfo(int Job, int Level)
     {
-        public int MapID { get; set; }
+        public int Job { get; set; } = Job;
+        public int Level { get; set; } = Level;
     }
-    struct CharacterJobInfo
+    struct ChracterAppearanceInfo(int Gender, int PresetNumber)
     {
-        public int Job { get; set; }
-        public int Level { get; set; }
+        public int Gender { get; set; } = Gender;
+        public int PresetNumber { get; set; } = PresetNumber;
     }
-    struct ChracterAppearanceInfo
+    struct CharacterLevelInfo(int Level, int CurrentEXP)
     {
-        public int Gender { get; set; }
-        public int PresetNumber { get; set; }
-    }
-    struct CharacterLevelInfo
-    {
-        public int Level { get; set; }
-        public int CurrentExp { get; set; }
+        public int Level { get; set; } = Level;
+        public int CurrentExp { get; set; } = CurrentEXP;
     }
     internal class PlayerCharacter
     {
-        public CharacterAccountInfo AccountInfo;
-        public CharacterPosition CurrentPosition;
-        public CharacterJobInfo JobInfo;
-        public ChracterAppearanceInfo AppearanceInfo;
-        public CharacterLevelInfo LevelInfo;
+        private CharacterAccountInfo AccountInfo;
+        private CharacterJobInfo JobInfo;
+        private ChracterAppearanceInfo AppearanceInfo;
+        private CharacterLevelInfo LevelInfo;
         private KinematicComponent MovementComponent;
         private MapComponent MapComponent;
-        private KinematicHandle KinematicHandle;
-        public PlayerCharacter()
+        public PlayerCharacter(string AccountID, string NickName,int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
         {
-            AccountInfo = new CharacterAccountInfo();
-            CurrentPosition = new CharacterPosition();
-            JobInfo = new CharacterJobInfo();
-            AppearanceInfo = new ChracterAppearanceInfo();
-            LevelInfo = new CharacterLevelInfo();
-            MovementComponent = new KinematicComponent();
-            MapComponent = new MapComponent(1); // 일단 임시로 대충
-        }
-
-        public void SetMovement(int Speed, Vector3 Position)
-        {
-            MainProxy.GetSingletone.AddKinematicMoveComponent(KinematicHandle,MovementComponent);
+            AccountInfo = new CharacterAccountInfo(AccountID, NickName);
+            JobInfo = new CharacterJobInfo(Job,JobLevel);
+            AppearanceInfo = new ChracterAppearanceInfo(Gender,PresetNum);
+            LevelInfo = new CharacterLevelInfo(Level,EXP);
+            MovementComponent = new KinematicComponent(300,1,StartPosition);
+            MapComponent = new MapComponent(MapID);
+            MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
         }
 
         public bool MoveToLocation(Vector3 Position)
         {
             LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Position}으로 이동합니다.");
-            return MovementComponent.MoveToLocation(CurrentPosition.MapID,Position);
+            return MovementComponent.MoveToLocation(MapComponent.GetCurrentMapID(),Position);
         }
 
         public void RemoveCharacter()
         {
             MainProxy.GetSingletone.RemoveUserFromMap(MapComponent);
-            MainProxy.GetSingletone.RemoveKinematicMoveComponent(KinematicHandle, MovementComponent,0);
+            MainProxy.GetSingletone.RemoveKinematicMoveComponent(MovementComponent,0);
         }
     }
 }
