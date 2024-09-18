@@ -117,6 +117,11 @@ namespace GameServer.MainUI
             return GameEngineClass.GetNickName(AccountID);
         }
 
+        public void SendToSameMap<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
+        {
+            GameEngineClass.SendToSameMap(MapID, PacketID, Packet);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StartAcceptLoginServer(TaskCompletionSource<bool> LoginServerReadyEvent)

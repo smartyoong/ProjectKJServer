@@ -141,6 +141,11 @@ namespace GameServer.GameSystem
             }
         }
 
+        public void SendToSameMap<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
+        {
+            MapSystem.SendPacketToSameMapUsers(MapID, PacketID, Packet);
+        }
+
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
         {
 

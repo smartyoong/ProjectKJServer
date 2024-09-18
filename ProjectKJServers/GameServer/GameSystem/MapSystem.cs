@@ -9,6 +9,9 @@ using CoreUtility.Utility;
 using Windows.ApplicationModel.VoiceCommands;
 using System.Numerics;
 using GameServer.Component;
+using GameServer.PacketList;
+using GameServer.MainUI;
+using System.Net.Sockets;
 
 namespace GameServer.GameSystem
 {
@@ -37,50 +40,52 @@ namespace GameServer.GameSystem
             // 만약 장애물 관련 업데이트가 필요할 경우 여기서 진행함
         }
 
+        private bool ValidComponentCheck(MapComponent Component)
+        {
+            if (MapUserList == null)
+            {
+                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                return false;
+            }
+            int MapID = Component.GetCurrentMapID();
+            if (MapUserList.Count <= MapID)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
+                return false;
+            }
+            return true;
+        }
+
         public void AddUser(MapComponent Component)
         {
-            lock(_lock)
+            if (!ValidComponentCheck(Component))
             {
-                if (MapUserList == null)
-                {
-                    LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
-                    return;
-                }
-                int MapID = Component.GetCurrentMapID();
-                if (MapUserList.Count <= MapID)
-                {
-                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
-                    return;
-                }
-                if (MapUserList[MapID] == null)
-                {
-                    MapUserList[MapID] = new List<MapComponent>();
-                }
-                MapUserList[MapID].Add(Component);
+                return;
+            }
+            int MapID = Component.GetCurrentMapID();
+            lock (_lock)
+            {
+                MapUserList![MapID].Add(Component);
             }
         }
 
         public void RemoveUser(MapComponent Component)
         {
-            lock(_lock)
+            if (!ValidComponentCheck(Component))
             {
-                if (MapUserList == null)
-                {
-                    LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
-                    return;
-                }
-                int MapID = Component.GetCurrentMapID();
-                if (MapUserList.Count <= MapID)
-                {
-                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
-                    return;
-                }
-                if (MapUserList[MapID] == null)
-                {
-                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
-                    return;
-                }
-                MapUserList[MapID].Remove(Component);
+                return;
+            }
+            int MapID = Component.GetCurrentMapID();
+
+            if (MapUserList![MapID] == null)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
+                return;
+            }
+
+            lock (_lock)
+            {
+                MapUserList![MapID].Remove(Component);
             }
         }
 
@@ -98,6 +103,36 @@ namespace GameServer.GameSystem
                 return false;
             }
             return true;
+        }
+
+        public void SendPacketToSameMapUsers<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
+        {
+            if(!ValidMapIDCheck(MapID))
+            {
+                return;
+            }
+
+            if (MapUserList == null)
+            {
+                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
+                return;
+            }
+            if (MapUserList[MapID] == null)
+            {
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
+                return;
+            }
+
+            //여기서 Lock을 걸면 오래걸릴것 같은데,, 근데 그렇다고 락을안 걸 수도 없고 음,,, 일단 걸어보자
+            lock (_lock)
+            {
+                foreach (MapComponent User in MapUserList[MapID])
+                {
+                    Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetAccountID());
+                    if (Sock != null)
+                        MainProxy.GetSingletone.SendToClient(PacketID,Packet,MainProxy.GetSingletone.GetClientID(Sock));
+                }
+            }
         }
 
         private bool BoundaryCheck(int MapID, ref readonly CustomVector3 Position)
