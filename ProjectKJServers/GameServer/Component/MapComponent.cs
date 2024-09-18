@@ -12,12 +12,14 @@ namespace GameServer.Component
         private int MapID;
         private int MapBufferID;
         private int MapDebuffID;
+        private string AccountID;
 
-        public MapComponent(int MapID)
+        public MapComponent(int MapID, string UserID)
         {
             this.MapID = MapID;
             MapBufferID = 0;
             MapDebuffID = 0;
+            AccountID = UserID;
         }
 
         public void Update()
@@ -39,6 +41,11 @@ namespace GameServer.Component
         public int GetCurrentMapID()
         {
             return MapID;
+        }
+
+        public string GetAccountID()
+        {
+            return AccountID;
         }
     }
 }

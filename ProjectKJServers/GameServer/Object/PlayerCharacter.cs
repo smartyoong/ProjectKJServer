@@ -42,8 +42,9 @@ namespace GameServer.Object
             AppearanceInfo = new ChracterAppearanceInfo(Gender,PresetNum);
             LevelInfo = new CharacterLevelInfo(Level,EXP);
             MovementComponent = new KinematicComponent(300,1,StartPosition);
-            MapComponent = new MapComponent(MapID);
+            MapComponent = new MapComponent(MapID,AccountID);
             MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
+            MainProxy.GetSingletone.AddUserToMap(MapComponent);
         }
 
         public bool MoveToLocation(Vector3 Position)
