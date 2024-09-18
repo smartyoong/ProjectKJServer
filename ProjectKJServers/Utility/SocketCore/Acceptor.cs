@@ -578,15 +578,25 @@ namespace CoreUtility.SocketCore
 
         public string GetIPAddrByClientID(int ClientID)
         {
-            return GetIPAddrByClientSocket(GetClientSocket(ClientID)!);
+            Socket? Sock = GetClientSocket(ClientID);
+            if (Sock == null)
+            {
+                LogManager.GetSingletone.WriteLog($"해당 클라이언트 소켓이 존재하지 않습니다. {ClientID}");
+                return string.Empty;
+            }
+            else
+                return GetIPAddrByClientSocket(Sock);
         }
 
         public string GetIPAddrByClientSocket(Socket ClientSock)
         {
-            IPEndPoint? IPEndAddr = ClientSock!.RemoteEndPoint as IPEndPoint;
+            IPEndPoint? IPEndAddr = ClientSock.RemoteEndPoint as IPEndPoint;
 
             if (IPEndAddr == null)
+            {
+                LogManager.GetSingletone.WriteLog("해당 클라이언트 소켓의 IP주소를 가져올 수 없습니다.");
                 return string.Empty;
+            }
 
             return IPEndAddr.Address.ToString();
         }

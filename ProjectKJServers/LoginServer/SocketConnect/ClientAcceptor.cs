@@ -121,7 +121,10 @@ namespace LoginServer.SocketConnect
             string Port = GetPortByClientID(ClientID).ToString();
 
             if (string.IsNullOrEmpty(Addr))
+            {
+                LogManager.GetSingletone.WriteLog($"MakeAuthHashCode에서 Addr이 null입니다. {AccountID} {ClientID}");
                 return string.Empty;
+            }
 
             SHA256 Secret = SHA256.Create();
             byte[] HashValue = Secret.ComputeHash(Encoding.UTF8.GetBytes(AccountID + Addr + Port));

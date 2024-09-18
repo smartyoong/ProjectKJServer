@@ -125,11 +125,12 @@ namespace LoginServer.PacketPipeLine
             string HashCode = string.Empty;
 
             if (Item.ReturnValue == LOGIN_SUCCESS)
-                HashCode = MainProxy.GetSingletone.MakeAuthHashCode(Item.NickName, ClientID);
-            if (string.IsNullOrEmpty(HashCode))
+                HashCode = MainProxy.GetSingletone.MakeAuthHashCode(AccountID, ClientID);
+            if (string.IsNullOrEmpty(HashCode) && Item.ReturnValue == LOGIN_SUCCESS)
             {
                 Item.ReturnValue = HASH_CODE_CREATE_FAIL;
                 HashCode = "NONEHASH";
+                LogManager.GetSingletone.WriteLog($"해시 코드 생성에 실패했습니다. {Item.NickName} {ClientID}");
             }
             else
             {
