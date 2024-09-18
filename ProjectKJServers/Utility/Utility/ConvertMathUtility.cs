@@ -12,6 +12,7 @@ namespace CoreUtility.Utility
     using Vector3 = System.Numerics.Vector3;
     public class ConvertMathUtility
     {
+        private static Random random = new Random();
         public static Vector3 ConvertToSystemVector3(CustomVector3 Vector3)
         {
             return new Vector3(Vector3.X, Vector3.Y, Vector3.Z);
@@ -19,6 +20,19 @@ namespace CoreUtility.Utility
         public static float ToRadian(float degrees)
         {
             return (float)(degrees * (Math.PI / 180.0));
+        }
+
+        public static Vector3 RadianToVector3(float Radian)
+        {
+            float x = (float)Math.Cos(Radian);
+            float y = (float)Math.Sin(Radian);
+            return new Vector3(x, y, 0); // Z축은 0으로 설정 (2.5D이니까)
+        }
+
+        public static float RandomBinomial()
+        {
+            // 두 개의 난수를 생성하여 그 차이를 반환
+            return (float)(random.NextDouble() - random.NextDouble());
         }
 
         public static Quaternion ConvertToSystemQuaternion(CoreUtility.GlobalVariable.Rotation Rotation)
