@@ -217,7 +217,7 @@ namespace GameServer.PacketPipeLine
             MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,Packet.AccountID);
             //같은 맵 유저에게 해당 캐릭터를 렌더링하도록 명령내린다.
             SendAnotherCharBaseInfoPacket SendPacket = new SendAnotherCharBaseInfoPacket(Packet.AccountID, Packet.Gender, Packet.PresetNumber, Packet.Job,
-                Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP);
+                Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP,MainProxy.GetSingletone.GetNickName(Packet.AccountID));
             MainProxy.GetSingletone.SendToSameMap(Packet.MapID, GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacket);
         }
     }
