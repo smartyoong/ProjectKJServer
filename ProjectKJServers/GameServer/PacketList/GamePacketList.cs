@@ -31,7 +31,8 @@
         REQUEST_CREATE_CHARACTER = 8,
         RESPONSE_CREATE_CHARACTER = 9,
         REQUEST_MOVE = 10,
-        RESPONSE_MOVE = 11
+        RESPONSE_MOVE = 11,
+        SEND_ANOTHER_CHAR_BASE_INFO = 12
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
