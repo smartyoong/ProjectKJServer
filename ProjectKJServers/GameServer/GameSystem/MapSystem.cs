@@ -32,7 +32,14 @@ namespace GameServer.GameSystem
         public void SetMapData(ref Dictionary<int, MapData> MapDataDictionary)
         {
             this.MapDataDictionary = MapDataDictionary;
-            MapUserList = new List<List<MapComponent>>(MapDataDictionary.Keys.Max()+1);
+            int MaxMapID = MapDataDictionary.Keys.Max() + 1;
+            MapUserList = new List<List<MapComponent>>(MaxMapID);
+
+            // 각 내부 리스트를 초기화
+            for (int i = 0; i < MaxMapID; i++)
+            {
+                MapUserList.Add(new List<MapComponent>());
+            }
         }
 
         public void Update()
@@ -104,6 +111,24 @@ namespace GameServer.GameSystem
             }
             return true;
         }
+        private bool CheckMapUserList(int MapID)
+        {
+            try
+            {
+                if (MapUserList == null || MapUserList[MapID] == null)
+                {
+                    LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e);
+                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다. {MapDataDictionary.Keys.Max() + 1}");
+                return false;
+            }
+            return true;
+        }
 
         public void SendPacketToSameMapUsers<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
         {
@@ -112,21 +137,15 @@ namespace GameServer.GameSystem
                 return;
             }
 
-            if (MapUserList == null)
+            if (!CheckMapUserList(MapID))
             {
-                LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
-                return;
-            }
-            if (MapUserList[MapID] == null)
-            {
-                LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에는 유저가 존재하지 않습니다.");
                 return;
             }
 
             //여기서 Lock을 걸면 오래걸릴것 같은데,, 근데 그렇다고 락을안 걸 수도 없고 음,,, 일단 걸어보자
             lock (_lock)
             {
-                foreach (MapComponent User in MapUserList[MapID])
+                foreach (MapComponent User in MapUserList![MapID])
                 {
                     Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetAccountID());
                     if (Sock != null)
