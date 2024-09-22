@@ -154,6 +154,24 @@ namespace GameServer.GameSystem
             }
         }
 
+        public List<MapComponent>? GetMapUsers(int MapID)
+        {
+            if (!ValidMapIDCheck(MapID))
+            {
+                return null;
+            }
+
+            if (!CheckMapUserList(MapID))
+            {
+                return null;
+            }
+
+            lock (_lock)
+            {
+                return MapUserList![MapID];
+            }
+        }
+
         private bool BoundaryCheck(int MapID, ref readonly CustomVector3 Position)
         {
             MapData Data = MapDataDictionary[MapID];

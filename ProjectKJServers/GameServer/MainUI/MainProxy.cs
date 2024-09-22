@@ -122,6 +122,16 @@ namespace GameServer.MainUI
             GameEngineClass.SendToSameMap(MapID, PacketID, Packet);
         }
 
+        public List<MapComponent>? GetMapUsers(int MapID)
+        {
+            return GameEngineClass.GetMapUsers(MapID);
+        }
+
+        public PlayerCharacter? GetCharacterByAccountID(string AccountID)
+        {
+            return GameEngineClass.GetCharacterByAccountID(AccountID);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StartAcceptLoginServer(TaskCompletionSource<bool> LoginServerReadyEvent)

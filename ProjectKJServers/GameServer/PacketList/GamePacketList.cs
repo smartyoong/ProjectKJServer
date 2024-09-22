@@ -32,7 +32,8 @@
         RESPONSE_CREATE_CHARACTER = 9,
         REQUEST_MOVE = 10,
         RESPONSE_MOVE = 11,
-        SEND_ANOTHER_CHAR_BASE_INFO = 12
+        SEND_ANOTHER_CHAR_BASE_INFO = 12,
+        REQUEST_GET_SAME_MAP_USER = 13
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -284,5 +285,13 @@
         public int Level { get; set; } = Level;
         public int EXP { get; set; } = EXP;
         public string NickName { get; set; } = NickName;
+    }
+
+    [Serializable]
+    public struct RequestGetSameMapUserPacket(string AccountID, string HashCode, int MapID)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string HashCode { get; set; } = HashCode;
+        public int MapID { get; set; } = MapID;
     }
 }

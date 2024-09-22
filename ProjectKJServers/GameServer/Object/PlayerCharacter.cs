@@ -35,6 +35,13 @@ namespace GameServer.Object
         private CharacterLevelInfo LevelInfo;
         private KinematicComponent MovementComponent;
         private MapComponent MapComponent;
+        public CharacterAccountInfo GetAccountInfo() => AccountInfo;
+        public CharacterJobInfo GetJobInfo() => JobInfo;
+        public ChracterAppearanceInfo GetAppearanceInfo() => AppearanceInfo;
+        public CharacterLevelInfo GetLevelInfo() => LevelInfo;
+        public KinematicComponent GetMovementComponent() => MovementComponent;
+        public MapComponent GetMapComponent() => MapComponent;
+
         public PlayerCharacter(string AccountID, string NickName,int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
         {
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);

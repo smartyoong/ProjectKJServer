@@ -1,6 +1,7 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
 using GameServer.MainUI;
+using GameServer.Object;
 using GameServer.PacketList;
 using GameServer.SocketConnect;
 using System;

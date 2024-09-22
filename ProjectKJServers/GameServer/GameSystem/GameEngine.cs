@@ -146,6 +146,11 @@ namespace GameServer.GameSystem
             MapSystem.SendPacketToSameMapUsers(MapID, PacketID, Packet);
         }
 
+        public List<MapComponent>? GetMapUsers(int MapID)
+        {
+            return MapSystem.GetMapUsers(MapID);
+        }
+
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
         {
 
@@ -157,6 +162,13 @@ namespace GameServer.GameSystem
 
             MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
 
+        }
+
+        public PlayerCharacter? GetCharacter(string AccountID)
+        {
+            if(OnlineCharacterDictionary.TryGetValue(AccountID, out PlayerCharacter? Character))
+                return Character;
+            return null;
         }
 
         public PlayerCharacter? GetCharacterByAccountID(string AccountID)

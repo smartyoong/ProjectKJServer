@@ -54,7 +54,7 @@ namespace GameServer.GameSystem
                 {
                     return;
                 }
-                //시간 간격을 구한다 자료형 문제가 있는거 같은데
+
                 float DeltaTime = (CurrentTickCount - LastTickCount);
                 Parallel.ForEach(Components, (Component) =>
                 {

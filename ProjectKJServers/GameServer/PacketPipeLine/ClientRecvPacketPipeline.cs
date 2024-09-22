@@ -150,6 +150,10 @@ namespace GameServer.PacketPipeLine
                     RequestMovePacket? RequestMovePacket = PacketUtils.GetPacketStruct<RequestMovePacket>(ref Data);
                     return RequestMovePacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
                         new ClientRecvPacketPipeLineWrapper(RequestMovePacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_GET_SAME_MAP_USER:
+                    RequestGetSameMapUserPacket? RequestGetSameMapUserPacket = PacketUtils.GetPacketStruct<RequestGetSameMapUserPacket>(ref Data);
+                    return RequestGetSameMapUserPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(RequestGetSameMapUserPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -172,6 +176,12 @@ namespace GameServer.PacketPipeLine
                     break;
                 case RequestMovePacket RequestMovePacket:
                     Func_RequestMove(RequestMovePacket, Packet.ClientID);
+                    break;
+                case RequestGetSameMapUserPacket RequestGetSameMapUserPacket:
+                    Func_GetSameMapUser(RequestGetSameMapUserPacket, Packet.ClientID);
+                    break;
+                default:
+                    LogManager.GetSingletone.WriteLog($"ProcessPacket에서 패킷이 할당되지 않았습니다. {Packet.ToString()}");
                     break;
             }
         }
@@ -277,6 +287,43 @@ namespace GameServer.PacketPipeLine
             else
             {
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_MOVE, new ResponseMovePacket(1/*실패*/), ClientID);
+            }
+        }
+
+        private void Func_GetSameMapUser(RequestGetSameMapUserPacket Packet, int ClientID)
+        {
+            string HashCode = Packet.HashCode;
+            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
+            {
+                SendAuthFailToClient(Packet.AccountID, ClientID);
+                // 해쉬 코드 인증 실패
+                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 Func_GetSameMapUser : {Packet.AccountID} {Packet.HashCode}");
+                return;
+            }
+            // 같은 맵에 있는 유저들을 가져온다.
+            //새로 생성된 유저에게 해당 맵의 유저들을 렌더링하도록 명령내린다.
+            var MapUsers = MainProxy.GetSingletone.GetMapUsers(Packet.MapID);
+            if (MapUsers == null)
+            {
+                return;
+            }
+            foreach (var User in MapUsers)
+            {
+                PlayerCharacter? Character = MainProxy.GetSingletone.GetCharacterByAccountID(User.GetAccountID());
+                if (Character == null)
+                {
+                    continue;
+                }
+                if (Character.GetAccountInfo().AccountID == Packet.AccountID)
+                {
+                    continue;
+                }
+                SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetAccountID(), Character.GetAppearanceInfo().Gender,
+                    Character.GetAppearanceInfo().PresetNumber, Character.GetJobInfo().Job, Character.GetJobInfo().Level, Character.GetMapComponent().GetCurrentMapID(),
+                    (int)Character.GetMovementComponent().GetCurrentPosition().X, (int)Character.GetMovementComponent().GetCurrentPosition().Y,
+                    Character.GetLevelInfo().Level, Character.GetLevelInfo().CurrentExp, MainProxy.GetSingletone.GetNickName(User.GetAccountID()));
+                MainProxy.GetSingletone.SendToClient(GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacketToNewUser, Packet.AccountID);
+                LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetAccountID()}의 정보를 보냈습니다.");
             }
         }
     }

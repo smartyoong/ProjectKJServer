@@ -68,6 +68,11 @@ namespace GameServer.Component
             return SteeringHandle;
         }
 
+        public Vector3 GetCurrentPosition()
+        {
+            return Data.Position;
+        }
+
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
         public void Update(float DeltaTime)
         {
