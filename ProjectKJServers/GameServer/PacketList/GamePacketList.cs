@@ -33,7 +33,10 @@
         REQUEST_MOVE = 10,
         RESPONSE_MOVE = 11,
         SEND_ANOTHER_CHAR_BASE_INFO = 12,
-        REQUEST_GET_SAME_MAP_USER = 13
+        REQUEST_GET_SAME_MAP_USER = 13,
+        SEND_USER_MOVE = 14,
+        REQUEST_PING_CHECK = 15,
+        RESPONSE_PING_CHECK = 16
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -293,5 +296,29 @@
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
         public int MapID { get; set; } = MapID;
+    }
+
+    [Serializable]
+    public struct SendUserMovePacket(string AccountID, int X, int Y)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int X { get; set; } = X;
+        public int Y { get; set; } = Y;
+    }
+    [Serializable]
+    public struct RequestPingCheckPacket(int Hour, int Min, int Secs, int MSecs)
+    {
+        public int Hour { get; set; } = Hour;
+        public int Min { get; set; } = Min;
+        public int Secs { get; set; } = Secs;
+        public int MSecs { get; set; } = MSecs;
+    }
+    [Serializable]
+    public struct ResponsePingCheckPacket(int Hour, int Min, int Secs, int MSecs)
+    {
+        public int Hour { get; set; } = Hour;
+        public int Min { get; set; } = Min;
+        public int Secs { get; set; } = Secs;
+        public int MSecs { get; set; } = MSecs;
     }
 }

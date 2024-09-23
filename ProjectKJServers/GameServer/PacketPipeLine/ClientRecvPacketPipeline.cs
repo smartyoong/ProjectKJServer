@@ -154,6 +154,10 @@ namespace GameServer.PacketPipeLine
                     RequestGetSameMapUserPacket? RequestGetSameMapUserPacket = PacketUtils.GetPacketStruct<RequestGetSameMapUserPacket>(ref Data);
                     return RequestGetSameMapUserPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
                         new ClientRecvPacketPipeLineWrapper(RequestGetSameMapUserPacket, Packet.ClientID);
+                case GamePacketListID.REQUEST_PING_CHECK:
+                    RequestPingCheckPacket? RequestPingCheckPacket = PacketUtils.GetPacketStruct<RequestPingCheckPacket>(ref Data);
+                    return RequestPingCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) :
+                        new ClientRecvPacketPipeLineWrapper(RequestPingCheckPacket, Packet.ClientID);
                 default:
                     return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
             }
@@ -179,6 +183,9 @@ namespace GameServer.PacketPipeLine
                     break;
                 case RequestGetSameMapUserPacket RequestGetSameMapUserPacket:
                     Func_GetSameMapUser(RequestGetSameMapUserPacket, Packet.ClientID);
+                    break;
+                case RequestPingCheckPacket RequestPingCheckPacket:
+                    Func_RequestPingCheckPacket(RequestPingCheckPacket, Packet.ClientID);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog($"ProcessPacket에서 패킷이 할당되지 않았습니다. {Packet.ToString()}");
@@ -283,6 +290,7 @@ namespace GameServer.PacketPipeLine
             if(Character.MoveToLocation(new System.Numerics.Vector3(Packet.X, Packet.Y, 0)))
             {
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_MOVE, new ResponseMovePacket(0/*성공*/), ClientID);
+                MainProxy.GetSingletone.SendToSameMap(Packet.MapID,GamePacketListID.SEND_USER_MOVE,new SendUserMovePacket(Packet.AccountID,Packet.X,Packet.Y));
             }
             else
             {
@@ -325,6 +333,12 @@ namespace GameServer.PacketPipeLine
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacketToNewUser, Packet.AccountID);
                 LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetAccountID()}의 정보를 보냈습니다.");
             }
+        }
+
+        private void Func_RequestPingCheckPacket(RequestPingCheckPacket Packet, int ClientID)
+        {
+            // 해쉬코드 인증이 필요없는 단순 핑 체크용 패킷
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_PING_CHECK, new ResponsePingCheckPacket(Packet.Hour, Packet.Min,Packet.Secs,Packet.MSecs), ClientID);
         }
     }
 }
