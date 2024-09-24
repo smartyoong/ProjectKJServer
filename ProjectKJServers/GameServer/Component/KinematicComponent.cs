@@ -172,8 +172,6 @@ namespace GameServer.Component
                     Destination = Vector3.Zero;
                 }
                 LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {Data.Position}");
-                if (Player != null)
-                    Player.SendAnotherUserArrivedDestination();
             }
             else
             {
