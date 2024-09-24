@@ -1,5 +1,7 @@
 ﻿using CoreUtility.Utility;
 using GameServer.MainUI;
+using GameServer.Object;
+using GameServer.PacketList;
 using System.Numerics;
 using WinRT;
 
@@ -40,7 +42,9 @@ namespace GameServer.Component
         private SteeringHandle SteeringHandle;
         private Vector3 Destination;
 
-        public KinematicComponent(float MaxSpeed, float MaxRotation, Vector3 Position)
+        private PlayerCharacter? Player = null;
+
+        public KinematicComponent(float MaxSpeed, float MaxRotation, Vector3 Position, PlayerCharacter? Onwer = null)
         {
             Data = new StaticData();
             Data.Position = Position;
@@ -56,22 +60,33 @@ namespace GameServer.Component
             SteeringHandle.Angular = 0;
             SteeringHandle.Linear = Vector3.Zero;
             Destination = Vector3.Zero;
+            Player = Onwer;
         }
 
         public KinematicHandle GetKinematicHandle()
         {
-            return Handle;
+            lock (_lock)
+            {
+                return Handle;
+            }
         }
 
         public SteeringHandle GetSteeringHandle()
         {
-            return SteeringHandle;
+            lock (_lock)
+            {
+                return SteeringHandle;
+            }
         }
 
         public Vector3 GetCurrentPosition()
         {
-            return Data.Position;
+            lock (_lock)
+            {
+                return Data.Position;
+            }
         }
+
 
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
         public void Update(float DeltaTime)
@@ -122,7 +137,6 @@ namespace GameServer.Component
                 Handle = NewHandle;
                 Data.Orientation = NewOrientation(Data.Orientation, Handle.Velocity);
             }
-
             return true;
         }
 
@@ -150,7 +164,6 @@ namespace GameServer.Component
             // 도착했는가?
             if (NewHandle.Velocity.Length() < Limit.Radius)
             {
-                LogManager.GetSingletone.WriteLog($"도착 업데이트 시작 {Data.Position}");
                 NewHandle.Velocity = Vector3.Zero;
                 NewHandle.Rotation = 0;
                 lock (_lock)
@@ -159,6 +172,8 @@ namespace GameServer.Component
                     Destination = Vector3.Zero;
                 }
                 LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {Data.Position}");
+                if (Player != null)
+                    Player.SendAnotherUserArrivedDestination();
             }
             else
             {

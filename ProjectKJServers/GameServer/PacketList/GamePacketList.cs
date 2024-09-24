@@ -36,7 +36,8 @@
         REQUEST_GET_SAME_MAP_USER = 13,
         SEND_USER_MOVE = 14,
         REQUEST_PING_CHECK = 15,
-        RESPONSE_PING_CHECK = 16
+        RESPONSE_PING_CHECK = 16,
+        SEND_USER_MOVE_ARRIVED = 17
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -320,5 +321,14 @@
         public int Min { get; set; } = Min;
         public int Secs { get; set; } = Secs;
         public int MSecs { get; set; } = MSecs;
+    }
+
+    [Serializable]
+    public struct SendUserMoveArrivedPacket(string AccountID, int MapID ,int X, int Y)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int MapID { get; set; } = MapID;
+        public int X { get; set; } = X;
+        public int Y { get; set; } = Y;
     }
 }

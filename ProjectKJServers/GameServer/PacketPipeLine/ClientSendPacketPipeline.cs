@@ -87,6 +87,8 @@ namespace GameServer.PacketPipeLine
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendUserMovePacket)packet.Packet), packet.ClientID);
                 case GamePacketListID.RESPONSE_PING_CHECK:
                     return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponsePingCheckPacket)packet.Packet), packet.ClientID);
+                case GamePacketListID.SEND_USER_MOVE_ARRIVED:
+                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendUserMoveArrivedPacket)packet.Packet), packet.ClientID);
                 default:
                     LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
                     return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);

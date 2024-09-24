@@ -1,9 +1,8 @@
 ﻿using CoreUtility.Utility;
 using GameServer.Component;
 using GameServer.MainUI;
-using Microsoft.VisualBasic.Logging;
+using GameServer.PacketList;
 using System.Numerics;
-using Windows.ApplicationModel.VoiceCommands;
 
 namespace GameServer.Object
 {
@@ -42,28 +41,37 @@ namespace GameServer.Object
         public KinematicComponent GetMovementComponent() => MovementComponent;
         public MapComponent GetMapComponent() => MapComponent;
 
-        public PlayerCharacter(string AccountID, string NickName,int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
+        public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
         {
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);
-            JobInfo = new CharacterJobInfo(Job,JobLevel);
-            AppearanceInfo = new ChracterAppearanceInfo(Gender,PresetNum);
-            LevelInfo = new CharacterLevelInfo(Level,EXP);
-            MovementComponent = new KinematicComponent(300,1,StartPosition);
-            MapComponent = new MapComponent(MapID,AccountID);
+            JobInfo = new CharacterJobInfo(Job, JobLevel);
+            AppearanceInfo = new ChracterAppearanceInfo(Gender, PresetNum);
+            LevelInfo = new CharacterLevelInfo(Level, EXP);
+            MovementComponent = new KinematicComponent(300, 1, StartPosition, this);
+            MapComponent = new MapComponent(MapID, AccountID);
             MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
             MainProxy.GetSingletone.AddUserToMap(MapComponent);
+
         }
 
         public bool MoveToLocation(Vector3 Position)
         {
             LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Position}으로 이동합니다.");
-            return MovementComponent.MoveToLocation(MapComponent.GetCurrentMapID(),Position);
+            return MovementComponent.MoveToLocation(MapComponent.GetCurrentMapID(), Position);
         }
 
         public void RemoveCharacter()
         {
             MainProxy.GetSingletone.RemoveUserFromMap(MapComponent);
-            MainProxy.GetSingletone.RemoveKinematicMoveComponent(MovementComponent,0);
+            MainProxy.GetSingletone.RemoveKinematicMoveComponent(MovementComponent, 0);
+        }
+
+        public void SendAnotherUserArrivedDestination()
+        {
+            int CurrentMapID = MapComponent.GetCurrentMapID();
+            Vector3 CurrentPosition = MovementComponent.GetCurrentPosition();
+            SendUserMoveArrivedPacket Packet = new SendUserMoveArrivedPacket(GetAccountInfo().AccountID, CurrentMapID, (int)CurrentPosition.X, (int)CurrentPosition.Y);
+            MainProxy.GetSingletone.SendToSameMap(MapComponent.GetCurrentMapID(), GamePacketListID.SEND_USER_MOVE_ARRIVED, Packet);
         }
     }
 }
