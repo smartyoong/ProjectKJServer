@@ -49,6 +49,8 @@ namespace CoreUtility.Utility
             );
         }
 
+        public static Vector3 MinusOneVector3 => new Vector3(-1, -1, -1);
+
         public static ConvertObstacles CalculateSquareVertex(Obstacle Obs, string MeshName)
         {
             const int SQUARE = 0;

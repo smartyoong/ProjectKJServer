@@ -276,7 +276,7 @@
     }
 
     [Serializable]
-    public struct SendAnotherCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName)
+    public struct SendAnotherCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int DestX, int DestY)
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -289,6 +289,8 @@
         public int Level { get; set; } = Level;
         public int EXP { get; set; } = EXP;
         public string NickName { get; set; } = NickName;
+        public int DestX { get; set; } = DestX;
+        public int DestY { get; set; } = DestY;
     }
 
     [Serializable]

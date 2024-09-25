@@ -238,16 +238,24 @@ namespace GameServer.PacketPipeLine
             }
         }
 
+        private bool CheckHashCodeIfFailSend(string AccountID, ref string HashCode, int ClientID, string DebugStr = "default")
+        {
+            var ErrorCode = MainProxy.GetSingletone.CheckAuthHashCode(AccountID, ref HashCode);
+            if (GeneralErrorCode.ERR_AUTH_FAIL == ErrorCode || ErrorCode == GeneralErrorCode.ERR_HASH_CODE_IS_NOT_REGIST)
+            {
+                SendAuthFailToClient(AccountID, ClientID);
+                // 해쉬 코드 인증 실패
+                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 {DebugStr} : {AccountID} {HashCode}");
+                return false;
+            }
+            return true;
+        }
+
         private void DB_Func_RequestCharacterBaseInfo(RequestCharBaseInfoPacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
-            {
-                MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK, new ResponseHashAuthCheckPacket(Packet.AccountID, (int)GeneralErrorCode.ERR_AUTH_FAIL), ClientID);
-                // 해쉬 코드 인증 실패
-                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+            if(!CheckHashCodeIfFailSend(Packet.AccountID, ref HashCode, ClientID, "DB_Func_RequestCharacterBaseInfo"))
                 return;
-            }
             // DB에서 캐릭터 정보를 가져온다.
             RequestDBCharBaseInfoPacket DBPacket = new RequestDBCharBaseInfoPacket(Packet.AccountID, Packet.NickName);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CHAR_BASE_INFO, DBPacket);
@@ -256,13 +264,8 @@ namespace GameServer.PacketPipeLine
         private void DB_Func_RequestCreateCharacter(RequestCreateCharacterPacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
-            {
-                SendAuthFailToClient(Packet.AccountID,ClientID);
-                // 해쉬 코드 인증 실패
-                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+            if(!CheckHashCodeIfFailSend(Packet.AccountID, ref HashCode, ClientID, "DB_Func_RequestCreateCharacter"))
                 return;
-            }
             // DB에다가 캐릭터 생성을 요청한다.
             RequestDBCreateCharacterPacket DBPacket = new RequestDBCreateCharacterPacket(Packet.AccountID,Packet.Gender,Packet.PresetID);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_CREATE_CHARACTER, DBPacket);
@@ -271,13 +274,8 @@ namespace GameServer.PacketPipeLine
         private void Func_RequestMove(RequestMovePacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
-            {
-                SendAuthFailToClient(Packet.AccountID, ClientID);
-                // 해쉬 코드 인증 실패
-                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 DB_Func_RequestCharacterBaseInfo : {Packet.AccountID} {Packet.HashCode}");
+            if(!CheckHashCodeIfFailSend(Packet.AccountID, ref HashCode, ClientID, "Func_RequestMove"))
                 return;
-            }
             // 이동 패킷을 처리한다.
             PlayerCharacter? Character = MainProxy.GetSingletone.GetPlayerCharacter(Packet.AccountID);
             if (Character == null)
@@ -301,35 +299,36 @@ namespace GameServer.PacketPipeLine
         private void Func_GetSameMapUser(RequestGetSameMapUserPacket Packet, int ClientID)
         {
             string HashCode = Packet.HashCode;
-            if (GeneralErrorCode.ERR_AUTH_FAIL == MainProxy.GetSingletone.CheckAuthHashCode(Packet.AccountID, ref HashCode))
-            {
-                SendAuthFailToClient(Packet.AccountID, ClientID);
-                // 해쉬 코드 인증 실패
-                LogManager.GetSingletone.WriteLog($"해시 코드 인증 실패 Func_GetSameMapUser : {Packet.AccountID} {Packet.HashCode}");
+            if(!CheckHashCodeIfFailSend(Packet.AccountID, ref HashCode, ClientID, "Func_GetSameMapUser"))
                 return;
-            }
+
             // 같은 맵에 있는 유저들을 가져온다.
             //새로 생성된 유저에게 해당 맵의 유저들을 렌더링하도록 명령내린다.
             var MapUsers = MainProxy.GetSingletone.GetMapUsers(Packet.MapID);
             if (MapUsers == null)
-            {
                 return;
-            }
+
             foreach (var User in MapUsers)
             {
                 PlayerCharacter? Character = MainProxy.GetSingletone.GetCharacterByAccountID(User.GetAccountID());
                 if (Character == null)
-                {
                     continue;
-                }
                 if (Character.GetAccountInfo().AccountID == Packet.AccountID)
-                {
                     continue;
+                System.Numerics.Vector3 Destination = Character.GetMovementComponent().GetDestination();
+                System.Numerics.Vector3 Position = Character.GetMovementComponent().GetCurrentPosition();
+                string NickName = MainProxy.GetSingletone.GetNickName(User.GetAccountID());
+                // 목표점이 없다는건 이동할 곳이 없다는 것이다.
+                if(Destination == System.Numerics.Vector3.Zero)
+                {
+                    Destination.X = -1;
+                    Destination.Y = -1;
+                    Destination.Z = -1;
                 }
                 SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetAccountID(), Character.GetAppearanceInfo().Gender,
                     Character.GetAppearanceInfo().PresetNumber, Character.GetJobInfo().Job, Character.GetJobInfo().Level, Character.GetMapComponent().GetCurrentMapID(),
-                    (int)Character.GetMovementComponent().GetCurrentPosition().X, (int)Character.GetMovementComponent().GetCurrentPosition().Y,
-                    Character.GetLevelInfo().Level, Character.GetLevelInfo().CurrentExp, MainProxy.GetSingletone.GetNickName(User.GetAccountID()));
+                    (int)Position.X, (int)Position.Y, Character.GetLevelInfo().Level, Character.GetLevelInfo().CurrentExp, NickName, (int)Destination.X, (int)Destination.Y);
+
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacketToNewUser, Packet.AccountID);
                 LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetAccountID()}의 정보를 보냈습니다.");
             }

@@ -7,6 +7,7 @@ using WinRT;
 
 namespace GameServer.Component
 {
+
     // 조종할때 사용
     internal struct SteeringHandle
     {
@@ -59,7 +60,7 @@ namespace GameServer.Component
             SteeringHandle = new SteeringHandle();
             SteeringHandle.Angular = 0;
             SteeringHandle.Linear = Vector3.Zero;
-            Destination = Vector3.Zero;
+            Destination = ConvertMathUtility.MinusOneVector3;
             Player = Onwer;
         }
 
@@ -87,6 +88,22 @@ namespace GameServer.Component
             }
         }
 
+        public float GetCurrentOrientation()
+        {
+            lock (_lock)
+            {
+                return Data.Orientation;
+            }
+        }
+
+        public Vector3 GetDestination()
+        {
+            lock (_lock)
+            {
+                return Destination;
+            }
+        }
+
 
         //핸들과 컴포넌트를 세트로 묶어야 하나,,
         public void Update(float DeltaTime)
@@ -103,8 +120,7 @@ namespace GameServer.Component
                 // 회전 속도 업데이트
                 Data.Orientation += SteeringHandle.Angular * DeltaTime;
             }
-
-            if(Destination != Vector3.Zero)
+            if (Destination != ConvertMathUtility.MinusOneVector3)
             {
                 Arrive();
             }
@@ -169,7 +185,7 @@ namespace GameServer.Component
                 lock (_lock)
                 {
                     Data.Position = Destination;
-                    Destination = Vector3.Zero;
+                    Destination = ConvertMathUtility.MinusOneVector3;
                 }
                 LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {Data.Position}");
             }

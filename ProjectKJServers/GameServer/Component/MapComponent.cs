@@ -27,6 +27,13 @@ namespace GameServer.Component
             // 맵 관련 업데이트가 필요할 경우 여기서 진행함
             MapBufferID = 0;
             MapDebuffID = 0;
+            if (MapBufferID == 0)
+            {
+                if (MapDebuffID == 0)
+                {
+                    return;  // 경고 출력 안되게 일단 막음 안쓰일것 같아서
+                }
+            }
         }
 
         public void MoveToAnotherMap(int MapID)
