@@ -1,9 +1,7 @@
 ﻿using CoreUtility.Utility;
 using GameServer.MainUI;
 using GameServer.Object;
-using GameServer.PacketList;
 using System.Numerics;
-using WinRT;
 
 namespace GameServer.Component
 {
@@ -15,7 +13,7 @@ namespace GameServer.Component
         public float Angular; // 각속도 -> 이걸 통해서 회전 속도를 증가시키자
     }
 
-    internal struct StaticData
+    internal struct KinematicStatic
     {
         public Vector3 Position;
         public float Orientation; // 라디언
@@ -37,7 +35,7 @@ namespace GameServer.Component
     internal class KinematicComponent
     {
         private readonly object _lock = new object();
-        private StaticData Data;
+        private KinematicStatic Data;
         private KinematicHandle Handle;
         private LimitData Limit;
         private SteeringHandle SteeringHandle;
@@ -47,7 +45,7 @@ namespace GameServer.Component
 
         public KinematicComponent(float MaxSpeed, float MaxRotation, Vector3 Position, PlayerCharacter? Onwer = null)
         {
-            Data = new StaticData();
+            Data = new KinematicStatic();
             Data.Position = Position;
             Data.Orientation = 0;
             Limit = new LimitData();
@@ -66,41 +64,58 @@ namespace GameServer.Component
 
         public KinematicHandle GetKinematicHandle()
         {
-            lock (_lock)
-            {
-                return Handle;
-            }
+            return Handle;
         }
 
         public SteeringHandle GetSteeringHandle()
         {
-            lock (_lock)
-            {
-                return SteeringHandle;
-            }
+            return SteeringHandle;
         }
 
         public Vector3 GetCurrentPosition()
         {
-            lock (_lock)
-            {
-                return Data.Position;
-            }
+            return Data.Position;
         }
 
         public float GetCurrentOrientation()
         {
-            lock (_lock)
-            {
-                return Data.Orientation;
-            }
+            return Data.Orientation;
         }
 
         public Vector3 GetDestination()
         {
+            return Destination;
+        }
+
+        private void SetDestination(Vector3 Target)
+        {
             lock (_lock)
             {
-                return Destination;
+                Destination = Target;
+            }
+        }
+
+        private void SetKinematicHandle(KinematicHandle NewHandle)
+        {
+            lock (_lock)
+            {
+                Handle = NewHandle;
+            }
+        }
+
+        private void SetOrientation(float NewOrientation)
+        {
+            lock (_lock)
+            {
+                Data.Orientation = NewOrientation;
+            }
+        }
+
+        private void SetPosition(Vector3 NewPosition)
+        {
+            lock (_lock)
+            {
+                Data.Position = NewPosition;
             }
         }
 
@@ -115,14 +130,19 @@ namespace GameServer.Component
                 Data.Position += Handle.Velocity * DeltaTime;
                 // 방위 업데이트 (기본적인 회전 속도)
                 Data.Orientation += Handle.Rotation * DeltaTime;
+            }
+
+            if (Destination != ConvertMathUtility.MinusOneVector3)
+            {
+                Arrive();
+            }
+
+            lock (_lock)
+            {
                 // 속도 업데이트
                 Handle.Velocity += SteeringHandle.Linear * DeltaTime;
                 // 회전 속도 업데이트
                 Data.Orientation += SteeringHandle.Angular * DeltaTime;
-            }
-            if (Destination != ConvertMathUtility.MinusOneVector3)
-            {
-                Arrive();
             }
         }
 
@@ -130,7 +150,7 @@ namespace GameServer.Component
         {
             if (Velocity.Length() > 0)
             {
-                return (float)Math.Atan2(Velocity.Y, Velocity.X);
+                return (float)Math.Atan2(Velocity.X, Velocity.X);
             }
             return Current;
         }
@@ -144,15 +164,12 @@ namespace GameServer.Component
             }
 
             KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Target - Data.Position;
+            NewHandle.Velocity = Target - GetCurrentPosition();
             NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
             NewHandle.Rotation = 0;
-            lock (_lock)
-            {
-                Destination = Target;
-                Handle = NewHandle;
-                Data.Orientation = NewOrientation(Data.Orientation, Handle.Velocity);
-            }
+            SetDestination(Target);
+            SetKinematicHandle(NewHandle);
+            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
             return true;
         }
 
@@ -160,14 +177,11 @@ namespace GameServer.Component
         public void RunFromTarget(Vector3 Target)
         {
             KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Data.Position - Target;
+            NewHandle.Velocity = GetCurrentPosition() - Target;
             NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
             NewHandle.Rotation = 0;
-            lock (_lock)
-            {
-                Handle = NewHandle;
-                Data.Orientation = NewOrientation(Data.Orientation, Handle.Velocity);
-            }
+            SetKinematicHandle(NewHandle);
+            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
         }
 
         public void Arrive()
@@ -175,19 +189,16 @@ namespace GameServer.Component
             // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
             //float TimeToTarget = 0.25f;
             KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Destination - Data.Position;
+            NewHandle.Velocity = GetDestination() - GetCurrentPosition();
 
             // 도착했는가?
             if (NewHandle.Velocity.Length() < Limit.Radius)
             {
                 NewHandle.Velocity = Vector3.Zero;
                 NewHandle.Rotation = 0;
-                lock (_lock)
-                {
-                    Data.Position = Destination;
-                    Destination = ConvertMathUtility.MinusOneVector3;
-                }
-                LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {Data.Position}");
+                SetPosition(Destination);
+                SetDestination(ConvertMathUtility.MinusOneVector3);
+                LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {GetCurrentPosition()}");
             }
             else
             {
@@ -199,23 +210,17 @@ namespace GameServer.Component
                 NewHandle.Rotation = 0;
             }
 
-            lock (_lock)
-            {
-                Data.Orientation = NewOrientation(Data.Orientation, NewHandle.Velocity);
-                Handle = NewHandle;
-            }
+            SetKinematicHandle(NewHandle);
+            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
         }
 
         // 랜덤한 방향으로 왔다리 갔다리 하도록하는 코드
         public void Wandering()
         {
             KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Limit.MaxSpeed * ConvertMathUtility.RadianToVector3(Data.Orientation);
+            NewHandle.Velocity = Limit.MaxSpeed * ConvertMathUtility.RadianToVector3(GetCurrentOrientation());
             NewHandle.Rotation = ConvertMathUtility.RandomBinomial() * Limit.MaxRotation;
-            lock(_lock)
-            {
-                Handle = NewHandle;
-            }
+            SetKinematicHandle(NewHandle);
         }
     }
 }
