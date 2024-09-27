@@ -51,6 +51,7 @@ namespace GameServer.Component
             Limit = new LimitData();
             Limit.MaxRotation = MaxRotation;
             Limit.MaxSpeed = MaxSpeed;
+            //클라랑 서버는 반경이 다르다 (클라가 먼저 선 이동하니까 동기화 목적)
             Limit.Radius = 10f;
             Handle = new KinematicHandle();
             Handle.Rotation = 0;
@@ -187,7 +188,7 @@ namespace GameServer.Component
         public void Arrive()
         {
             // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
-            //float TimeToTarget = 0.25f;
+            const float TimeToTarget = 0.25f;
             KinematicHandle NewHandle = new KinematicHandle();
             NewHandle.Velocity = GetDestination() - GetCurrentPosition();
 
@@ -202,7 +203,7 @@ namespace GameServer.Component
             }
             else
             {
-                //NewHandle.Velocity = NewHandle.Velocity / TimeToTarget;
+                NewHandle.Velocity = NewHandle.Velocity / TimeToTarget;
                 if (NewHandle.Velocity.Length() > Limit.MaxSpeed)
                 {
                     NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
