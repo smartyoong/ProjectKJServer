@@ -41,5 +41,17 @@
     <Setting Name="ResourceDicrectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">D:\ProjectKJ\GameServer\ProjectKJServers\Resource</Value>
     </Setting>
+    <Setting Name="MaxSpeed" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">300</Value>
+    </Setting>
+    <Setting Name="MaxAccelrate" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="MaxRotation" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="BoardRadius" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

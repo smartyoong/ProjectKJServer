@@ -47,7 +47,9 @@ namespace GameServer.Object
             JobInfo = new CharacterJobInfo(Job, JobLevel);
             AppearanceInfo = new ChracterAppearanceInfo(Gender, PresetNum);
             LevelInfo = new CharacterLevelInfo(Level, EXP);
-            MovementComponent = new KinematicComponent(300, 1, StartPosition, this);
+            // 현재는 서버세팅으로 해놨는데 리소스화 시키자
+            MovementComponent = new KinematicComponent(StartPosition,GameServerSettings.Default.MaxSpeed, GameServerSettings.Default.MaxAccelrate, 
+              GameServerSettings.Default.MaxRotation, GameServerSettings.Default.BoardRadius);
             MapComponent = new MapComponent(MapID, AccountID);
             MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
             MainProxy.GetSingletone.AddUserToMap(MapComponent);
@@ -69,7 +71,7 @@ namespace GameServer.Object
         public void SendAnotherUserArrivedDestination()
         {
             int CurrentMapID = MapComponent.GetCurrentMapID();
-            Vector3 CurrentPosition = MovementComponent.GetCurrentPosition();
+            Vector3 CurrentPosition = MovementComponent.CharcaterStaticData.Position;
             SendUserMoveArrivedPacket Packet = new SendUserMoveArrivedPacket(GetAccountInfo().AccountID, CurrentMapID, (int)CurrentPosition.X, (int)CurrentPosition.Y);
             MainProxy.GetSingletone.SendToSameMap(MapComponent.GetCurrentMapID(), GamePacketListID.SEND_USER_MOVE_ARRIVED, Packet);
         }

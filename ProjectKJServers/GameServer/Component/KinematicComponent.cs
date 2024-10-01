@@ -1,159 +1,153 @@
 ﻿using CoreUtility.Utility;
 using GameServer.MainUI;
-using GameServer.Object;
+using System.Collections.Concurrent;
 using System.Numerics;
+using Windows.ApplicationModel.Background;
 
 namespace GameServer.Component
 {
+    interface Behaviors
+    {
+        SteeringHandle? GetSteeringHandle(Kinematic Character, Kinematic Target,float MaxSpeed,
+            float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget);
+    }
+
+    enum MoveType
+    {
+        Stop,
+        Chase,
+        RunAway,
+        Move
+    }
 
     // 조종할때 사용
     internal struct SteeringHandle
     {
-        public Vector3 Linear; // 직선 가속도 -> 이걸 통해서 속도를 증가시키자
-        public float Angular; // 각속도 -> 이걸 통해서 회전 속도를 증가시키자
+        public Vector3 Linear { get; set; } // 직선 가속도 -> 이걸 통해서 속도를 증가시키자
+        public float Angular { get; set; } // 각속도 -> 이걸 통해서 회전 속도를 증가시키자
+
+        // 생성자
+        public SteeringHandle(Vector3 linear, float angular)
+        {
+            Linear = linear;
+            Angular = angular;
+        }
+
+        // 연산자 오버로딩
+        public static SteeringHandle operator +(SteeringHandle A, SteeringHandle B)
+        {
+            return new SteeringHandle(A.Linear + B.Linear, A.Angular + B.Angular);
+        }
     }
 
-    internal struct KinematicStatic
+    internal struct Kinematic(Vector3 Position, Vector3 Velocity, float Orientation, float Rotation)
     {
-        public Vector3 Position;
-        public float Orientation; // 라디언
+        public Vector3 Position { get; set; } = Position;
+        public Vector3 Velocity { get; set; } = Velocity;
+        public float Orientation { get; set; } = Orientation;
+        public float Rotation { get; set; } = Rotation;
     }
 
-    internal struct LimitData
-    {
-        public float MaxSpeed;
-        public float MaxRotation;
-        public float Radius;
-    }
-
-    internal struct KinematicHandle
-    {
-        public Vector3 Velocity; // 속도
-        public float Rotation; // 회전 속도
-    }
 
     internal class KinematicComponent
     {
-        private readonly object _lock = new object();
-        private KinematicStatic Data;
-        private KinematicHandle Handle;
-        private LimitData Limit;
-        private SteeringHandle SteeringHandle;
-        private Vector3 Destination;
+        // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
+        private const float TIME_TO_TARGET = 0.25f;
+        private const float INVALID_RADIAN = -361;
+        private const float SlowRadius = 300f;
+        public float MaxSpeed { get; private set; }
+        public float MaxRotation { get; private set; }
+        public float Radius { get; private set; }
+        public float MaxAccelerate { get; private set; }
+        public float MaxAngular { get; private set; }
+        private ConcurrentQueue<Behaviors> BehaviorList;
+        private Kinematic CharacterData;
+        public Kinematic CharcaterStaticData { get => CharacterData; }
+        private Kinematic Target;
+        public Kinematic TargetStaticData { get => Target; }
 
-        private PlayerCharacter? Player = null;
+        public MoveType CurrentMoveType { get; private set; }
 
-        public KinematicComponent(float MaxSpeed, float MaxRotation, Vector3 Position, PlayerCharacter? Onwer = null)
+        public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius)
         {
-            Data = new KinematicStatic();
-            Data.Position = Position;
-            Data.Orientation = 0;
-            Limit = new LimitData();
-            Limit.MaxRotation = MaxRotation;
-            Limit.MaxSpeed = MaxSpeed;
-            //클라랑 서버는 반경이 다르다 (클라가 먼저 선 이동하니까 동기화 목적)
-            Limit.Radius = 10f;
-            Handle = new KinematicHandle();
-            Handle.Rotation = 0;
-            Handle.Velocity = Vector3.Zero;
-            SteeringHandle = new SteeringHandle();
-            SteeringHandle.Angular = 0;
-            SteeringHandle.Linear = Vector3.Zero;
-            Destination = ConvertMathUtility.MinusOneVector3;
-            Player = Onwer;
+            BehaviorList = new ConcurrentQueue<Behaviors>();
+            CharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
+            this.MaxSpeed = MaxSpeed;
+            this.MaxAccelerate = MaxAccelerate;
+            this.MaxRotation = MaxRotation;
+            this.Radius = Radius;
+            MaxAngular = 1;
+            Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
+            CurrentMoveType = MoveType.Stop;
         }
 
-        public KinematicHandle GetKinematicHandle()
-        {
-            return Handle;
-        }
-
-        public SteeringHandle GetSteeringHandle()
-        {
-            return SteeringHandle;
-        }
-
-        public Vector3 GetCurrentPosition()
-        {
-            return Data.Position;
-        }
-
-        public float GetCurrentOrientation()
-        {
-            return Data.Orientation;
-        }
-
-        public Vector3 GetDestination()
-        {
-            return Destination;
-        }
-
-        private void SetDestination(Vector3 Target)
-        {
-            lock (_lock)
-            {
-                Destination = Target;
-            }
-        }
-
-        private void SetKinematicHandle(KinematicHandle NewHandle)
-        {
-            lock (_lock)
-            {
-                Handle = NewHandle;
-            }
-        }
-
-        private void SetOrientation(float NewOrientation)
-        {
-            lock (_lock)
-            {
-                Data.Orientation = NewOrientation;
-            }
-        }
-
-        private void SetPosition(Vector3 NewPosition)
-        {
-            lock (_lock)
-            {
-                Data.Position = NewPosition;
-            }
-        }
-
-
-        //핸들과 컴포넌트를 세트로 묶어야 하나,,
         public void Update(float DeltaTime)
         {
             DeltaTime /= 1000;
-            lock (_lock)
+
+            // 위치 업데이트
+            CharacterData.Position += CharacterData.Velocity * DeltaTime;
+            // 방위 업데이트 (기본적인 회전 속도)
+            CharacterData.Orientation += CharacterData.Rotation * DeltaTime;
+
+            SteeringHandle TempHandle = new SteeringHandle(Vector3.Zero, 0);
+            // 정확히 현재 큐에 있는 만큼만 반복한다. 추가로 삽입된건 다음턴에 한다.
+            int CurrentCount = BehaviorList.Count;
+            for (int i = 0; i < CurrentCount; ++i)
             {
-                // 위치 업데이트
-                Data.Position += Handle.Velocity * DeltaTime;
-                // 방위 업데이트 (기본적인 회전 속도)
-                Data.Orientation += Handle.Rotation * DeltaTime;
+                if (BehaviorList.IsEmpty)
+                    break;
+                BehaviorList.TryDequeue(out Behaviors? TempBehavior);
+                if (TempBehavior == null)
+                    continue;
+                SteeringHandle? BehaviorResult;
+                BehaviorResult = TempBehavior.GetSteeringHandle
+                    (CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                // 아무런 동작을 할 필요가 없다.
+                if (BehaviorResult == null)
+                {
+                    LogManager.GetSingletone.WriteLog($"도착 진짜 위치 : {CharacterData.Position}");
+                    StopMove();
+                    LogManager.GetSingletone.WriteLog($"도착 위치 : {CharacterData.Position}");
+                    LogManager.GetSingletone.WriteLog($"도착 속력 : {CharacterData.Velocity}");
+                    continue;
+                }
+                TempHandle += (SteeringHandle)BehaviorResult;
+                BehaviorList.Enqueue(TempBehavior);
             }
 
-            if (Destination != ConvertMathUtility.MinusOneVector3)
+            // 속도 업데이트
+            CharacterData.Velocity += TempHandle.Linear * DeltaTime;
+            // 회전 속도 업데이트
+            CharacterData.Orientation += TempHandle.Angular * DeltaTime;
+
+            // 속도 제한
+            if (CharacterData.Velocity.Length() > MaxSpeed)
             {
-                Arrive();
+                CharacterData.Velocity = Vector3.Normalize(CharacterData.Velocity) * MaxSpeed;
             }
 
-            lock (_lock)
+            // 회전 속도 제한
+
+            if (CharacterData.Rotation > MaxRotation)
             {
-                // 속도 업데이트
-                Handle.Velocity += SteeringHandle.Linear * DeltaTime;
-                // 회전 속도 업데이트
-                Data.Orientation += SteeringHandle.Angular * DeltaTime;
+                CharacterData.Rotation = MaxRotation;
             }
         }
 
-        float NewOrientation(float Current, Vector3 Velocity)
+        private bool IsMovingNow()
         {
-            if (Velocity.Length() > 0)
-            {
-                return (float)Math.Atan2(Velocity.X, Velocity.X);
-            }
-            return Current;
+            return Math.Abs(CharacterData.Rotation) > 1f || CharacterData.Velocity.Length() > 3f;
+        }
+
+        public void StopMove()
+        {
+            BehaviorList.Clear();
+            CharacterData.Velocity = Vector3.Zero;
+            CharacterData.Rotation = 0;
+            CurrentMoveType = MoveType.Stop;
+            CharacterData.Position = Target.Position;
+            CharacterData.Orientation = Target.Orientation;
         }
 
         public bool MoveToLocation(int MapID, Vector3 Target)
@@ -164,64 +158,12 @@ namespace GameServer.Component
                 return false;
             }
 
-            KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Target - GetCurrentPosition();
-            NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
-            NewHandle.Rotation = 0;
-            SetDestination(Target);
-            SetKinematicHandle(NewHandle);
-            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
+            this.Target.Position = Target;
+            MoveMethod Move = new MoveMethod();
+            BehaviorList.Enqueue(Move);
+            CurrentMoveType = MoveType.Move;
             return true;
         }
-
-        // 도망 가기
-        public void RunFromTarget(Vector3 Target)
-        {
-            KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = GetCurrentPosition() - Target;
-            NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
-            NewHandle.Rotation = 0;
-            SetKinematicHandle(NewHandle);
-            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
-        }
-
-        public void Arrive()
-        {
-            // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
-            const float TimeToTarget = 0.25f;
-            KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = GetDestination() - GetCurrentPosition();
-
-            // 도착했는가?
-            if (NewHandle.Velocity.Length() < Limit.Radius)
-            {
-                NewHandle.Velocity = Vector3.Zero;
-                NewHandle.Rotation = 0;
-                SetPosition(Destination);
-                SetDestination(ConvertMathUtility.MinusOneVector3);
-                LogManager.GetSingletone.WriteLog($"도착 업데이트 완료 {GetCurrentPosition()}");
-            }
-            else
-            {
-                NewHandle.Velocity = NewHandle.Velocity / TimeToTarget;
-                if (NewHandle.Velocity.Length() > Limit.MaxSpeed)
-                {
-                    NewHandle.Velocity = Vector3.Normalize(NewHandle.Velocity) * Limit.MaxSpeed;
-                }
-                NewHandle.Rotation = 0;
-            }
-
-            SetKinematicHandle(NewHandle);
-            SetOrientation(NewOrientation(GetCurrentOrientation(), NewHandle.Velocity));
-        }
-
-        // 랜덤한 방향으로 왔다리 갔다리 하도록하는 코드
-        public void Wandering()
-        {
-            KinematicHandle NewHandle = new KinematicHandle();
-            NewHandle.Velocity = Limit.MaxSpeed * ConvertMathUtility.RadianToVector3(GetCurrentOrientation());
-            NewHandle.Rotation = ConvertMathUtility.RandomBinomial() * Limit.MaxRotation;
-            SetKinematicHandle(NewHandle);
-        }
     }
+
 }

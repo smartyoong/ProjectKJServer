@@ -178,5 +178,53 @@ namespace GameServer {
                 this["ResourceDicrectory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("300")]
+        public int MaxSpeed {
+            get {
+                return ((int)(this["MaxSpeed"]));
+            }
+            set {
+                this["MaxSpeed"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int MaxAccelrate {
+            get {
+                return ((int)(this["MaxAccelrate"]));
+            }
+            set {
+                this["MaxAccelrate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int MaxRotation {
+            get {
+                return ((int)(this["MaxRotation"]));
+            }
+            set {
+                this["MaxRotation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int BoardRadius {
+            get {
+                return ((int)(this["BoardRadius"]));
+            }
+            set {
+                this["BoardRadius"] = value;
+            }
+        }
     }
 }

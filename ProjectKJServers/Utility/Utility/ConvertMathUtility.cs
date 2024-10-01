@@ -1,10 +1,5 @@
 ﻿using CoreUtility.GlobalVariable;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CoreUtility.Utility
 {
@@ -51,6 +46,29 @@ namespace CoreUtility.Utility
 
         public static Vector3 MinusOneVector3 => new Vector3(-1, -1, -1);
 
+        public static float MapToRange(float radians)
+        {
+            // -pi ~ pi 범위로 라디안 변환
+            while (radians > Math.PI)
+            {
+                radians -= 2 * (float)Math.PI;
+            }
+            while (radians < -Math.PI)
+            {
+                radians += 2 * (float)Math.PI;
+            }
+            return radians;
+        }
+
+        public static float GetNewOrientationByVelocity(float CurrentOrientation, Vector3 Velocity)
+        {
+            if(Velocity.Length() > 0 )
+            {
+                return (float)Math.Atan2(Velocity.Y, Velocity.X);
+            }
+            return CurrentOrientation;
+        }
+
         public static ConvertObstacles CalculateSquareVertex(Obstacle Obs, string MeshName)
         {
             const int SQUARE = 0;
@@ -67,7 +85,7 @@ namespace CoreUtility.Utility
                 new Vector2(0, MeshSize.Y),
                 new Vector2(MeshSize.X, MeshSize.Y),
             ];
-            ConvertObstacles ConvertObstacles = new ConvertObstacles(SQUARE, new List<Vector3>(), MeshName,0,0,0);
+            ConvertObstacles ConvertObstacles = new ConvertObstacles(SQUARE, new List<Vector3>(), MeshName, 0, 0, 0);
             for (int i = 0; i < Vertices.Length; i++)
             {
                 // 스케일 적용

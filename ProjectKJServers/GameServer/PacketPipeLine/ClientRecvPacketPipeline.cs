@@ -315,8 +315,8 @@ namespace GameServer.PacketPipeLine
                     continue;
                 if (Character.GetAccountInfo().AccountID == Packet.AccountID)
                     continue;
-                System.Numerics.Vector3 Destination = Character.GetMovementComponent().GetDestination();
-                System.Numerics.Vector3 Position = Character.GetMovementComponent().GetCurrentPosition();
+                System.Numerics.Vector3 Destination = Character.GetMovementComponent().TargetStaticData.Position;
+                System.Numerics.Vector3 Position = Character.GetMovementComponent().CharcaterStaticData.Position;
                 string NickName = MainProxy.GetSingletone.GetNickName(User.GetAccountID());
                 // 목표점이 없다는건 이동할 곳이 없다는 것이다.
                 if(Destination == System.Numerics.Vector3.Zero)
