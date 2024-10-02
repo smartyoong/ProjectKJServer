@@ -10,7 +10,7 @@ namespace GameServer.Component
 {
     class MoveMethod : Behaviors
     {
-        public SteeringHandle? GetSteeringHandle(Kinematic Character, Kinematic Target, float MaxSpeed, float MaxAccelerate, float MaxRotate, float MaxAngular,
+        public SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed, float MaxAccelerate, float MaxRotate, float MaxAngular,
             float TargetRadius, float SlowRadius, float TimeToTarget)
         {
             SteeringHandle Result = new SteeringHandle(Vector3.Zero, 0);
@@ -20,7 +20,6 @@ namespace GameServer.Component
 
             if (Distance < TargetRadius)
             {
-                LogManager.GetSingletone.WriteLog("진짜로 도착!");
                 return null;
             }
 
@@ -42,7 +41,7 @@ namespace GameServer.Component
             }
 
             Result.Angular = 0;
-
+            Result.Linear *= Ratio;
             return Result;
         }
     }

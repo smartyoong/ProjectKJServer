@@ -217,7 +217,7 @@ namespace GameServer {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int BoardRadius {
             get {
                 return ((int)(this["BoardRadius"]));

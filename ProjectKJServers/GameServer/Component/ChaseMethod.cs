@@ -13,12 +13,13 @@ namespace GameServer.Component
     //추적을 사용할때 용이합니다 (해당지점에 전속력으로 돌진합니다.)
     class ChaseMethod : Behaviors
     {
-        public SteeringHandle? GetSteeringHandle(Kinematic Character, Kinematic Target, float MaxSpeed, float MaxAccelerate, float MaxRotate, float MaxAngular,
+        public SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed, float MaxAccelerate, float MaxRotate, float MaxAngular,
             float TargetRadius, float SlowRadius, float TimeToTarget)
         {
             SteeringHandle Result = new SteeringHandle(Vector3.Zero, 0);
             Result.Linear = Target.Position - Character.Position;
             Result.Linear = Vector3.Normalize(Result.Linear) * MaxAccelerate;
+            Result.Linear *= Ratio;
             return Result;
         }
     }

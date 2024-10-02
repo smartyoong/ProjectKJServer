@@ -8,16 +8,19 @@ namespace GameServer.Component
 {
     interface Behaviors
     {
-        SteeringHandle? GetSteeringHandle(Kinematic Character, Kinematic Target,float MaxSpeed,
+         SteeringHandle? GetSteeringHandle(float Ratio ,Kinematic Character, Kinematic Target,float MaxSpeed,
             float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget);
     }
 
-    enum MoveType
+    [Flags]
+    enum MoveType : int
     {
-        Stop,
-        Chase,
-        RunAway,
-        Move
+        None = 0, // 0
+        Chase = 1 << 0, // 1
+        RunAway = 1 << 1, // 2
+        Move = 1 << 2, // 4
+        VelocityStop = 1 << 3, // 8
+        ForceAdjustPosition = 1 << 4, // 16
     }
 
     // 조종할때 사용
@@ -52,25 +55,24 @@ namespace GameServer.Component
     internal class KinematicComponent
     {
         // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
-        private const float TIME_TO_TARGET = 0.25f;
+        private const float TIME_TO_TARGET = 0.1f;
         private const float INVALID_RADIAN = -361;
-        private const float SlowRadius = 300f;
+        private const float SlowRadius = 400f;
+        private int MoveFlag = 0;
         public float MaxSpeed { get; private set; }
         public float MaxRotation { get; private set; }
         public float Radius { get; private set; }
         public float MaxAccelerate { get; private set; }
         public float MaxAngular { get; private set; }
-        private ConcurrentQueue<Behaviors> BehaviorList;
+
         private Kinematic CharacterData;
         public Kinematic CharcaterStaticData { get => CharacterData; }
         private Kinematic Target;
         public Kinematic TargetStaticData { get => Target; }
 
-        public MoveType CurrentMoveType { get; private set; }
 
         public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius)
         {
-            BehaviorList = new ConcurrentQueue<Behaviors>();
             CharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
             this.MaxSpeed = MaxSpeed;
             this.MaxAccelerate = MaxAccelerate;
@@ -78,7 +80,32 @@ namespace GameServer.Component
             this.Radius = Radius;
             MaxAngular = 1;
             Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
-            CurrentMoveType = MoveType.Stop;
+            MoveFlag = (int)MoveType.None;
+        }
+
+        private void AddMoveFlag(MoveType Flag)
+        {
+            int InitialValue, NewValue;
+            do
+            {
+                InitialValue = MoveFlag;
+                NewValue = InitialValue | (int)Flag;
+            } while (Interlocked.CompareExchange(ref MoveFlag, NewValue, InitialValue) != InitialValue);
+        }
+
+        private void RemoveMoveFlag(MoveType Flag)
+        {
+            int InitialValue, NewValue;
+            do
+            {
+                InitialValue = MoveFlag;
+                NewValue = InitialValue & ~(int)Flag;
+            } while (Interlocked.CompareExchange(ref MoveFlag, NewValue, InitialValue) != InitialValue);
+        }
+
+        private bool HasFlag(MoveType Flag)
+        {
+            return (MoveFlag & (int)Flag) == (int)Flag;
         }
 
         public void Update(float DeltaTime)
@@ -91,30 +118,68 @@ namespace GameServer.Component
             CharacterData.Orientation += CharacterData.Rotation * DeltaTime;
 
             SteeringHandle TempHandle = new SteeringHandle(Vector3.Zero, 0);
-            // 정확히 현재 큐에 있는 만큼만 반복한다. 추가로 삽입된건 다음턴에 한다.
-            int CurrentCount = BehaviorList.Count;
-            for (int i = 0; i < CurrentCount; ++i)
+
+            if (HasFlag(MoveType.Move))
             {
-                if (BehaviorList.IsEmpty)
-                    break;
-                BehaviorList.TryDequeue(out Behaviors? TempBehavior);
-                if (TempBehavior == null)
-                    continue;
-                SteeringHandle? BehaviorResult;
-                BehaviorResult = TempBehavior.GetSteeringHandle
-                    (CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                // 아무런 동작을 할 필요가 없다.
-                if (BehaviorResult == null)
+                MoveMethod Move = new MoveMethod();
+                var Result = Move.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
                 {
-                    LogManager.GetSingletone.WriteLog($"도착 진짜 위치 : {CharacterData.Position}");
-                    StopMove();
-                    LogManager.GetSingletone.WriteLog($"도착 위치 : {CharacterData.Position}");
-                    LogManager.GetSingletone.WriteLog($"도착 속력 : {CharacterData.Velocity}");
-                    continue;
+                    TempHandle += Result.Value;
                 }
-                TempHandle += (SteeringHandle)BehaviorResult;
-                BehaviorList.Enqueue(TempBehavior);
+                else
+                {
+                    RemoveMoveFlag(MoveType.Move);
+                    // 이동이 끝났으니 속도를 0으로 만들어주자
+                    AddMoveFlag(MoveType.VelocityStop);
+                    AddMoveFlag(MoveType.ForceAdjustPosition);
+                }
             }
+
+            if (HasFlag(MoveType.Chase))
+            {
+                ChaseMethod Chase = new ChaseMethod();
+                var Result = Chase.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.Chase);
+                }
+            }
+
+            if (HasFlag(MoveType.RunAway))
+            {
+                RunAwayMethod RunAway = new RunAwayMethod();
+                SteeringHandle? Result = RunAway.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.RunAway);
+                }
+            }
+
+            // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤)
+            if (HasFlag(MoveType.VelocityStop))
+            {
+                CharacterData.Velocity = Vector3.Zero;
+                TempHandle.Linear = Vector3.Zero;
+                RemoveMoveFlag(MoveType.VelocityStop);
+                LogManager.GetSingletone.WriteLog("속도가 0으로 만들어짐");
+            }
+            // 위치를 강제로 조정하는 플래그
+            if (HasFlag(MoveType.ForceAdjustPosition))
+            {
+                CharacterData.Position = Target.Position;
+                RemoveMoveFlag(MoveType.ForceAdjustPosition);
+                LogManager.GetSingletone.WriteLog($"위치가 강제로 조정됨 {CharacterData.Position}");
+            }
+
 
             // 속도 업데이트
             CharacterData.Velocity += TempHandle.Linear * DeltaTime;
@@ -133,21 +198,13 @@ namespace GameServer.Component
             {
                 CharacterData.Rotation = MaxRotation;
             }
+
         }
+
 
         private bool IsMovingNow()
         {
             return Math.Abs(CharacterData.Rotation) > 1f || CharacterData.Velocity.Length() > 3f;
-        }
-
-        public void StopMove()
-        {
-            BehaviorList.Clear();
-            CharacterData.Velocity = Vector3.Zero;
-            CharacterData.Rotation = 0;
-            CurrentMoveType = MoveType.Stop;
-            CharacterData.Position = Target.Position;
-            CharacterData.Orientation = Target.Orientation;
         }
 
         public bool MoveToLocation(int MapID, Vector3 Target)
@@ -159,9 +216,7 @@ namespace GameServer.Component
             }
 
             this.Target.Position = Target;
-            MoveMethod Move = new MoveMethod();
-            BehaviorList.Enqueue(Move);
-            CurrentMoveType = MoveType.Move;
+            AddMoveFlag(MoveType.Move);
             return true;
         }
     }
