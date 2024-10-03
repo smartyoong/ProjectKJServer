@@ -23,6 +23,7 @@ namespace GameServer.Component
         Brake = 1 << 5, // 32
         RotateStop = 1 << 6, // 64
         Align = 1 << 7, // 128
+        VelocityMatch = 1 << 8, // 256
     }
 
     // 조종할때 사용
@@ -150,6 +151,20 @@ namespace GameServer.Component
                 {
                     RemoveMoveFlag(MoveType.Align);
                     AddMoveFlag(MoveType.RotateStop);
+                }
+            }
+
+            if (HasFlag(MoveType.VelocityMatch))
+            {
+                VelocityMatchMethod VelocityMatch = new VelocityMatchMethod();
+                var Result = VelocityMatch.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.VelocityMatch);
                 }
             }
 
