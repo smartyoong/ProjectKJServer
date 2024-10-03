@@ -51,11 +51,11 @@ namespace CoreUtility.Utility
             // -pi ~ pi 범위로 라디안 변환
             while (radians > Math.PI)
             {
-                radians -= 2 * (float)Math.PI;
+                radians -= (float)Math.PI;
             }
             while (radians < -Math.PI)
             {
-                radians += 2 * (float)Math.PI;
+                radians += (float)Math.PI;
             }
             return radians;
         }

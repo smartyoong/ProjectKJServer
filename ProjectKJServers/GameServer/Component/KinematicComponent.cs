@@ -3,7 +3,6 @@ using GameServer.MainUI;
 using System.Collections.Concurrent;
 using System.Numerics;
 using Windows.ApplicationModel.Background;
-
 namespace GameServer.Component
 {
     interface Behaviors
@@ -20,8 +19,10 @@ namespace GameServer.Component
         RunAway = 1 << 1, // 2
         Move = 1 << 2, // 4
         VelocityStop = 1 << 3, // 8
-        ForceAdjustPosition = 1 << 4, // 16
+        EqaulVelocityMove = 1 << 4, // 16
         Brake = 1 << 5, // 32
+        RotateStop = 1 << 6, // 64
+        Align = 1 << 7, // 128
     }
 
     // 조종할때 사용
@@ -137,6 +138,21 @@ namespace GameServer.Component
                 }
             }
 
+            if(HasFlag(MoveType.Align))
+            {
+                AlignMethod Align = new AlignMethod();
+                var Result = Align.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, 2f, 10f, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.Align);
+                    AddMoveFlag(MoveType.RotateStop);
+                }
+            }
+
             if (HasFlag(MoveType.Chase))
             {
                 ChaseMethod Chase = new ChaseMethod();
@@ -177,24 +193,38 @@ namespace GameServer.Component
                 {
                     RemoveMoveFlag(MoveType.Brake);
                     AddMoveFlag(MoveType.VelocityStop);
-                    AddMoveFlag(MoveType.ForceAdjustPosition);
                 }
             }
 
-            // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤)
+            if(HasFlag(MoveType.EqaulVelocityMove))
+            {
+                EqualVelocityMoveMethod EqualVelocityMove = new EqualVelocityMoveMethod();
+                SteeringHandle? Result = EqualVelocityMove.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    CharacterData.Velocity += Result.Value.Linear;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.EqaulVelocityMove);
+                    AddMoveFlag(MoveType.VelocityStop);
+                }
+            }
+
+            // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
             if (HasFlag(MoveType.VelocityStop))
             {
                 CharacterData.Velocity = Vector3.Zero;
                 TempHandle.Linear = Vector3.Zero;
-                RemoveMoveFlag(MoveType.VelocityStop);
-                LogManager.GetSingletone.WriteLog("속도가 0으로 만들어짐");
-            }
-            // 위치를 강제로 조정하는 플래그
-            if (HasFlag(MoveType.ForceAdjustPosition))
-            {
                 CharacterData.Position = Target.Position;
-                RemoveMoveFlag(MoveType.ForceAdjustPosition);
-                LogManager.GetSingletone.WriteLog($"위치가 강제로 조정됨 {CharacterData.Position}");
+                RemoveMoveFlag(MoveType.VelocityStop);
+            }
+            //회전을 강제로 멈추는 플래그
+            if(HasFlag(MoveType.RotateStop))
+            {
+                CharacterData.Rotation = 0;
+                TempHandle.Angular = 0;
+                RemoveMoveFlag(MoveType.RotateStop);
             }
 
 
@@ -232,7 +262,8 @@ namespace GameServer.Component
             }
 
             this.Target.Position = Target;
-            AddMoveFlag(MoveType.Move);
+            CharacterData.Orientation = ConvertMathUtility.GetNewOrientationByVelocity(CharacterData.Orientation, Target - CharacterData.Position);
+            AddMoveFlag(MoveType.EqaulVelocityMove);
             return true;
         }
     }
