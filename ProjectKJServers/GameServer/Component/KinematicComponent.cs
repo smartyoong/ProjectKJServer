@@ -21,6 +21,7 @@ namespace GameServer.Component
         Move = 1 << 2, // 4
         VelocityStop = 1 << 3, // 8
         ForceAdjustPosition = 1 << 4, // 16
+        Brake = 1 << 5, // 32
     }
 
     // 조종할때 사용
@@ -119,6 +120,8 @@ namespace GameServer.Component
 
             SteeringHandle TempHandle = new SteeringHandle(Vector3.Zero, 0);
 
+            // 우선 순위 기반 행동 조합이다.
+
             if (HasFlag(MoveType.Move))
             {
                 MoveMethod Move = new MoveMethod();
@@ -130,9 +133,7 @@ namespace GameServer.Component
                 else
                 {
                     RemoveMoveFlag(MoveType.Move);
-                    // 이동이 끝났으니 속도를 0으로 만들어주자
-                    AddMoveFlag(MoveType.VelocityStop);
-                    AddMoveFlag(MoveType.ForceAdjustPosition);
+                    AddMoveFlag(MoveType.Brake);
                 }
             }
 
@@ -161,6 +162,22 @@ namespace GameServer.Component
                 else
                 {
                     RemoveMoveFlag(MoveType.RunAway);
+                }
+            }
+
+            if (HasFlag(MoveType.Brake))
+            {
+                BrakeMethod Brake = new BrakeMethod();
+                SteeringHandle? Result = Brake.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, DeltaTime);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.Brake);
+                    AddMoveFlag(MoveType.VelocityStop);
+                    AddMoveFlag(MoveType.ForceAdjustPosition);
                 }
             }
 
@@ -198,7 +215,6 @@ namespace GameServer.Component
             {
                 CharacterData.Rotation = MaxRotation;
             }
-
         }
 
 
