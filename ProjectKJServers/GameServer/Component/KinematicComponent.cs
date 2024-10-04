@@ -28,6 +28,7 @@ namespace GameServer.Component
         LockOn = 1 << 10, // 1024
         LookAtToMove = 1 << 11, // 2048
         EqualVelocityWander = 1 << 12, // 4096
+        Wander = 1 << 13, // 8192
     }
 
     // 조종할때 사용
@@ -208,7 +209,21 @@ namespace GameServer.Component
                 }
             }
 
-            if(HasFlag(MoveType.EqaulVelocityMove))
+            if(HasFlag(MoveType.Wander))
+            {
+                WanderMethod Wander = new WanderMethod();
+                SteeringHandle? Result = Wander.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                // 한번만 가속을 추가하고 끝낸다.
+                // 매우 느리겠지만 어울릴 수도 있다.
+                // 만약 매우 느리다면 Velocity쪽애 직접 추가하는 것을 고려해보자
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                    RemoveMoveFlag(MoveType.Wander);
+                }
+            }
+
+            if (HasFlag(MoveType.EqaulVelocityMove))
             {
                 EqualVelocityMoveMethod EqualVelocityMove = new EqualVelocityMoveMethod();
                 SteeringHandle? Result = EqualVelocityMove.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
