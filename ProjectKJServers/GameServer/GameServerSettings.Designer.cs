@@ -205,7 +205,7 @@ namespace GameServer {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
         public int MaxRotation {
             get {
                 return ((int)(this["MaxRotation"]));

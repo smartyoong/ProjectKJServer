@@ -24,6 +24,10 @@ namespace GameServer.Component
         RotateStop = 1 << 6, // 64
         Align = 1 << 7, // 128
         VelocityMatch = 1 << 8, // 256
+        Pursue = 1 << 9, // 512
+        LockOn = 1 << 10, // 1024
+        LookAtToMove = 1 << 11, // 2048
+        EqualVelocityWander = 1 << 12, // 4096
     }
 
     // 조종할때 사용
@@ -81,7 +85,7 @@ namespace GameServer.Component
             this.MaxAccelerate = MaxAccelerate;
             this.MaxRotation = MaxRotation;
             this.Radius = Radius;
-            MaxAngular = 1;
+            MaxAngular = 30;
             Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
             MoveFlag = (int)MoveType.None;
         }
@@ -139,18 +143,17 @@ namespace GameServer.Component
                 }
             }
 
-            if(HasFlag(MoveType.Align))
+            if(HasFlag(MoveType.Pursue))
             {
-                AlignMethod Align = new AlignMethod();
-                var Result = Align.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, 2f, 10f, TIME_TO_TARGET);
+                PursueMethod Pursue = new PursueMethod();
+                var Result = Pursue.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
                 {
                     TempHandle += Result.Value;
                 }
                 else
                 {
-                    RemoveMoveFlag(MoveType.Align);
-                    AddMoveFlag(MoveType.RotateStop);
+                    RemoveMoveFlag(MoveType.Pursue);
                 }
             }
 
@@ -175,9 +178,6 @@ namespace GameServer.Component
                 if (Result != null)
                 {
                     TempHandle += Result.Value;
-                }
-                else
-                {
                     RemoveMoveFlag(MoveType.Chase);
                 }
             }
@@ -189,9 +189,6 @@ namespace GameServer.Component
                 if (Result != null)
                 {
                     TempHandle += Result.Value;
-                }
-                else
-                {
                     RemoveMoveFlag(MoveType.RunAway);
                 }
             }
@@ -226,7 +223,20 @@ namespace GameServer.Component
                 }
             }
 
-            // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
+            if (HasFlag(MoveType.EqualVelocityWander))
+            {
+                EqualVelocityWanderMethod EqualVelocityWander = new EqualVelocityWanderMethod();
+                SteeringHandle? Result = EqualVelocityWander.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    // 배회 방향이랑 속도가 정해지면 플래그를 끈다.
+                    CharacterData.Velocity += Result.Value.Linear;
+                    CharacterData.Rotation += Result.Value.Angular;
+                    RemoveMoveFlag(MoveType.EqualVelocityWander);
+                }
+            }
+
+             // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
             if (HasFlag(MoveType.VelocityStop))
             {
                 CharacterData.Velocity = Vector3.Zero;
@@ -234,25 +244,72 @@ namespace GameServer.Component
                 CharacterData.Position = Target.Position;
                 RemoveMoveFlag(MoveType.VelocityStop);
             }
-            //회전을 강제로 멈추는 플래그
-            if(HasFlag(MoveType.RotateStop))
-            {
-                CharacterData.Rotation = 0;
-                TempHandle.Angular = 0;
-                RemoveMoveFlag(MoveType.RotateStop);
-            }
-
 
             // 속도 업데이트
             CharacterData.Velocity += TempHandle.Linear * DeltaTime;
-            // 회전 속도 업데이트
-            CharacterData.Orientation += TempHandle.Angular * DeltaTime;
 
             // 속도 제한
             if (CharacterData.Velocity.Length() > MaxSpeed)
             {
                 CharacterData.Velocity = Vector3.Normalize(CharacterData.Velocity) * MaxSpeed;
             }
+
+
+            if (HasFlag(MoveType.LookAtToMove))
+            {
+                LookAtToMoveMethod LookAtToMove = new LookAtToMoveMethod();
+                var Result = LookAtToMove.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.LookAtToMove);
+                    AddMoveFlag(MoveType.RotateStop);
+                }
+            }
+
+            if (HasFlag(MoveType.LockOn))
+            {
+                LockOnMethod LockOn = new LockOnMethod();
+                var Result = LockOn.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.LockOn);
+                    AddMoveFlag(MoveType.RotateStop);
+                }
+            }
+
+            if (HasFlag(MoveType.Align))
+            {
+                AlignMethod Align = new AlignMethod();
+                var Result = Align.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, 2f, 10f, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.Align);
+                    AddMoveFlag(MoveType.RotateStop);
+                }
+            }
+
+            //회전을 강제로 멈추는 플래그
+            if (HasFlag(MoveType.RotateStop))
+            {
+                CharacterData.Rotation = 0;
+                TempHandle.Angular = 0;
+                RemoveMoveFlag(MoveType.RotateStop);
+            }
+
+            // 회전 속도 업데이트
+            CharacterData.Orientation += TempHandle.Angular * DeltaTime;
 
             // 회전 속도 제한
 
@@ -279,6 +336,9 @@ namespace GameServer.Component
             this.Target.Position = Target;
             CharacterData.Orientation = ConvertMathUtility.GetNewOrientationByVelocity(CharacterData.Orientation, Target - CharacterData.Position);
             AddMoveFlag(MoveType.EqaulVelocityMove);
+            //작동은 하는데 등가속도, 등가각속도 이 2개가 체감이 별로다. 특정 상황에서는 사용 가능할 듯 (빙판길 같은곳)
+            //AddMoveFlag(MoveType.Move);
+            //AddMoveFlag(MoveType.LookAtToMove);
             return true;
         }
     }

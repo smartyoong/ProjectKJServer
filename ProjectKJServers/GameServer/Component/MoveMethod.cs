@@ -19,12 +19,12 @@ namespace GameServer.Component
             float Distance = Direction.Length();
 
             // 현재 속도의 제곱 크기
-            float CurrentSpeedSqr = Character.Velocity.LengthSquared();
+            //float CurrentSpeedSqr = Character.Velocity.LengthSquared();
 
             // 브레이크 거리를 계산하여 TargetRadius를 동적으로 설정
-            float DynamicTargetRadius = CurrentSpeedSqr / (2 * MaxAccelerate);
+            //float DynamicTargetRadius = CurrentSpeedSqr / (2 * MaxAccelerate);
 
-            if (Distance < DynamicTargetRadius)
+            if (Distance < TargetRadius)
             {
                 // null을 반환 받으면 브레이크를 시작한다 (현재 속력의 반대 방향으로 최대 가속도를 적용)
                 return null;
@@ -32,11 +32,11 @@ namespace GameServer.Component
 
             float TargetSpeed = MaxSpeed;
 
-            float DynamicSlowRadius = DynamicTargetRadius * 2; // 브레이크 지점에 비해서 넒은 지점을 감속 지점으로 지정
+            //float DynamicSlowRadius = DynamicTargetRadius * 2; // 브레이크 지점에 비해서 넒은 지점을 감속 지점으로 지정
 
-            if (Distance < DynamicSlowRadius)
+            if (Distance < SlowRadius)
             {
-                TargetSpeed = MaxSpeed * Distance / DynamicSlowRadius;
+                TargetSpeed = MaxSpeed * Distance / SlowRadius;
             }
 
             Vector3 TargetVelocity = Vector3.Normalize(Direction) * TargetSpeed;

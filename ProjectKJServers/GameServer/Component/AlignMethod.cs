@@ -17,19 +17,19 @@ namespace GameServer.Component
             Rotation = ConvertMathUtility.MapToRange(Rotation);
             float RotationSize = Math.Abs(Rotation);
             //회전을 강제로 멈추도록 요청한다.
-            if(RotationSize < TargetRadius)
+            if(RotationSize < 0.1f)
             {
                 return null;
             }
             
             float GoalRotation = 0;
-            if (RotationSize > SlowRadius)
+            if (RotationSize > 5f)
             {
                 GoalRotation = MaxRotate;
             }
             else
             {
-                GoalRotation = MaxRotate * RotationSize / SlowRadius;
+                GoalRotation = MaxRotate * RotationSize / 5f;
             }
 
             GoalRotation *= Rotation / RotationSize;

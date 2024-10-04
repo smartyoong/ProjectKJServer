@@ -48,7 +48,7 @@
       <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="MaxRotation" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">10</Value>
+      <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="BoardRadius" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
