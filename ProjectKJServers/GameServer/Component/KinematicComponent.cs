@@ -339,7 +339,7 @@ namespace GameServer.Component
 
             if (HasFlag(MoveType.EqualVelocityRunAway))
             {
-                EqaulVelocityRunAwayMethod EqaulVelocityRunAway = new EqaulVelocityRunAwayMethod();
+                EqualVelocityRunAwayMethod EqaulVelocityRunAway = new EqualVelocityRunAwayMethod();
                 SteeringHandle? Result = EqaulVelocityRunAway.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
                 {

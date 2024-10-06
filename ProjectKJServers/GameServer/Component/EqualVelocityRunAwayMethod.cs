@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace GameServer.Component
 {
-    internal class EqaulVelocityRunAwayMethod : Behaviors
+    internal class EqualVelocityRunAwayMethod : Behaviors
     {
         public SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed,
             float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget)
