@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using CoreUtility.Utility;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     class MoveMethod : Behaviors
     {

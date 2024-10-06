@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using CoreUtility.Utility;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class WanderMethod : Behaviors
     {
@@ -20,14 +21,14 @@ namespace GameServer.Component
 
             WanderOrientation += (float)(ConvertMathUtility.RandomBinomial() * WanderRate);
             float TargetOrientation = WanderOrientation + Character.Orientation;
-            Vector3 TargetPosition = Character.Position + (WanderOffset * new Vector3((float)Math.Cos(Character.Orientation), (float)Math.Sin(Character.Orientation), 0));
-            TargetPosition += (WanderRadius * new Vector3((float)Math.Cos(TargetOrientation), (float)Math.Sin(TargetOrientation), 0));
+            Vector3 TargetPosition = Character.Position + WanderOffset * new Vector3((float)Math.Cos(Character.Orientation), (float)Math.Sin(Character.Orientation), 0);
+            TargetPosition += WanderRadius * new Vector3((float)Math.Cos(TargetOrientation), (float)Math.Sin(TargetOrientation), 0);
             SteeringHandle Result = new SteeringHandle();
             Result.Linear = MaxAccelerate * new Vector3((float)Math.Cos(Character.Orientation), (float)Math.Sin(Character.Orientation), 0);
 
             LockOnMethod LockOn = new LockOnMethod();
             var Angular = LockOn.GetSteeringHandle(Ratio, Character, Target, MaxSpeed, MaxAccelerate, MaxRotate, MaxAngular, TargetRadius, SlowRadius, TimeToTarget);
-            if(Angular != null)
+            if (Angular != null)
             {
                 Result.Angular = Angular.Value.Angular;
             }

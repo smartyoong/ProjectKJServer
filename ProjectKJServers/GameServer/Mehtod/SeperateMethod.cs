@@ -5,8 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class SeperateMethod : Behaviors
     {
@@ -22,7 +23,7 @@ namespace GameServer.Component
             float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget)
         {
             SteeringHandle Result = new SteeringHandle();
-            for(int i = 0; i < CharacterList.Count; i++)
+            for (int i = 0; i < CharacterList.Count; i++)
             {
                 Vector3 Direction = CharacterList[i].Position - Character.Position;
                 float Distance = Direction.Length();

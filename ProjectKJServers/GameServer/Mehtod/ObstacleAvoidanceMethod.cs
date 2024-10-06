@@ -4,9 +4,10 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using GameServer.Component;
 using Windows.Storage;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class ObstacleAvoidanceMethod : Behaviors
     {

@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class FollowPathMethod : Behaviors
     {

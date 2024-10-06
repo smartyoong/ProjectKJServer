@@ -4,8 +4,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     class PursueMethod : Behaviors
     {

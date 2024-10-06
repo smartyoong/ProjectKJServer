@@ -4,20 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
-using Windows.ApplicationModel.DataTransfer;
+using Windows.Foundation.Numerics;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
-    //도착지점에 완벽하게 멈추지 않고,
-    //왔다 갔다 하거나 빙빙 돕니다.
-    //추적을 사용할때 용이합니다 (해당지점에 전속력으로 돌진합니다.)
-    class ChaseMethod : Behaviors
+    internal class RunAwayMethod : Behaviors
     {
+        // 타겟의 반대방향으로 이동합니다.
+        // 해당 타겟이 추적중일때 타겟의 반대방향으로 계속 도망칠때 사용합니다.
         public SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed, float MaxAccelerate, float MaxRotate, float MaxAngular,
             float TargetRadius, float SlowRadius, float TimeToTarget)
         {
             SteeringHandle Result = new SteeringHandle(Vector3.Zero, 0);
-            Result.Linear = Target.Position - Character.Position;
+            Result.Linear = Character.Position - Target.Position;
             Result.Linear = Vector3.Normalize(Result.Linear) * MaxAccelerate;
             Result.Linear *= Ratio;
             return Result;

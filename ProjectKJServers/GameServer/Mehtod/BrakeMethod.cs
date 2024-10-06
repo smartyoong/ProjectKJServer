@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class BrakeMethod : Behaviors
     {
@@ -19,7 +20,7 @@ namespace GameServer.Component
             const float VelocityThreshold = 0.01f; // 속도가 매우 작다고 간주할 임계값
 
             // 속도가 0을 넘어 반대 방향으로 가는 것을 방지 (null을 받으면 정지)
-            float Diff = Character.Velocity.Length() - (BrakeForce.Length() * TimeToTarget); // 여기서 TimeToTarget은 DeltaTime
+            float Diff = Character.Velocity.Length() - BrakeForce.Length() * TimeToTarget; // 여기서 TimeToTarget은 DeltaTime
             if (Diff < VelocityThreshold || Vector3.Dot(Character.Velocity, BrakeDirection) > 0)
             {
                 return null;

@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using Windows.UI.Composition;
+using GameServer.Component;
 
-namespace GameServer.Component
+namespace GameServer.Mehtod
 {
     internal class CollsionAvoidanceMethod : Behaviors
     {
@@ -26,7 +27,7 @@ namespace GameServer.Component
             Vector3 FirstRelativePos = new Vector3(0, 0, 0);
             Vector3 FirstRelativeVel = new Vector3(0, 0, 0);
 
-            foreach(Kinematic t in TargetList)
+            foreach (Kinematic t in TargetList)
             {
                 Vector3 RelativePos = t.Position - Character.Position;
                 Vector3 RelativeVel = t.Velocity - Character.Velocity;
@@ -57,7 +58,7 @@ namespace GameServer.Component
             }
             else // 미래 위치 기반
             {
-               Pos += FirstRelativePos + FirstRelativeVel * ShortestTime;
+                Pos += FirstRelativePos + FirstRelativeVel * ShortestTime;
             }
 
             Pos = Vector3.Normalize(Pos);
