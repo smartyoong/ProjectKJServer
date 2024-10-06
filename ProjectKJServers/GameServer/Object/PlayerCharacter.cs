@@ -34,12 +34,15 @@ namespace GameServer.Object
         private CharacterLevelInfo LevelInfo;
         private KinematicComponent MovementComponent;
         private MapComponent MapComponent;
+        private PathComponent PathComponent;
+
         public CharacterAccountInfo GetAccountInfo() => AccountInfo;
         public CharacterJobInfo GetJobInfo() => JobInfo;
         public ChracterAppearanceInfo GetAppearanceInfo() => AppearanceInfo;
         public CharacterLevelInfo GetLevelInfo() => LevelInfo;
         public KinematicComponent GetMovementComponent() => MovementComponent;
         public MapComponent GetMapComponent() => MapComponent;
+        public PathComponent GetPathComponent() => PathComponent;
 
         public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
         {
@@ -49,11 +52,11 @@ namespace GameServer.Object
             LevelInfo = new CharacterLevelInfo(Level, EXP);
             // 현재는 서버세팅으로 해놨는데 리소스화 시키자
             MovementComponent = new KinematicComponent(StartPosition,GameServerSettings.Default.MaxSpeed, GameServerSettings.Default.MaxAccelrate, 
-              GameServerSettings.Default.MaxRotation, GameServerSettings.Default.BoardRadius);
+              GameServerSettings.Default.MaxRotation, GameServerSettings.Default.BoardRadius, null);
             MapComponent = new MapComponent(MapID, AccountID);
             MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
             MainProxy.GetSingletone.AddUserToMap(MapComponent);
-
+            PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
         }
 
         public bool MoveToLocation(Vector3 Position)

@@ -29,6 +29,13 @@ namespace GameServer.Component
         LookAtToMove = 1 << 11, // 2048
         EqualVelocityWander = 1 << 12, // 4096
         Wander = 1 << 13, // 8192
+        FollwPath = 1 << 14, // 16384
+        Sperate = 1 << 15, // 32768
+        CollsionAvoidance = 1 << 16, // 65536
+        ObstacleAvoidance = 1 << 17, // 131072
+        EqualVelocityChase = 1 << 18, // 262144
+        EqualVelocityRunAway = 1 << 19, // 524288
+        OreintationChange = 1 << 20, // 1048576
     }
 
     // 조종할때 사용
@@ -59,7 +66,6 @@ namespace GameServer.Component
         public float Rotation { get; set; } = Rotation;
     }
 
-
     internal class KinematicComponent
     {
         // 고정시간으로 목표지점까지 이동 시킬거면 필요함 주석 해제하면됨
@@ -77,9 +83,10 @@ namespace GameServer.Component
         public Kinematic CharcaterStaticData { get => CharacterData; }
         private Kinematic Target;
         public Kinematic TargetStaticData { get => Target; }
+        private PathComponent? Path;
 
 
-        public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius)
+        public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius, PathComponent? Path)
         {
             CharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
             this.MaxSpeed = MaxSpeed;
@@ -89,6 +96,7 @@ namespace GameServer.Component
             MaxAngular = 30;
             Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
             MoveFlag = (int)MoveType.None;
+            this.Path = Path;
         }
 
         private void AddMoveFlag(MoveType Flag)
@@ -223,6 +231,69 @@ namespace GameServer.Component
                 }
             }
 
+            if (HasFlag(MoveType.FollwPath))
+            {
+                //경로가 없으면 행동을 안한다.
+                if(Path == null)
+                {
+                    RemoveMoveFlag(MoveType.FollwPath);
+                    return;
+                }
+
+                FollowPathMethod FollowPath = new FollowPathMethod(ref Path);
+                SteeringHandle? Result = FollowPath.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.FollwPath);
+                }
+            }
+
+            if (HasFlag(MoveType.Sperate))
+            {
+                // 추후에 이걸 실질적으로 사용할때는 여기 List를 채우도록 구현한다.
+                List<Kinematic> TargetList = new List<Kinematic>();
+                SeperateMethod Sperate = new SeperateMethod(TargetList);
+                SteeringHandle? Result = Sperate.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+            }
+
+            if (HasFlag(MoveType.CollsionAvoidance))
+            {
+                // 추후에 이걸 실질적으로 사용할때는 여기 List를 채우도록 구현한다.
+                List<Kinematic> Targets = new List<Kinematic>();
+                CollsionAvoidanceMethod CollsionAvoidance = new CollsionAvoidanceMethod(Targets);
+                //여기서 Radius 대신 Collision Component의 Radius를 넣어주어야 한다.
+                SteeringHandle? Result = CollsionAvoidance.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+            }
+
+            if (HasFlag(MoveType.ObstacleAvoidance))
+            {
+                //주의 충돌 판정 로직이 구현이 안되어 있음
+                //충돌 판정 로직이 구현되면 해당 로직을 사용할것
+                //Collision Component를 만들자
+                ObstacleAvoidanceMethod ObstacleAvoidance = new ObstacleAvoidanceMethod();
+                SteeringHandle? Result = ObstacleAvoidance.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    TempHandle += Result.Value;
+                }
+                else
+                {
+                    RemoveMoveFlag(MoveType.ObstacleAvoidance);
+                }
+            }
+
             if (HasFlag(MoveType.EqaulVelocityMove))
             {
                 EqualVelocityMoveMethod EqualVelocityMove = new EqualVelocityMoveMethod();
@@ -230,6 +301,7 @@ namespace GameServer.Component
                 if (Result != null)
                 {
                     CharacterData.Velocity += Result.Value.Linear;
+                    AddMoveFlag(MoveType.OreintationChange);
                 }
                 else
                 {
@@ -248,10 +320,37 @@ namespace GameServer.Component
                     CharacterData.Velocity += Result.Value.Linear;
                     CharacterData.Rotation += Result.Value.Angular;
                     RemoveMoveFlag(MoveType.EqualVelocityWander);
+                    AddMoveFlag(MoveType.OreintationChange);
                 }
             }
 
-             // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
+            if (HasFlag(MoveType.EqualVelocityChase))
+            {
+                EqualVelocityChaseMethod EqualVelocityChase = new EqualVelocityChaseMethod();
+                SteeringHandle? Result = EqualVelocityChase.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    CharacterData.Velocity += Result.Value.Linear;
+                    CharacterData.Rotation += Result.Value.Angular;
+                    RemoveMoveFlag(MoveType.EqualVelocityChase);
+                    AddMoveFlag(MoveType.OreintationChange);
+                }
+            }
+
+            if (HasFlag(MoveType.EqualVelocityRunAway))
+            {
+                EqaulVelocityRunAwayMethod EqaulVelocityRunAway = new EqaulVelocityRunAwayMethod();
+                SteeringHandle? Result = EqaulVelocityRunAway.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
+                if (Result != null)
+                {
+                    CharacterData.Velocity += Result.Value.Linear;
+                    CharacterData.Rotation += Result.Value.Angular;
+                    RemoveMoveFlag(MoveType.EqualVelocityRunAway);
+                    AddMoveFlag(MoveType.OreintationChange);
+                }
+            }
+
+                // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
             if (HasFlag(MoveType.VelocityStop))
             {
                 CharacterData.Velocity = Vector3.Zero;
@@ -315,6 +414,13 @@ namespace GameServer.Component
                 }
             }
 
+            if(HasFlag(MoveType.OreintationChange))
+            {
+                // 방향을 현재 속력에 따라 바꾼는 플래그
+                CharacterData.Orientation = ConvertMathUtility.GetNewOrientationByVelocity(CharacterData.Orientation, CharacterData.Velocity);
+                RemoveMoveFlag(MoveType.OreintationChange);
+            }
+
             //회전을 강제로 멈추는 플래그
             if (HasFlag(MoveType.RotateStop))
             {
@@ -349,7 +455,6 @@ namespace GameServer.Component
             }
 
             this.Target.Position = Target;
-            CharacterData.Orientation = ConvertMathUtility.GetNewOrientationByVelocity(CharacterData.Orientation, Target - CharacterData.Position);
             AddMoveFlag(MoveType.EqaulVelocityMove);
             //작동은 하는데 등가속도, 등가각속도 이 2개가 체감이 별로다. 특정 상황에서는 사용 가능할 듯 (빙판길 같은곳)
             //AddMoveFlag(MoveType.Move);
