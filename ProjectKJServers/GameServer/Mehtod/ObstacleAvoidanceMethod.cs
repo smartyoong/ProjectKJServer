@@ -22,6 +22,9 @@ namespace GameServer.Mehtod
             Ray = Vector3.Normalize(Ray);
             Ray *= LookAhead;
 
+            // 여기부터 지워라
+            LookAhead += AvoidDistance;
+
             //일단 충돌 구현이 안되어있어서 null로 둔다.
             return null;
 

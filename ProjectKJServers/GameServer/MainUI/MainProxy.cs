@@ -73,14 +73,14 @@ namespace GameServer.MainUI
             GameEngineClass.RemoveKinematicComponentFromSystem(Component,Count);
         }
 
-        public void AddUserToMap(MapComponent Component)
+        public void AddUserToMap(Pawn Character)
         {
-            GameEngineClass.AddUserToMap(Component);
+            GameEngineClass.AddUserToMap(Character);
         }
 
-        public void RemoveUserFromMap(MapComponent Component)
+        public void RemoveUserFromMap(Pawn Character)
         {
-            GameEngineClass.RemoveUserFromMap(Component);
+            GameEngineClass.RemoveUserFromMap(Character);
         }
 
         public bool CanMove(int MapID, System.Numerics.Vector3 Position)
@@ -122,7 +122,7 @@ namespace GameServer.MainUI
             GameEngineClass.SendToSameMap(MapID, PacketID, Packet);
         }
 
-        public List<MapComponent>? GetMapUsers(int MapID)
+        public List<Pawn>? GetMapUsers(int MapID)
         {
             return GameEngineClass.GetMapUsers(MapID);
         }

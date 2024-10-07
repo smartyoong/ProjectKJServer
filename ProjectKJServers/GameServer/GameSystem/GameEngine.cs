@@ -21,13 +21,13 @@ namespace GameServer.GameSystem
         private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
 
-        MapSystem MapSystem;
+        CollisionSystem CollisionSystem;
         KinematicMoveSystem KinematicMovementSystem;
         ResourceLoader ResourceLoader;
 
         public GameEngine()
         {
-            MapSystem = new MapSystem();
+            CollisionSystem = new CollisionSystem();
             KinematicMovementSystem = new KinematicMoveSystem();
             ResourceLoader = new ResourceLoader();
         }
@@ -42,7 +42,7 @@ namespace GameServer.GameSystem
         {
             LogManager.GetSingletone.WriteLog("리소스를 로드합니다.");
             ResourceLoader.LoadMapData(ref MapDataDictionary);
-            MapSystem.SetMapData(ref MapDataDictionary);
+            CollisionSystem.SetMapData(ref MapDataDictionary);
             ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
         }
 
@@ -52,7 +52,7 @@ namespace GameServer.GameSystem
             {
                 try
                 {
-                    MapSystem.Update();
+                    CollisionSystem.Update();
                     KinematicMovementSystem.Update();
                 }
                 catch (Exception e)
@@ -96,19 +96,19 @@ namespace GameServer.GameSystem
             KinematicMovementSystem.RemoveComponent(Component, Count);
         }
 
-        public void AddUserToMap(MapComponent Component)
+        public void AddUserToMap(Pawn Character)
         {
-            MapSystem.AddUser(Component);
+            CollisionSystem.AddUser(Character);
         }
 
-        public void RemoveUserFromMap(MapComponent Component)
+        public void RemoveUserFromMap(Pawn Character)
         {
-            MapSystem.RemoveUser(Component);
+            CollisionSystem.RemoveUser(Character);
         }
 
         public bool CanMove(int MapID, Vector3 Position)
         {
-            return MapSystem.CanMove(MapID, Position);
+            return CollisionSystem.CanMove(MapID, Position);
         }
 
         public void AddNickName(string AccountID, string NickName)
@@ -143,12 +143,12 @@ namespace GameServer.GameSystem
 
         public void SendToSameMap<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
         {
-            MapSystem.SendPacketToSameMapUsers(MapID, PacketID, Packet);
+            CollisionSystem.SendPacketToSameMapUsers(MapID, PacketID, Packet);
         }
 
-        public List<MapComponent>? GetMapUsers(int MapID)
+        public List<Pawn>? GetMapUsers(int MapID)
         {
-            return MapSystem.GetMapUsers(MapID);
+            return CollisionSystem.GetMapUsers(MapID);
         }
 
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)

@@ -1,31 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using GameServer.Resource;
-using CoreUtility.GlobalVariable;
+﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
-using Windows.ApplicationModel.VoiceCommands;
-using System.Numerics;
 using GameServer.Component;
-using GameServer.PacketList;
 using GameServer.MainUI;
+using GameServer.Object;
+using GameServer.PacketList;
 using System.Net.Sockets;
 
 namespace GameServer.GameSystem
 {
-    using Vector3 = System.Numerics.Vector3;
     using CustomVector3 = CoreUtility.GlobalVariable.Vector3;
 
-    internal class MapSystem : IComponentSystem
+    internal class CollisionSystem : IComponentSystem
     {
         private readonly object _lock = new object();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         //ConCurrentBag는 편의성 좋은 메서드가 하나도 없네, AddRemove때만 Lock을 잘 걸자
-        private List<List<MapComponent>>? MapUserList;
+        private List<List<Pawn>>? MapUserList;
+        private long LastTickCount = 0;
 
-        public MapSystem()
+        public CollisionSystem()
         {
         }
 
@@ -33,28 +26,58 @@ namespace GameServer.GameSystem
         {
             this.MapDataDictionary = MapDataDictionary;
             int MaxMapID = MapDataDictionary.Keys.Max() + 1;
-            MapUserList = new List<List<MapComponent>>(MaxMapID);
+            MapUserList = new List<List<Pawn>>(MaxMapID);
 
             // 각 내부 리스트를 초기화
             for (int i = 0; i < MaxMapID; i++)
             {
-                MapUserList.Add(new List<MapComponent>());
+                MapUserList.Add(new List<Pawn>());
             }
         }
 
         public void Update()
         {
-            // 만약 장애물 관련 업데이트가 필요할 경우 여기서 진행함
+            // 모든 Collision 관련 업데이트를 진행합니다.
+            try
+            {
+                long CurrentTickCount = Environment.TickCount64;
+                //병렬로 위치 업데이트를 시킨다
+                if (CurrentTickCount - LastTickCount < GameEngine.UPDATE_INTERVAL_20PERSEC)
+                {
+                    return;
+                }
+
+                float DeltaTime = (CurrentTickCount - LastTickCount);
+                if (MapUserList == null)
+                    return;
+
+                // 2중 for문 미쳤네 ㅋㅋ
+                Parallel.ForEach(MapUserList, pawnList =>
+                {
+                    foreach (var pawn in pawnList)
+                    {
+                        int MapID = pawn.GetCurrentMapID();
+                        // 각 캐릭터가 CollisionComponent를 업데이트 시키도록하자 각 캐릭터가 몇개의 CollisionComponent를 가지고 있는지는 알 수 없다.
+                        pawn.UpdateCollisionComponents(DeltaTime, MapDataDictionary[MapID], GetMapUsers(MapID));
+                    }
+                });
+
+                LastTickCount = CurrentTickCount;
+            }
+            catch (Exception e)
+            {
+                LogManager.GetSingletone.WriteLog(e.Message);
+            }
         }
 
-        private bool ValidComponentCheck(MapComponent Component)
+        private bool ValidPawnCheck(Pawn Character)
         {
             if (MapUserList == null)
             {
                 LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
                 return false;
             }
-            int MapID = Component.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID();
             if (MapUserList.Count <= MapID)
             {
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
@@ -63,26 +86,26 @@ namespace GameServer.GameSystem
             return true;
         }
 
-        public void AddUser(MapComponent Component)
+        public void AddUser(Pawn Character)
         {
-            if (!ValidComponentCheck(Component))
+            if (!ValidPawnCheck(Character))
             {
                 return;
             }
-            int MapID = Component.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID();
             lock (_lock)
             {
-                MapUserList![MapID].Add(Component);
+                MapUserList![MapID].Add(Character);
             }
         }
 
-        public void RemoveUser(MapComponent Component)
+        public void RemoveUser(Pawn Character)
         {
-            if (!ValidComponentCheck(Component))
+            if (!ValidPawnCheck(Character))
             {
                 return;
             }
-            int MapID = Component.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID();
 
             if (MapUserList![MapID] == null)
             {
@@ -92,7 +115,7 @@ namespace GameServer.GameSystem
 
             lock (_lock)
             {
-                MapUserList![MapID].Remove(Component);
+                MapUserList![MapID].Remove(Character);
             }
         }
 
@@ -132,7 +155,7 @@ namespace GameServer.GameSystem
 
         public void SendPacketToSameMapUsers<T>(int MapID, GamePacketListID PacketID, T Packet) where T : struct
         {
-            if(!ValidMapIDCheck(MapID))
+            if (!ValidMapIDCheck(MapID))
             {
                 return;
             }
@@ -142,19 +165,16 @@ namespace GameServer.GameSystem
                 return;
             }
 
-            //여기서 Lock을 걸면 오래걸릴것 같은데,, 근데 그렇다고 락을안 걸 수도 없고 음,,, 일단 걸어보자
-            lock (_lock)
+
+            foreach (Pawn User in MapUserList![MapID])
             {
-                foreach (MapComponent User in MapUserList![MapID])
-                {
-                    Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetAccountID());
-                    if (Sock != null)
-                        MainProxy.GetSingletone.SendToClient(PacketID,Packet,MainProxy.GetSingletone.GetClientID(Sock));
-                }
+                Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetAccountID());
+                if (Sock != null)
+                    MainProxy.GetSingletone.SendToClient(PacketID, Packet, MainProxy.GetSingletone.GetClientID(Sock));
             }
         }
 
-        public List<MapComponent>? GetMapUsers(int MapID)
+        public List<Pawn>? GetMapUsers(int MapID)
         {
             if (!ValidMapIDCheck(MapID))
             {
@@ -216,7 +236,7 @@ namespace GameServer.GameSystem
 
         public bool CanMove(int MapID, CustomVector3 Position)
         {
-            if(!ValidMapIDCheck(MapID))
+            if (!ValidMapIDCheck(MapID))
             {
                 return false;
             }
