@@ -71,7 +71,6 @@ namespace CoreUtility.Utility
 
         public static ConvertObstacles CalculateSquareVertex(Obstacle Obs, string MeshName)
         {
-            const int SQUARE = 0;
             Vector2 Location = new Vector2(Obs.Location.X, Obs.Location.Y);
             Vector2 Scale = new Vector2(Obs.Scale.X, Obs.Scale.Y);
             Vector2 MeshSize = new Vector2(Obs.MeshSize.X, Obs.MeshSize.Y);
@@ -85,11 +84,12 @@ namespace CoreUtility.Utility
                 new Vector2(0, MeshSize.Y),
                 new Vector2(MeshSize.X, MeshSize.Y),
             ];
-            ConvertObstacles ConvertObstacles = new ConvertObstacles(SQUARE, new List<Vector3>(), MeshName, 0, 0, 0);
+            ConvertObstacles ConvertObstacles = new ConvertObstacles(ObjectType.Square, new List<Vector3>(), MeshName, 0, 0, 0);
             for (int i = 0; i < Vertices.Length; i++)
             {
                 // 스케일 적용
                 Vector2 ScaledVertex = Vector2.Multiply(Vertices[i], Scale);
+                // 위치 적용
                 Vector2 WorldVertex = ScaledVertex + Location;
                 // 2D 회전 적용
                 Vector2 RotatedVertex = RotateVector(WorldVertex - Location, Rotation) + Location;
@@ -103,7 +103,6 @@ namespace CoreUtility.Utility
         }
         public static ConvertObstacles CalculateSphereVertex(Obstacle Obs, string MeshName)
         {
-            const int Sphere = 1;
             Vector2 Location = new Vector2(Obs.Location.X, Obs.Location.Y);
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
@@ -117,7 +116,7 @@ namespace CoreUtility.Utility
                 new Vector2(Location.X + Obs.SphereRadius, Location.Y + Obs.SphereRadius),
             ];
 
-            ConvertObstacles ConvertObstacles = new ConvertObstacles(Sphere, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
+            ConvertObstacles ConvertObstacles = new ConvertObstacles(ObjectType.Sphere, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
                 //LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");
@@ -134,7 +133,6 @@ namespace CoreUtility.Utility
 
         public static ConvertObstacles CalculateCylinderVertex(Obstacle Obs, string MeshName)
         {
-            const int Cylinder = 2;
             Vector2 Location = new Vector2(Obs.Location.X, Obs.Location.Y);
             float RotationAngle = ToRadian(Obs.Rotation.Yaw);
 
@@ -149,7 +147,7 @@ namespace CoreUtility.Utility
                 new Vector2(Location.X + Obs.CylinderRadius, Location.Y + Obs.CylinderRadius),
             ];
 
-            ConvertObstacles ConvertObstacles = new ConvertObstacles(Cylinder, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
+            ConvertObstacles ConvertObstacles = new ConvertObstacles(ObjectType.Cylinder, new List<Vector3>(), MeshName, Obs.CylinderRadius, Obs.CylinderHeight, Obs.SphereRadius);
             for (int i = 0; i < Vertices.Length; i++)
             {
                 //LogManager.GetSingletone.WriteLog($" 변환전 {Vertices[i]}");

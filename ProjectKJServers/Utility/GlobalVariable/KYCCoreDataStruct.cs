@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace CoreUtility.GlobalVariable
 {
+    public enum ObjectType
+    {
+        Square = 0,
+        Sphere = 1,
+        Cylinder = 2
+    }
     public record Vector3
     {
         public float X { get; set; }
@@ -32,9 +38,9 @@ namespace CoreUtility.GlobalVariable
         public float SphereRadius { get; set; } = SphereRadius;
     }
 
-    public record ConvertObstacles(int Type, List<System.Numerics.Vector3> Points, string MeshName, float CylinderRadius, float CylinderHeight, float SphereRadius)
+    public record ConvertObstacles(ObjectType Type, List<System.Numerics.Vector3> Points, string MeshName, float CylinderRadius, float CylinderHeight, float SphereRadius)
     {
-        public int Type { get; set; } = Type; // 0은 사각형 , 1은 원 , 2는 실린더
+        public ObjectType Type { get; set; } = Type; // 0은 사각형 , 1은 원 , 2는 실린더
         public List<System.Numerics.Vector3> Points { get; set; } = Points;
         public string MeshName { get; set; } = MeshName;
         public float CylinderRadius { get; set; } = CylinderRadius;

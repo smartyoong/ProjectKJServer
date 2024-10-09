@@ -17,6 +17,7 @@ namespace GameServer.Object
         float GetOrientation();
         int GetCurrentMapID();
         void UpdateCollisionComponents(float DeltaTime, MapData Data, List<Pawn>? Characters);
+        CollisionComponent GetCollisionComponent();
     }
 
     struct CharacterAccountInfo(string AccountID, string NickName)
@@ -56,7 +57,6 @@ namespace GameServer.Object
         public ChracterAppearanceInfo GetAppearanceInfo() => AppearanceInfo;
         public CharacterLevelInfo GetLevelInfo() => LevelInfo;
         public KinematicComponent GetMovementComponent() => MovementComponent;
-        public CollisionComponent GetCollisionComponent() => CircleCollisionComponent;
         public CollisionComponent GetLineComponent() => LineTracerComponent;
         public PathComponent GetPathComponent() => PathComponent;
 
@@ -117,6 +117,11 @@ namespace GameServer.Object
         public int GetCurrentMapID()
         {
             return CurrentMapID;
+        }
+
+        public CollisionComponent GetCollisionComponent()
+        {
+            return CircleCollisionComponent;
         }
 
         public void UpdateCollisionComponents(float DeltaTime, MapData Data, List<Pawn>? Characters)
