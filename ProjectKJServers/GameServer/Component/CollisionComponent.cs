@@ -80,6 +80,10 @@ namespace GameServer.Component
             {
                 foreach (var Pawn in HitPawns)
                 {
+                    //자기 자신은 제외
+                    if(Pawn == Owner)
+                        continue;
+
                     LogManager.GetSingletone.WriteLog($"{Owner.GetAccountID()}가 {Pawn.GetAccountID()}와 충돌했습니다.");
                     // 추후에 Owner혹은 Pawn에게 시그널을 보내자
                 }
