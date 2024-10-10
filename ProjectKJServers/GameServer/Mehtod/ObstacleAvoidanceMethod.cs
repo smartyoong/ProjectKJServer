@@ -14,27 +14,20 @@ namespace GameServer.Mehtod
         // 벽으로의 최소 거리 캐릭터 보다 커야한다.
         private float AvoidDistance = 200f;
         private float LookAhead = 400f;
+        Vector3 CollisionPosition;
+        Vector3 CollisionNormal;
+        public ObstacleAvoidanceMethod(Vector3 Position, Vector3 Normal)
+        {
+            CollisionPosition = Position;
+            CollisionNormal = Normal;
+        }
 
         public SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed,
             float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget)
         {
-            Vector3 Ray = Character.Velocity;
-            Ray = Vector3.Normalize(Ray);
-            Ray *= LookAhead;
-
-            // 여기부터 지워라
-            LookAhead += AvoidDistance;
-
-            //일단 충돌 구현이 안되어있어서 null로 둔다.
-            return null;
-
-            // 언리얼의 Tarce 시스템을 가져와야겠다.
-            //Collision = dectector.getCollision(Character.Position, Ray);
-            //if (Collision == null)
-            //    return null;
-            //Target= Collision.Position + Collision.Normal * AvoidDistance;
-            //ChaseMethod chase = new ChaseMethod();
-            //return chase.GetSteeringHandle(Ratio, Character, Target, MaxSpeed, MaxAccelerate, MaxRotate, MaxAngular, TargetRadius, SlowRadius, TimeToTarget);
+            Target.Position = CollisionPosition + CollisionNormal * AvoidDistance;
+            ChaseMethod chase = new ChaseMethod();
+            return chase.GetSteeringHandle(Ratio, Character, Target, MaxSpeed, MaxAccelerate, MaxRotate, MaxAngular, TargetRadius, SlowRadius, TimeToTarget);
         }
     }
 }

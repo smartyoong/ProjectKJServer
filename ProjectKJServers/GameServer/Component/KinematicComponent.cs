@@ -86,6 +86,8 @@ namespace GameServer.Component
         public Kinematic TargetStaticData { get => Target; }
         private PathComponent? Path;
 
+        private Vector3 CollisionPosition;
+        private Vector3 CollisionNormal;
 
         public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius, PathComponent? Path)
         {
@@ -124,7 +126,7 @@ namespace GameServer.Component
         {
             return (MoveFlag & (int)Flag) == (int)Flag;
         }
-
+        // 내생각엔 욕심이 너무 과했다. 가속도 Move까지만 있어도 될거 같긴한데
         public void Update(float DeltaTime)
         {
             DeltaTime /= 1000;
@@ -283,7 +285,7 @@ namespace GameServer.Component
                 //주의 충돌 판정 로직이 구현이 안되어 있음
                 //충돌 판정 로직이 구현되면 해당 로직을 사용할것
                 //Collision Component를 만들자
-                ObstacleAvoidanceMethod ObstacleAvoidance = new ObstacleAvoidanceMethod();
+                ObstacleAvoidanceMethod ObstacleAvoidance = new ObstacleAvoidanceMethod(CollisionPosition,CollisionNormal);
                 SteeringHandle? Result = ObstacleAvoidance.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
                 {
@@ -358,6 +360,7 @@ namespace GameServer.Component
                 TempHandle.Linear = Vector3.Zero;
                 CharacterData.Position = Target.Position;
                 RemoveMoveFlag(MoveType.VelocityStop);
+                LogManager.GetSingletone.WriteLog($"강제로 멈춤 {CharacterData.Position}");
             }
 
             // 속도 업데이트
@@ -441,6 +444,11 @@ namespace GameServer.Component
             }
         }
 
+        private void ClearAllFlag()
+        {
+            MoveFlag = (int)MoveType.None;
+        }
+
 
         private bool IsMovingNow()
         {
@@ -461,6 +469,21 @@ namespace GameServer.Component
             //AddMoveFlag(MoveType.Move);
             //AddMoveFlag(MoveType.LookAtToMove);
             return true;
+        }
+
+        public void AvoidObstacle(Vector3 Position, Vector3 Normal)
+        {
+            CollisionPosition = Position;
+            CollisionNormal = Normal;
+            AddMoveFlag(MoveType.ObstacleAvoidance);
+        }
+
+        public void StopMove()
+        {
+            //일단은 강제로 멈추게 해보자 그리고 이동관련 로직을 좀 쳐내자
+            ClearAllFlag();
+            Target.Position = CharacterData.Position;
+            AddMoveFlag(MoveType.VelocityStop);
         }
     }
 

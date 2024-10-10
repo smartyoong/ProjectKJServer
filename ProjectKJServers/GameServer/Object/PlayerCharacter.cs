@@ -9,6 +9,13 @@ using System.Runtime.CompilerServices;
 namespace GameServer.Object
 {
     using Vector3 = System.Numerics.Vector3;
+    enum PawnType
+    {
+        Player = 0,
+        Monster = 1,
+        NPC = 2,
+        Projectile = 3
+    }
 
     interface Pawn
     {
@@ -18,6 +25,7 @@ namespace GameServer.Object
         int GetCurrentMapID();
         void UpdateCollisionComponents(float DeltaTime, MapData Data, List<Pawn>? Characters);
         CollisionComponent GetCollisionComponent();
+        PawnType GetPawnType();
     }
 
     struct CharacterAccountInfo(string AccountID, string NickName)
@@ -73,8 +81,11 @@ namespace GameServer.Object
               GameServerSettings.Default.MaxRotation, GameServerSettings.Default.BoardRadius, null);
             MainProxy.GetSingletone.AddKinematicMoveComponent(MovementComponent);
 
-            CircleCollisionComponent = new CollisionComponent(MapID, this, StartPosition, CollisionType.Circle, 50f, OwnerType.Player);
+            CircleCollisionComponent = new CollisionComponent(MapID, this, StartPosition, CollisionType.Circle, 42f, OwnerType.Player);
             LineTracerComponent = new CollisionComponent(MapID, this, StartPosition, CollisionType.Line, 400f, OwnerType.Player);
+
+            // 충돌시 응답 델리게이트 추가
+            CircleCollisionComponent.CollideWithObstacleDelegate = OnObstacleBlock;
 
             PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
             MainProxy.GetSingletone.AddUserToMap(this);
@@ -130,6 +141,18 @@ namespace GameServer.Object
             {
                 Component.Update(DeltaTime, Data, Characters);
             });
+        }
+
+        public PawnType GetPawnType()
+        {
+            return PawnType.Player;
+        }
+
+        private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle)
+        {
+            //왠지 한번 멈추면 계속 멈출거 같은데, 원 체크때문에
+            MovementComponent.StopMove();
+            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에 막혔습니다.");
         }
     }
 }

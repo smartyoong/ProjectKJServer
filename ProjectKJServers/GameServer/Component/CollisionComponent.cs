@@ -37,6 +37,9 @@ namespace GameServer.Component
 
         private int MapID;
 
+        public Action<CollisionType, ConvertObstacles>? CollideWithObstacleDelegate;
+        public Action<CollisionType,PawnType, Pawn>? CollideWithPawnDelegate;
+
         public CollisionComponent(int MapID, Pawn Provider, Vector3 StartPosition, CollisionType type, float Size, OwnerType ownerType)
         {
             this.MapID = MapID;
@@ -74,6 +77,7 @@ namespace GameServer.Component
                 foreach (var Obstacle in HitObstacles)
                 {
                     // 추후에 Owner혹은 장애물에게 시그널을 보내자
+                    CollideWithObstacleDelegate?.Invoke(Type, Obstacle);
                 }
             }
             if (CollidePawnCheck(in Characters, ref HitPawns))
@@ -84,6 +88,7 @@ namespace GameServer.Component
                     if(Pawn == Owner)
                         continue;
 
+                    CollideWithPawnDelegate?.Invoke(Type, Pawn.GetPawnType(), Pawn);
                     LogManager.GetSingletone.WriteLog($"{Owner.GetAccountID()}가 {Pawn.GetAccountID()}와 충돌했습니다.");
                     // 추후에 Owner혹은 Pawn에게 시그널을 보내자
                 }
