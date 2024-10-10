@@ -29,7 +29,7 @@ namespace GameServer.Mehtod
                 TargetPoint.Position = Component.GetPosition(CurrentIndex);
             }
 
-            ChaseMethod Chase = new ChaseMethod();
+            EqualVelocityChaseMethod Chase = new EqualVelocityChaseMethod();
             return Chase.GetSteeringHandle(Ratio, Character, TargetPoint, MaxSpeed, MaxAccelerate, MaxRotate, MaxAngular, TargetRadius, SlowRadius, TimeToTarget);
         }
     }

@@ -16,27 +16,17 @@ namespace GameServer.Component
     enum MoveType : int
     {
         None = 0, // 0
-        Chase = 1 << 0, // 1
-        RunAway = 1 << 1, // 2
-        Move = 1 << 2, // 4
-        VelocityStop = 1 << 3, // 8
-        EqaulVelocityMove = 1 << 4, // 16
-        Brake = 1 << 5, // 32
-        RotateStop = 1 << 6, // 64
-        Align = 1 << 7, // 128
-        VelocityMatch = 1 << 8, // 256
-        Pursue = 1 << 9, // 512
-        LockOn = 1 << 10, // 1024
-        LookAtToMove = 1 << 11, // 2048
-        EqualVelocityWander = 1 << 12, // 4096
-        Wander = 1 << 13, // 8192
-        FollwPath = 1 << 14, // 16384
-        Sperate = 1 << 15, // 32768
-        CollsionAvoidance = 1 << 16, // 65536
-        ObstacleAvoidance = 1 << 17, // 131072
-        EqualVelocityChase = 1 << 18, // 262144
-        EqualVelocityRunAway = 1 << 19, // 524288
-        OreintationChange = 1 << 20, // 1048576
+        Move = 1 << 0,
+        VelocityStop = 1 << 1,
+        EqaulVelocityMove = 1 << 2,
+        RotateStop = 1 << 3,
+        LockOn = 1 << 4, 
+        LookAtToMove = 1 << 5, 
+        EqualVelocityWander = 1 << 6, 
+        FollwPath = 1 << 7, 
+        EqualVelocityChase = 1 << 8, 
+        EqualVelocityRunAway = 1 << 9, 
+        OreintationChange = 1 << 10, 
     }
 
     // 조종할때 사용
@@ -140,6 +130,7 @@ namespace GameServer.Component
 
             // 우선 순위 기반 행동 조합이다.
 
+            // 가속도 기반 이동이다.
             if (HasFlag(MoveType.Move))
             {
                 MoveMethod Move = new MoveMethod();
@@ -151,89 +142,11 @@ namespace GameServer.Component
                 else
                 {
                     RemoveMoveFlag(MoveType.Move);
-                    AddMoveFlag(MoveType.Brake);
-                }
-            }
-
-            if(HasFlag(MoveType.Pursue))
-            {
-                PursueMethod Pursue = new PursueMethod();
-                var Result = Pursue.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-                else
-                {
-                    RemoveMoveFlag(MoveType.Pursue);
-                }
-            }
-
-            if (HasFlag(MoveType.VelocityMatch))
-            {
-                VelocityMatchMethod VelocityMatch = new VelocityMatchMethod();
-                var Result = VelocityMatch.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-                else
-                {
-                    RemoveMoveFlag(MoveType.VelocityMatch);
-                }
-            }
-
-            if (HasFlag(MoveType.Chase))
-            {
-                ChaseMethod Chase = new ChaseMethod();
-                var Result = Chase.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                    RemoveMoveFlag(MoveType.Chase);
-                }
-            }
-
-            if (HasFlag(MoveType.RunAway))
-            {
-                RunAwayMethod RunAway = new RunAwayMethod();
-                SteeringHandle? Result = RunAway.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                    RemoveMoveFlag(MoveType.RunAway);
-                }
-            }
-
-            if (HasFlag(MoveType.Brake))
-            {
-                BrakeMethod Brake = new BrakeMethod();
-                SteeringHandle? Result = Brake.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, DeltaTime);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-                else
-                {
-                    RemoveMoveFlag(MoveType.Brake);
                     AddMoveFlag(MoveType.VelocityStop);
                 }
             }
 
-            if(HasFlag(MoveType.Wander))
-            {
-                WanderMethod Wander = new WanderMethod();
-                SteeringHandle? Result = Wander.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                // 한번만 가속을 추가하고 끝낸다.
-                // 매우 느리겠지만 어울릴 수도 있다.
-                // 만약 매우 느리다면 Velocity쪽애 직접 추가하는 것을 고려해보자
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                    RemoveMoveFlag(MoveType.Wander);
-                }
-            }
-
+            // 등속도 기반 경로 추적 이동
             if (HasFlag(MoveType.FollwPath))
             {
                 //경로가 없으면 행동을 안한다.
@@ -247,53 +160,11 @@ namespace GameServer.Component
                 SteeringHandle? Result = FollowPath.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
                 {
-                    TempHandle += Result.Value;
+                    CharacterData.Velocity += Result.Value.Linear;
                 }
                 else
                 {
                     RemoveMoveFlag(MoveType.FollwPath);
-                }
-            }
-
-            if (HasFlag(MoveType.Sperate))
-            {
-                // 추후에 이걸 실질적으로 사용할때는 여기 List를 채우도록 구현한다.
-                List<Kinematic> TargetList = new List<Kinematic>();
-                SeperateMethod Sperate = new SeperateMethod(TargetList);
-                SteeringHandle? Result = Sperate.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-            }
-
-            if (HasFlag(MoveType.CollsionAvoidance))
-            {
-                // 추후에 이걸 실질적으로 사용할때는 여기 List를 채우도록 구현한다.
-                List<Kinematic> Targets = new List<Kinematic>();
-                CollsionAvoidanceMethod CollsionAvoidance = new CollsionAvoidanceMethod(Targets);
-                //여기서 Radius 대신 Collision Component의 Radius를 넣어주어야 한다.
-                SteeringHandle? Result = CollsionAvoidance.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-            }
-
-            if (HasFlag(MoveType.ObstacleAvoidance))
-            {
-                //주의 충돌 판정 로직이 구현이 안되어 있음
-                //충돌 판정 로직이 구현되면 해당 로직을 사용할것
-                //Collision Component를 만들자
-                ObstacleAvoidanceMethod ObstacleAvoidance = new ObstacleAvoidanceMethod(CollisionPosition,CollisionNormal);
-                SteeringHandle? Result = ObstacleAvoidance.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-                else
-                {
-                    RemoveMoveFlag(MoveType.ObstacleAvoidance);
                 }
             }
 
@@ -313,6 +184,7 @@ namespace GameServer.Component
                 }
             }
 
+            // 일정시간 뒤에는 멈추도록 해야한다.
             if (HasFlag(MoveType.EqualVelocityWander))
             {
                 EqualVelocityWanderMethod EqualVelocityWander = new EqualVelocityWanderMethod();
@@ -327,6 +199,7 @@ namespace GameServer.Component
                 }
             }
 
+            // 일정시간 뒤에는 멈추도록 해야한다.
             if (HasFlag(MoveType.EqualVelocityChase))
             {
                 EqualVelocityChaseMethod EqualVelocityChase = new EqualVelocityChaseMethod();
@@ -340,6 +213,7 @@ namespace GameServer.Component
                 }
             }
 
+            // 일정시간 뒤에는 멈추도록 해야한다.
             if (HasFlag(MoveType.EqualVelocityRunAway))
             {
                 EqualVelocityRunAwayMethod EqaulVelocityRunAway = new EqualVelocityRunAwayMethod();
@@ -403,21 +277,6 @@ namespace GameServer.Component
                 }
             }
 
-            if (HasFlag(MoveType.Align))
-            {
-                AlignMethod Align = new AlignMethod();
-                var Result = Align.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, 2f, 10f, TIME_TO_TARGET);
-                if (Result != null)
-                {
-                    TempHandle += Result.Value;
-                }
-                else
-                {
-                    RemoveMoveFlag(MoveType.Align);
-                    AddMoveFlag(MoveType.RotateStop);
-                }
-            }
-
             if(HasFlag(MoveType.OreintationChange))
             {
                 // 방향을 현재 속력에 따라 바꾼는 플래그
@@ -471,16 +330,10 @@ namespace GameServer.Component
             return true;
         }
 
-        public void AvoidObstacle(Vector3 Position, Vector3 Normal)
-        {
-            CollisionPosition = Position;
-            CollisionNormal = Normal;
-            AddMoveFlag(MoveType.ObstacleAvoidance);
-        }
-
         public void StopMove()
         {
             //일단은 강제로 멈추게 해보자 그리고 이동관련 로직을 좀 쳐내자
+            //일단 CollisionComponent 밖으로 밀어내고 멈추도록 수정해보자
             ClearAllFlag();
             Target.Position = CharacterData.Position;
             AddMoveFlag(MoveType.VelocityStop);
