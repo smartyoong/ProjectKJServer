@@ -2,6 +2,7 @@
 using CoreUtility.Utility;
 using GameServer.Object;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Numerics;
 
 namespace GameServer.Component
@@ -36,9 +37,11 @@ namespace GameServer.Component
         private Vector3[] SquarePoints;
 
         private int MapID;
+        private List<ConvertObstacles> PreviousHitObstacles = new List<ConvertObstacles>();
 
-        public Action<CollisionType, ConvertObstacles>? CollideWithObstacleDelegate;
-        public Action<CollisionType,PawnType, Pawn>? CollideWithPawnDelegate;
+        public Action<CollisionType, ConvertObstacles, Vector2>? BeginCollideWithObstacleDelegate;
+        public Action<CollisionType, ConvertObstacles>? EndCollideWithObstacleDelegate;
+        public Action<CollisionType,PawnType, Pawn, Vector2>? CollideWithPawnDelegate;
 
         public CollisionComponent(int MapID, Pawn Provider, Vector3 StartPosition, CollisionType type, float Size, OwnerType ownerType)
         {
@@ -70,29 +73,42 @@ namespace GameServer.Component
             }
             List<ConvertObstacles> HitObstacles = new List<ConvertObstacles>();
             List<Pawn> HitPawns = new List<Pawn>();
+            List<Vector2> ImpactNormals = new List<Vector2>();
             // 갱신 후에 전달받은 데이터를 토대로 obstacle과 collision이 충돌하는지 체크하자
             // 정확한지는 모르겠지만 일단 되는거 확인!
-            if (CollideObstacleCheck(in Data, ref HitObstacles))
+            if (CollideObstacleCheck(in Data, ref HitObstacles, ref ImpactNormals))
             {
-                foreach (var Obstacle in HitObstacles)
+                for(int i = 0; i < HitObstacles.Count; ++i)
                 {
                     // 추후에 Owner혹은 장애물에게 시그널을 보내자
-                    CollideWithObstacleDelegate?.Invoke(Type, Obstacle);
+                    BeginCollideWithObstacleDelegate?.Invoke(Type, HitObstacles[i], ImpactNormals[i]);
                 }
             }
-            if (CollidePawnCheck(in Characters, ref HitPawns))
+            if (CollidePawnCheck(in Characters, ref HitPawns, ref ImpactNormals))
             {
-                foreach (var Pawn in HitPawns)
+                for(int i = 0; i < HitPawns.Count; ++i)
                 {
                     //자기 자신은 제외
-                    if(Pawn == Owner)
+                    if (HitPawns[i] == Owner)
                         continue;
 
-                    CollideWithPawnDelegate?.Invoke(Type, Pawn.GetPawnType(), Pawn);
-                    LogManager.GetSingletone.WriteLog($"{Owner.GetAccountID()}가 {Pawn.GetAccountID()}와 충돌했습니다.");
+                    CollideWithPawnDelegate?.Invoke(Type, HitPawns[i].GetPawnType(), HitPawns[i], ImpactNormals[i]);
+                    LogManager.GetSingletone.WriteLog($"{Owner.GetAccountID()}가 {HitPawns[i].GetAccountID()}와 충돌했습니다.");
                     // 추후에 Owner혹은 Pawn에게 시그널을 보내자
                 }
             }
+
+            // 교차에서 벗어난 Obstacle을 감지하고 EndCollideWithObstacleDelegate 호출
+            for (int i = 0; i < PreviousHitObstacles.Count; ++i)
+            {
+                if (!HitObstacles.Contains(PreviousHitObstacles[i]))
+                {
+                    EndCollideWithObstacleDelegate?.Invoke(Type, PreviousHitObstacles[i]);
+                }
+            }
+
+            // 현재 프레임의 Obstacles를 저장하여 다음 프레임에서 비교할 수 있도록 함
+            PreviousHitObstacles = new List<ConvertObstacles>(HitObstacles);
         }
 
         // 선형 도형 StartPosition과 EndPosition 재조정
@@ -128,30 +144,41 @@ namespace GameServer.Component
         }
 
 
-        private bool CollideObstacleCheck(in MapData Data, ref List<ConvertObstacles> HitObstacles)
+        private bool CollideObstacleCheck(in MapData Data, ref List<ConvertObstacles> HitObstacles, ref List<Vector2> ImpactNormals)
         {
             bool Result = false;
             ConcurrentBag<ConvertObstacles> ConcurrentHitObstacles = new ConcurrentBag<ConvertObstacles>();
+            ConcurrentBag<Vector2> ConcurrentImpactNormals = new ConcurrentBag<Vector2>();
             // 장애물과 충돌한거니까 본인한테만 시그널이가면 됨, 만약에 벽을 부시는 거면 그때는 다른 처리가 필요함
             Parallel.ForEach(Data.Obstacles, (Obstacle) =>
             {
+                Vector2 ImpactNormal = Vector2.Zero;
                 bool LocalResult = false;
                 switch (Obstacle.Type)
                 {
                     case ObjectType.Square:
-                        LocalResult = InterSectCheckWithSquare(Obstacle);
-                        if(LocalResult)
+                        LocalResult = InterSectCheckWithSquare(Obstacle, out ImpactNormal);
+                        if (LocalResult)
+                        {
                             ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal);
+                        }
                         break;
                     case ObjectType.Sphere:
-                        LocalResult = InterSectCheckWithCircle(Obstacle, false);
+                        LocalResult = InterSectCheckWithCircle(Obstacle, false, out ImpactNormal);
                         if (LocalResult)
+                        {
                             ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal);
+                        }
                         break;
                     case ObjectType.Cylinder:
-                        LocalResult = InterSectCheckWithCircle(Obstacle, true);
+                        LocalResult = InterSectCheckWithCircle(Obstacle, true, out ImpactNormal);
                         if (LocalResult)
+                        {
                             ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal);
+                        }
                         break;
                 }
                 if (LocalResult)
@@ -160,99 +187,105 @@ namespace GameServer.Component
                 }
             });
             HitObstacles = new List<ConvertObstacles>(ConcurrentHitObstacles);
+            ImpactNormals = new List<Vector2>(ConcurrentImpactNormals);
             return Result;
         }
 
-        private bool CollidePawnCheck(in List<Pawn>? PawnList, ref List<Pawn> HitPawns)
+        private bool CollidePawnCheck(in List<Pawn>? PawnList, ref List<Pawn> HitPawns, ref List<Vector2> ImpactNormals)
         {
             if(PawnList == null)
                 return false;
 
             ConcurrentBag<Pawn> HitPawn = new ConcurrentBag<Pawn>();
+            ConcurrentBag<Vector2> ImpactNormalBag = new ConcurrentBag<Vector2>();
             bool Result = false;
 
             Parallel.ForEach(PawnList, (Pawns) =>
             {
                 CollisionComponent Component =  Pawns.GetCollisionComponent();
                 bool LocalResult = false;
+                Vector2 ImpactNormal = Vector2.Zero;
                 // 본인 타입과 상대방 타입에 따라서 달라져야한다.
-                if(Type == CollisionType.Line && Component.Type == CollisionType.Line)
+                if (Type == CollisionType.Line && Component.Type == CollisionType.Line)
                 {
                     LocalResult = LineIntersectsLine(new Vector2(Position.X, Position.Y), new Vector2(EndPosition.X, EndPosition.Y),
-                        new Vector2(Component.Position.X, Component.Position.Y), new Vector2(Component.EndPosition.X, Component.EndPosition.Y));
+                        new Vector2(Component.Position.X, Component.Position.Y), new Vector2(Component.EndPosition.X, Component.EndPosition.Y), out ImpactNormal);
                 }
                 else if(Type == CollisionType.Line && Component.Type == CollisionType.Circle)
                 {
                     LocalResult = LineIntersectsCircle(new Vector2(Position.X, Position.Y), new Vector2(EndPosition.X, EndPosition.Y),
-                        new Vector2(Component.Position.X, Component.Position.Y), Component.Radius);
+                        new Vector2(Component.Position.X, Component.Position.Y), Component.Radius, out ImpactNormal);
                 }
                 else if(Type == CollisionType.Line && Component.Type == CollisionType.Square)
                 {
                     LocalResult = LineIntersectsSquare(new Vector2(Position.X, Position.Y), new Vector2(EndPosition.X, EndPosition.Y),
-                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y));
+                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y), out ImpactNormal);
                 }
                 else if (Type == CollisionType.Circle && Component.Type == CollisionType.Line)
                 {
                     // 매개변수 위치에 주의! 뒤에가 본인이다!
                     LocalResult = LineIntersectsCircle(new Vector2(Component.Position.X, Component.Position.Y), new Vector2(Component.EndPosition.X, Component.EndPosition.Y),
-                        new Vector2(Position.X, Position.Y), Radius);
+                        new Vector2(Position.X, Position.Y), Radius, out ImpactNormal);
                 }
                 else if (Type == CollisionType.Circle && Component.Type == CollisionType.Circle)
                 {
                     LocalResult = CircleIntersectsCircle(new Vector2(Position.X, Position.Y), Radius,
-                        new Vector2(Component.Position.X, Component.Position.Y), Component.Radius);
+                        new Vector2(Component.Position.X, Component.Position.Y), Component.Radius, out ImpactNormal);
                 }
                 else if (Type == CollisionType.Circle && Component.Type == CollisionType.Square)
                 {
                     LocalResult = CircleIntersectsSquare(new Vector2(Position.X, Position.Y), Radius,
-                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y));
+                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y), out ImpactNormal);
                 }
                 else if (Type == CollisionType.Square && Component.Type == CollisionType.Line)
                 {
                     // 매개변수 위치에 주의! 뒤에가 본인이다!
                     LocalResult = LineIntersectsSquare(new Vector2(Component.Position.X, Component.Position.Y), new Vector2(Component.EndPosition.X, Component.EndPosition.Y),
-                        new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y));
+                        new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y), out ImpactNormal);
                 }
                 else if (Type == CollisionType.Square && Component.Type == CollisionType.Circle)
                 {
                     // 매개변수 위치에 주의! 뒤에가 본인이다!
                     LocalResult = CircleIntersectsSquare(new Vector2(Component.Position.X, Component.Position.Y), Component.Radius,
-                        new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y));
+                        new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y), out ImpactNormal);
                 }
                 else if (Type == CollisionType.Square && Component.Type == CollisionType.Square)
                 {
                     LocalResult = SquareIntersectsSquare(new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y),
-                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y));
+                        new Vector2(Component.SquarePoints[0].X, Component.SquarePoints[0].Y), new Vector2(Component.SquarePoints[3].X, Component.SquarePoints[3].Y), out ImpactNormal);
                 }
                 if (LocalResult)
                 {
                     HitPawn.Add(Pawns);
+                    ImpactNormalBag.Add(ImpactNormal);
                     Result = true;
                 }
             });
             HitPawns = new List<Pawn>(HitPawn);
+            ImpactNormals = new List<Vector2>(ImpactNormalBag);
             return Result;
         }
 
-        private bool InterSectCheckWithSquare(ConvertObstacles Obstacle)
+        private bool InterSectCheckWithSquare(ConvertObstacles Obstacle, out Vector2 ImpactNormal)
         {
             // 본인의 CollisionType에 따라서 처리
             switch (Type)
             {
                 case CollisionType.Line:
                     return LineIntersectsSquare(new Vector2(Position.X,Position.Y), new Vector2(EndPosition.X,EndPosition.Y), 
-                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle));
+                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle), out ImpactNormal);
                 case CollisionType.Circle:
                     return CircleIntersectsSquare(new Vector2(Position.X, Position.Y), Radius,
-                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle));
+                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle), out ImpactNormal);
                 case CollisionType.Square:
                     return SquareIntersectsSquare(new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y),
-                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle));
+                        GetMinPointInSquare(Obstacle), GetMaxPointInSquare(Obstacle), out ImpactNormal);
             }
+            ImpactNormal = Vector2.Zero;
             return false;
         }
 
-        private bool InterSectCheckWithCircle(ConvertObstacles Obstacle, bool IsCylinder)
+        private bool InterSectCheckWithCircle(ConvertObstacles Obstacle, bool IsCylinder, out Vector2 ImpactNormal)
         {
             // 본인의 CollisionType에 따라서 처리
             Vector2 MinPoints = GetMinPointInSquare(Obstacle);
@@ -269,31 +302,32 @@ namespace GameServer.Component
                 case CollisionType.Line:
                     if(IsCylinder)
                         return LineIntersectsCircle(new Vector2(Position.X, Position.Y), new Vector2(EndPosition.X, EndPosition.Y),
-                            Center, Obstacle.CylinderRadius);
+                            Center, Obstacle.CylinderRadius, out ImpactNormal);
                     else
                         return LineIntersectsCircle(new Vector2(Position.X, Position.Y), new Vector2(EndPosition.X, EndPosition.Y),
-                            Center, Obstacle.SphereRadius);
+                            Center, Obstacle.SphereRadius, out ImpactNormal);
                 case CollisionType.Circle:
                     if (IsCylinder)
                         return CircleIntersectsCircle(new Vector2(Position.X, Position.Y), Radius,
-                            Center, Obstacle.CylinderRadius);
+                            Center, Obstacle.CylinderRadius, out ImpactNormal);
                     else
                         return CircleIntersectsCircle(new Vector2(Position.X, Position.Y), Radius,
-                            Center, Obstacle.SphereRadius);
+                            Center, Obstacle.SphereRadius, out ImpactNormal);
                 case CollisionType.Square:
                     // 매개변수 위치 주의! 본인이 Square다!
                     if (IsCylinder)
                         return CircleIntersectsSquare(Center, Obstacle.CylinderRadius,
-                            new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y));
+                            new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y), out ImpactNormal);
                     else
                         return CircleIntersectsSquare(Center, Obstacle.SphereRadius,
-                            new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y));
+                            new Vector2(SquarePoints[0].X, SquarePoints[0].Y), new Vector2(SquarePoints[3].X, SquarePoints[3].Y), out ImpactNormal);
             }
+            ImpactNormal = Vector2.Zero;
             return false;
         }
 
 
-        private bool LineIntersectsSquare(Vector2 LineStart, Vector2 LineEnd, Vector2 MinSquarePoint, Vector2 MaxSquarePoint)
+        private bool LineIntersectsSquare(Vector2 LineStart, Vector2 LineEnd, Vector2 MinSquarePoint, Vector2 MaxSquarePoint, out Vector2 ImpactNormal)
         {
             Vector2[] SquarePoints =
             {
@@ -306,14 +340,15 @@ namespace GameServer.Component
             for (int i = 0; i < 4; i++)
             {
                 Vector2 SquareLineStart = SquarePoints[i];
-                Vector2 SqaureLineEnd = SquarePoints[(i + 1) % 4];
+                Vector2 SquareLineEnd = SquarePoints[(i + 1) % 4];
 
-                if (LineIntersectsLine(LineStart, LineEnd, SquareLineStart, SqaureLineEnd))
+                if (LineIntersectsLine(LineStart, LineEnd, SquareLineStart, SquareLineEnd, out ImpactNormal))
                 {
                     return true;
                 }
             }
 
+            ImpactNormal = Vector2.Zero;
             return false;
         }
 
@@ -331,15 +366,18 @@ namespace GameServer.Component
             return new Vector2(MaxX, MaxY);
         }
 
-        private bool LineIntersectsLine(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2)
+        private bool LineIntersectsLine(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2, out Vector2 ImpactNormal)
         {
             // 2차 행렬이므로 행렬식을 구하는 방법이 빠르다. ad-bc 하드 코딩 ㄱㄱ
 
             // 2차 행렬의 행렬식 (외적을 구한다 , Z축이 나올거다)
             float d = (p2.X - p1.X) * (q2.Y - q1.Y) - (p2.Y - p1.Y) * (q2.X - q1.X);
             // 두 선은 평행하다. 혹은 완전히 일치한다.
-            if (d == 0) 
+            if (d == 0)
+            {
+                ImpactNormal = Vector2.Zero;
                 return false;
+            }
 
             // 교차점 체크 P = P1 + u(P2 - P1) , Q = Q1 + v(Q2 - Q1) 여기서 두 선의 교차점은 유일해가 존재한다는 것이다.
             // u 행렬식
@@ -347,11 +385,22 @@ namespace GameServer.Component
             // v 행렬식
             float v = ((q1.X - p1.X) * (p2.Y - p1.Y) - (q1.Y - p1.Y) * (p2.X - p1.X)) / d;
 
-            // 교차점이 볌위내에 존재한다. (크래머 규칙 u = Du/D, v = Dv/D, 위에서 d를 나누어준 이유)
-            return (u >= 0 && u <= 1) && (v >= 0 && v <= 1);
+            // 교차점이 범위 내에 존재한다. (크래머 규칙 u = Du/D, v = Dv/D, 위에서 d를 나누어준 이유)
+            if ((u >= 0 && u <= 1) && (v >= 0 && v <= 1))
+            {
+                // 교차 지점에서의 법선 벡터 계산
+                Vector2 intersectionPoint = p1 + u * (p2 - p1);
+                Vector2 edge = q2 - q1;
+                ImpactNormal = new Vector2(-edge.Y, edge.X);
+                ImpactNormal = Vector2.Normalize(ImpactNormal);
+                return true;
+            }
+
+            ImpactNormal = Vector2.Zero;
+            return false;
         }
 
-        private bool LineIntersectsCircle(Vector2 LineStart, Vector2 LineEnd, Vector2 Center, float Radius)
+        private bool LineIntersectsCircle(Vector2 LineStart, Vector2 LineEnd, Vector2 Center, float Radius, out Vector2 ImpactNormal)
         {
             // 선분의 길이
             Vector2 d = LineEnd - LineStart;
@@ -365,12 +414,13 @@ namespace GameServer.Component
             // (x^2 + y^2 = r^2)
             float c = Vector2.Dot(f, f) - Radius * Radius;
             // at2(제곱) + bt + c = 0 형태로 변환
-            
+
             // 판별식
             float Discriminant = b * b - 4 * a * c;
             // 접점이 없음
             if (Discriminant < 0)
             {
+                ImpactNormal = Vector2.Zero;
                 return false;
             }
             else
@@ -383,20 +433,35 @@ namespace GameServer.Component
                 // 1개의 근이라도 정상 범위라면 통과
                 if (t1 >= 0 && t1 <= 1 || t2 >= 0 && t2 <= 1)
                 {
+                    // 충돌 지점에서의 법선 벡터 계산
+                    Vector2 intersectionPoint = LineStart + t1 * d;
+                    ImpactNormal = (intersectionPoint - Center);
+                    ImpactNormal = Vector2.Normalize(ImpactNormal);
                     return true;
                 }
             }
 
+            ImpactNormal = Vector2.Zero;
             return false;
         }
 
-        private bool CircleIntersectsCircle(Vector2 Center1, float Radius1, Vector2 Center2, float Radius2)
+
+        private bool CircleIntersectsCircle(Vector2 Center1, float Radius1, Vector2 Center2, float Radius2, out Vector2 ImpactNormal)
         {
             float Distance = Vector2.Distance(Center1, Center2);
-            return Distance <= (Radius1 + Radius2);
+            if (Distance <= (Radius1 + Radius2))
+            {
+                // 충돌 지점에서의 법선 벡터 계산
+                ImpactNormal = Center2 - Center1;
+                ImpactNormal = Vector2.Normalize(ImpactNormal);
+                return true;
+            }
+
+            ImpactNormal = Vector2.Zero;
+            return false;
         }
 
-        private bool CircleIntersectsSquare(Vector2 Center, float Radius, Vector2 MinPoint, Vector2 MaxPoint)
+        private bool CircleIntersectsSquare(Vector2 Center, float Radius, Vector2 MinPoint, Vector2 MaxPoint, out Vector2 ImpactNormal)
         {
             float ClosestX = Math.Clamp(Center.X, MinPoint.X, MaxPoint.X);
             float ClosestY = Math.Clamp(Center.Y, MinPoint.Y, MaxPoint.Y);
@@ -405,14 +470,34 @@ namespace GameServer.Component
             float DistanceY = Center.Y - ClosestY;
 
             float DistanceSquared = (DistanceX * DistanceX) + (DistanceY * DistanceY);
-            return DistanceSquared < (Radius * Radius);
+            if (DistanceSquared < (Radius * Radius))
+            {
+                // 충돌 지점에서의 법선 벡터 계산
+                ImpactNormal = new Vector2(DistanceX, DistanceY);
+                ImpactNormal = Vector2.Normalize(ImpactNormal);
+                return true;
+            }
+
+            ImpactNormal = Vector2.Zero;
+            return false;
         }
 
-        private bool SquareIntersectsSquare(Vector2 Min1, Vector2 Max1, Vector2 Min2, Vector2 Max2)
+        private bool SquareIntersectsSquare(Vector2 Min1, Vector2 Max1, Vector2 Min2, Vector2 Max2, out Vector2 ImpactNormal)
         {
             // 사실상 AABB 충돌 체크
-            return (Min1.X <= Max2.X && Max1.X >= Min2.X) &&
-                   (Min1.Y <= Max2.Y && Max1.Y >= Min2.Y);
+            if ((Min1.X <= Max2.X && Max1.X >= Min2.X) &&
+                (Min1.Y <= Max2.Y && Max1.Y >= Min2.Y))
+            {
+                // 충돌 지점에서의 법선 벡터 계산 (간단한 예로, 첫 번째 사각형의 중심에서 두 번째 사각형의 중심으로 향하는 벡터)
+                Vector2 Center1 = (Min1 + Max1) / 2;
+                Vector2 Center2 = (Min2 + Max2) / 2;
+                ImpactNormal = Center2 - Center1;
+                ImpactNormal = Vector2.Normalize(ImpactNormal);
+                return true;
+            }
+
+            ImpactNormal = Vector2.Zero;
+            return false;
         }
 
     }

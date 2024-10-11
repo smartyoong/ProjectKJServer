@@ -4,7 +4,6 @@ using GameServer.Component;
 using GameServer.MainUI;
 using GameServer.PacketList;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace GameServer.Object
 {
@@ -60,6 +59,9 @@ namespace GameServer.Object
         private PathComponent PathComponent;
         private int CurrentMapID = 0;
 
+        public bool IsLineCollideObstacle { get; set; } = false;
+        public bool IsCircleCollideObstacle { get; set; } = false;
+
         public CharacterAccountInfo GetAccountInfo() => AccountInfo;
         public CharacterJobInfo GetJobInfo() => JobInfo;
         public ChracterAppearanceInfo GetAppearanceInfo() => AppearanceInfo;
@@ -85,7 +87,10 @@ namespace GameServer.Object
             LineTracerComponent = new CollisionComponent(MapID, this, StartPosition, CollisionType.Line, 400f, OwnerType.Player);
 
             // 충돌시 응답 델리게이트 추가
-            CircleCollisionComponent.CollideWithObstacleDelegate = OnObstacleBlock;
+            CircleCollisionComponent.BeginCollideWithObstacleDelegate = OnObstacleBlock;
+            LineTracerComponent.BeginCollideWithObstacleDelegate = OnObstacleBlock;
+            CircleCollisionComponent.EndCollideWithObstacleDelegate = OnEndObsatcleBlock;
+            LineTracerComponent.EndCollideWithObstacleDelegate = OnEndObsatcleBlock;
 
             PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
             MainProxy.GetSingletone.AddUserToMap(this);
@@ -148,11 +153,40 @@ namespace GameServer.Object
             return PawnType.Player;
         }
 
-        private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle)
+        private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle, Vector2 Normal)
         {
-            //왠지 한번 멈추면 계속 멈출거 같은데, 원 체크때문에
-            MovementComponent.StopMove();
-            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에 막혔습니다.");
+            switch (Type)
+            {
+                case CollisionType.Circle:
+                    IsCircleCollideObstacle = true;
+                    break;
+                case CollisionType.Line:
+                    IsLineCollideObstacle = true;
+                    break;
+            }
+
+            if(IsCircleCollideObstacle && IsLineCollideObstacle)
+                LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에 막혔습니다. {Normal} {Obstacle.MeshName} {Type}");
+        }
+
+        private void OnEndObsatcleBlock(CollisionType Type, ConvertObstacles Obstacle)
+        {
+            //현재는 Obstacle의 종류를 세부적으로 비교를 안하는데,
+            //일단은 Begin End가 잘되는지 테스트하기 위함이고, 나중에는 여기를 제대로 수정해서 사용하자
+            switch (Type)
+            {
+                case CollisionType.Circle:
+                    IsCircleCollideObstacle = false;
+                    break;
+                case CollisionType.Line:
+                    IsLineCollideObstacle = false;
+                    break;
+            }
+
+            if (IsCircleCollideObstacle && !IsLineCollideObstacle)
+                LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 원은 장애물에 겹쳤으나 라인은 안겹쳤습니다.");
+            if (!IsCircleCollideObstacle && !IsLineCollideObstacle)
+                LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에서 완전 벗어났습니다 현재 이동을 막지 않는 중 입니다.");
         }
     }
 }
