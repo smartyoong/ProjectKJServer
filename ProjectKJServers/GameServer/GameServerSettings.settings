@@ -53,5 +53,8 @@
     <Setting Name="BoardRadius" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
     </Setting>
+    <Setting Name="PlayerCollisionRadius" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">42</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

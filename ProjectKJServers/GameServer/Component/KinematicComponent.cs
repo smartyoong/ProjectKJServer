@@ -4,6 +4,7 @@ using GameServer.Mehtod;
 using System.Collections.Concurrent;
 using System.Numerics;
 using Windows.ApplicationModel.Background;
+using Windows.UI.Input;
 namespace GameServer.Component
 {
     interface Behaviors
@@ -71,17 +72,18 @@ namespace GameServer.Component
         public float MaxAngular { get; private set; }
 
         private Kinematic CharacterData;
+        private Kinematic PreviusCharacterData;
         public Kinematic CharcaterStaticData { get => CharacterData; }
+        public Kinematic PreviusCharacterStaticData { get => PreviusCharacterData; }
         private Kinematic Target;
         public Kinematic TargetStaticData { get => Target; }
         private PathComponent? Path;
 
-        private Vector3 CollisionPosition;
-        private Vector3 CollisionNormal;
 
         public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius, PathComponent? Path)
         {
             CharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
+            PreviusCharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
             this.MaxSpeed = MaxSpeed;
             this.MaxAccelerate = MaxAccelerate;
             this.MaxRotation = MaxRotation;
@@ -121,6 +123,8 @@ namespace GameServer.Component
         {
             DeltaTime /= 1000;
 
+            // 이전 위치 업데이트
+            PreviusCharacterData = CharacterData;
             // 위치 업데이트
             CharacterData.Position += CharacterData.Velocity * DeltaTime;
             // 방위 업데이트 (기본적인 회전 속도)
@@ -330,12 +334,28 @@ namespace GameServer.Component
             return true;
         }
 
-        public void StopMove()
+        public void AdjustCurrentPosition(Vector3 Position)
+        {
+            // 아예 이 인스턴스를 잠궈서 다른 Update도 못하게 막아야할듯 데드락 발생하면 수정하자
+            lock (this)
+            {
+                CharacterData.Position = Position;
+            }
+        }
+
+        public void StopMove(Vector3? TargetPosition)
         {
             //일단은 강제로 멈추게 해보자 그리고 이동관련 로직을 좀 쳐내자
             //일단 CollisionComponent 밖으로 밀어내고 멈추도록 수정해보자
             ClearAllFlag();
-            Target.Position = CharacterData.Position;
+            if (TargetPosition != null)
+            {
+                Target.Position = TargetPosition.Value;
+            }
+            else
+            {
+                Target.Position = CharacterData.Position;
+            }
             AddMoveFlag(MoveType.VelocityStop);
         }
     }

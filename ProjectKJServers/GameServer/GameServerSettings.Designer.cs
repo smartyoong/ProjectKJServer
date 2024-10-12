@@ -226,5 +226,17 @@ namespace GameServer {
                 this["BoardRadius"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("42")]
+        public int PlayerCollisionRadius {
+            get {
+                return ((int)(this["PlayerCollisionRadius"]));
+            }
+            set {
+                this["PlayerCollisionRadius"] = value;
+            }
+        }
     }
 }

@@ -13,7 +13,6 @@ namespace GameServer.Mehtod
     {
         // 벽으로의 최소 거리 캐릭터 보다 커야한다.
         private float AvoidDistance = 200f;
-        private float LookAhead = 400f;
         Vector3 CollisionPosition;
         Vector3 CollisionNormal;
         public ObstacleAvoidanceMethod(Vector3 Position, Vector3 Normal)

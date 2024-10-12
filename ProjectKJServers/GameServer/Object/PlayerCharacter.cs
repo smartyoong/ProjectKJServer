@@ -153,7 +153,7 @@ namespace GameServer.Object
             return PawnType.Player;
         }
 
-        private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle, Vector2 Normal)
+        private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle, Vector2 Normal, Vector2 HitPoint)
         {
             switch (Type)
             {
@@ -165,8 +165,26 @@ namespace GameServer.Object
                     break;
             }
 
-            if(IsCircleCollideObstacle && IsLineCollideObstacle)
+            if (IsCircleCollideObstacle)
+            {
                 LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에 막혔습니다. {Normal} {Obstacle.MeshName} {Type}");
+
+                // 이거 0이 계속 나온다 그래서 미정의 현상이 발생한다 -> 이거 Boolean으로 Lock걸어서 상태만 재설정하고,
+                // KinematicComponent에서 매 Position Update할때 Lock으로 현재 충돌했는지 체크하고 슬라이딩 벡터 설정해야겠다 클라는 잘된다 그럼 그게 맞다.
+                if (Type == CollisionType.Circle)
+                {
+                    // 캐릭터의 현재 위치를 가져옵니다.
+                    Vector2 MixPosition = new Vector2(MovementComponent.CharcaterStaticData.Position.X, MovementComponent.CharcaterStaticData.Position.Y);
+                    Vector2 CurrentPosition = new Vector2(MovementComponent.PreviusCharacterStaticData.X, MovementComponent.PreviusCharacterStaticData.Y);
+
+                    // 충돌 지점에서의 법선 벡터를 이용하여 슬라이딩 벡터 계산
+                    Vector2 SlideDirection = Vector2.Normalize(Vector2.Reflect(MixPosition - CurrentPosition, Normal));
+                    Vector2 AdjustPosition = MixPosition + SlideDirection;
+
+                    MovementComponent.StopMove(new Vector3(AdjustPosition, 0));
+                    LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 원에 막혀 위치가 조정됩니다. {AdjustPosition}");
+                }
+            }
         }
 
         private void OnEndObsatcleBlock(CollisionType Type, ConvertObstacles Obstacle)
@@ -184,7 +202,7 @@ namespace GameServer.Object
             }
 
             if (IsCircleCollideObstacle && !IsLineCollideObstacle)
-                LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 원은 장애물에 겹쳤으나 라인은 안겹쳤습니다.");
+                LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 원은 장애물에 겹쳤으나 라인은 안겹쳤습니다 하지만 신뢰 불가능입니다.");
             if (!IsCircleCollideObstacle && !IsLineCollideObstacle)
                 LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 장애물에서 완전 벗어났습니다 현재 이동을 막지 않는 중 입니다.");
         }
