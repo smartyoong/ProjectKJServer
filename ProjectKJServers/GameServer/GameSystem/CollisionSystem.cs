@@ -192,6 +192,16 @@ namespace GameServer.GameSystem
             }
         }
 
+        public List<ConvertObstacles> GetMapObstacles(int MapID)
+        {
+            if (!ValidMapIDCheck(MapID))
+            {
+                return new List<ConvertObstacles>();
+            }
+
+            return MapDataDictionary[MapID].Obstacles;
+        }
+
         private bool BoundaryCheck(int MapID, ref readonly CustomVector3 Position)
         {
             MapData Data = MapDataDictionary[MapID];

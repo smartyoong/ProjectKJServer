@@ -127,6 +127,11 @@ namespace GameServer.MainUI
             return GameEngineClass.GetMapUsers(MapID);
         }
 
+        public List<ConvertObstacles> GetMapObstacles(int MapID)
+        {
+            return GameEngineClass.GetMapObstacles(MapID);
+        }
+
         public PlayerCharacter? GetCharacterByAccountID(string AccountID)
         {
             return GameEngineClass.GetCharacterByAccountID(AccountID);

@@ -1,12 +1,15 @@
 ﻿using CoreUtility.GlobalVariable;
 using CoreUtility.Utility;
+using GameServer.MainUI;
 using GameServer.Object;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Numerics;
+using Windows.UI.Input.Inking;
 
 namespace GameServer.Component
 {
+    using static System.Runtime.InteropServices.JavaScript.JSType;
     using Vector3 = System.Numerics.Vector3;
 
     enum CollisionType
@@ -518,6 +521,71 @@ namespace GameServer.Component
             ImpactNormal = Vector2.Zero;
             HitPoint = Vector2.Zero;
             return false;
+        }
+
+        // 외부에서 특정 위치에 원형(Collision)을 기준으로 장애물과 충돌하는지 체크
+        public bool CheckPositionBlockByWall(int MapID, Vector3 ToPosition, float Radius, ref List<ConvertObstacles> HitObstacles, ref List<Vector2> ImpactNormals, ref List<Vector2> HitPoints)
+        {
+            bool Result = false;
+            ConcurrentBag<ConvertObstacles> ConcurrentHitObstacles = new ConcurrentBag<ConvertObstacles>();
+            ConcurrentBag<Vector2> ConcurrentImpactNormals = new ConcurrentBag<Vector2>();
+            ConcurrentBag<Vector2> ConcurrentHitPoints = new ConcurrentBag<Vector2>();
+            List<ConvertObstacles> Obstacles = MainProxy.GetSingletone.GetMapObstacles(MapID);
+            // 장애물과 충돌한거니까 본인한테만 시그널이가면 됨, 만약에 벽을 부시는 거면 그때는 다른 처리가 필요함
+            Parallel.ForEach(Obstacles, (Obstacle) =>
+            {
+                bool LocalResult = false;
+                Vector2 ObstacleMin = GetMinPointInSquare(Obstacle);
+                Vector2 ObstacleMax = GetMaxPointInSquare(Obstacle);
+                Vector2 ObstacleCenter = ObstacleMin + (ObstacleMax - ObstacleMin) / 2; // 장애물의 중심 계산 이거 잘되는지 나중에 로그 찍어보자
+                Vector2 NextPosition = new Vector2(ToPosition.X, ToPosition.Y);
+                switch (Obstacle.Type)
+                {
+                    case ObjectType.Square:
+                        Vector2 ImpactNormal = Vector2.Zero;
+                        Vector2 HitPoint = Vector2.Zero;
+                        LocalResult = CircleIntersectsSquare(NextPosition, Radius, ObstacleMin, ObstacleMax, out ImpactNormal, out HitPoint);
+                        if (LocalResult)
+                        {
+                            ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal);
+                            ConcurrentHitPoints.Add(HitPoint);
+                        }
+                        break;
+                    case ObjectType.Sphere:
+                        Vector2 ImpactNormal2 = Vector2.Zero;
+                        Vector2 HitPoint2 = Vector2.Zero;
+                        LocalResult = CircleIntersectsCircle(NextPosition, Radius, ObstacleCenter, Obstacle.SphereRadius, out ImpactNormal2, out HitPoint2);
+                        if (LocalResult)
+                        {
+                            ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal2);
+                            ConcurrentHitPoints.Add(HitPoint2);
+                        }
+                        break;
+                    case ObjectType.Cylinder:
+                        Vector2 ImpactNormal3 = Vector2.Zero;
+                        Vector2 HitPoint3 = Vector2.Zero;
+                        LocalResult = CircleIntersectsCircle(NextPosition, Radius, ObstacleCenter, Obstacle.CylinderRadius, out ImpactNormal3, out HitPoint3);
+                        if (LocalResult)
+                        {
+                            ConcurrentHitObstacles.Add(Obstacle);
+                            ConcurrentImpactNormals.Add(ImpactNormal3);
+                            ConcurrentHitPoints.Add(HitPoint3);
+                        }
+                        break;
+                }
+            });
+            HitObstacles = new List<ConvertObstacles>(ConcurrentHitObstacles);
+            ImpactNormals = new List<Vector2>(ConcurrentImpactNormals);
+            HitPoints = new List<Vector2>(ConcurrentHitPoints);
+
+            if(HitObstacles.Count > 0)
+            {
+                Result = true;
+            }
+
+            return Result;
         }
 
     }

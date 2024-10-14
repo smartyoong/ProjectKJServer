@@ -151,6 +151,11 @@ namespace GameServer.GameSystem
             return CollisionSystem.GetMapUsers(MapID);
         }
 
+        public List<ConvertObstacles> GetMapObstacles(int MapID)
+        {
+            return CollisionSystem.GetMapObstacles(MapID);
+        }
+
         public void CreateCharacter(ResponseDBCharBaseInfoPacket Info)
         {
 

@@ -1,16 +1,16 @@
-﻿using CoreUtility.Utility;
+﻿using CoreUtility.GlobalVariable;
+using CoreUtility.Utility;
 using GameServer.MainUI;
 using GameServer.Mehtod;
-using System.Collections.Concurrent;
+using GameServer.Object;
 using System.Numerics;
-using Windows.ApplicationModel.Background;
-using Windows.UI.Input;
 namespace GameServer.Component
 {
+    using Vector3 = System.Numerics.Vector3;
     interface Behaviors
     {
-         SteeringHandle? GetSteeringHandle(float Ratio ,Kinematic Character, Kinematic Target,float MaxSpeed,
-            float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget);
+        SteeringHandle? GetSteeringHandle(float Ratio, Kinematic Character, Kinematic Target, float MaxSpeed,
+           float MaxAccelerate, float MaxRotate, float MaxAngular, float TargetRadius, float SlowRadius, float TimeToTarget);
     }
 
     [Flags]
@@ -21,13 +21,13 @@ namespace GameServer.Component
         VelocityStop = 1 << 1,
         EqaulVelocityMove = 1 << 2,
         RotateStop = 1 << 3,
-        LockOn = 1 << 4, 
-        LookAtToMove = 1 << 5, 
-        EqualVelocityWander = 1 << 6, 
-        FollwPath = 1 << 7, 
-        EqualVelocityChase = 1 << 8, 
-        EqualVelocityRunAway = 1 << 9, 
-        OreintationChange = 1 << 10, 
+        LockOn = 1 << 4,
+        LookAtToMove = 1 << 5,
+        EqualVelocityWander = 1 << 6,
+        FollwPath = 1 << 7,
+        EqualVelocityChase = 1 << 8,
+        EqualVelocityRunAway = 1 << 9,
+        OreintationChange = 1 << 10,
     }
 
     // 조종할때 사용
@@ -77,11 +77,13 @@ namespace GameServer.Component
         public Kinematic PreviusCharacterStaticData { get => PreviusCharacterData; }
         private Kinematic Target;
         public Kinematic TargetStaticData { get => Target; }
-        private PathComponent? Path;
+        private Pawn Owner;
+        private float BlockRadius;
 
 
-        public KinematicComponent(Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius, PathComponent? Path)
+        public KinematicComponent(Pawn Owner, Vector3 Position, float MaxSpeed, float MaxAccelerate, float MaxRotation, float Radius, float CollisionRadius)
         {
+            this.Owner = Owner;
             CharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
             PreviusCharacterData = new Kinematic(Position, Vector3.Zero, 0, 0);
             this.MaxSpeed = MaxSpeed;
@@ -91,7 +93,7 @@ namespace GameServer.Component
             MaxAngular = 30;
             Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
             MoveFlag = (int)MoveType.None;
-            this.Path = Path;
+            BlockRadius = CollisionRadius;
         }
 
         private void AddMoveFlag(MoveType Flag)
@@ -125,10 +127,53 @@ namespace GameServer.Component
 
             // 이전 위치 업데이트
             PreviusCharacterData = CharacterData;
-            // 위치 업데이트
-            CharacterData.Position += CharacterData.Velocity * DeltaTime;
-            // 방위 업데이트 (기본적인 회전 속도)
-            CharacterData.Orientation += CharacterData.Rotation * DeltaTime;
+
+            Vector3 NextPosition = CharacterData.Position + CharacterData.Velocity * DeltaTime;
+
+            List<ConvertObstacles> HitObstacles = new List<ConvertObstacles>();
+            List<Vector2> HitPoints = new List<Vector2>();
+            List<Vector2> HitNormals = new List<Vector2>();
+            if (Owner.GetCollisionComponent().CheckPositionBlockByWall(Owner.GetCurrentMapID(), NextPosition, BlockRadius, ref HitObstacles, ref HitNormals, ref HitPoints))
+            {
+                // 캐릭터의 현재 위치를 가져옵니다.
+                Vector2 NewPosition = new Vector2(NextPosition.X, NextPosition.Y);
+                Vector2 CurrentPosition = new Vector2(PreviusCharacterStaticData.Position.X, PreviusCharacterStaticData.Position.Y);
+
+                // 충돌 지점에서의 법선 벡터를 이용하여 슬라이딩 벡터 계산
+                // 벡터를 평면에 투영하는 것은 벡터와 법선 벡터의 내적을 이용하여 계산
+                Vector2 Direction = NewPosition - CurrentPosition;
+                Vector2 SlideDirection = Vector2.Zero;
+                int DebugCount = 0;
+                for (int i = 0; i < HitNormals.Count; i++)
+                {
+                    //최초 1개만 찾고 끝내자
+                    if (HitNormals[i] != Vector2.Zero)
+                    {
+                        SlideDirection = Direction - Vector2.Dot(Direction, HitNormals[i]) * HitNormals[i];
+                        break;
+                    }
+                    DebugCount++;
+                }
+
+                // AdjustPosition을 CurrentPosition에서 SlideDirection을 더한 값으로 설정
+                Vector2 AdjustPosition = CurrentPosition + SlideDirection;
+
+                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}이 원에 막혀 위치가 조정됩니다. {AdjustPosition}");
+                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 슬라이드 방향 및 조정전 위치. {SlideDirection}, {CurrentPosition}");
+                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 Next랑 HitNormal. {NewPosition}, {HitNormals[DebugCount]} {DebugCount}");
+
+                // 조정된 위치로 업데이트
+                CharacterData.Position = new Vector3(AdjustPosition.X, AdjustPosition.Y, 0);
+                // 방위 업데이트 (기본적인 회전 속도)
+                CharacterData.Orientation += CharacterData.Rotation * DeltaTime;
+            }
+            else // 충돌하지 않았다면 그냥 업데이트 시킨다.
+            {
+                // 위치 업데이트
+                CharacterData.Position += CharacterData.Velocity * DeltaTime;
+                // 방위 업데이트 (기본적인 회전 속도)
+                CharacterData.Orientation += CharacterData.Rotation * DeltaTime;
+            }
 
             SteeringHandle TempHandle = new SteeringHandle(Vector3.Zero, 0);
 
@@ -154,12 +199,12 @@ namespace GameServer.Component
             if (HasFlag(MoveType.FollwPath))
             {
                 //경로가 없으면 행동을 안한다.
-                if(Path == null)
+                if (Owner.GetPathComponent() == null)
                 {
                     RemoveMoveFlag(MoveType.FollwPath);
                     return;
                 }
-
+                PathComponent Path = Owner.GetPathComponent();
                 FollowPathMethod FollowPath = new FollowPathMethod(ref Path);
                 SteeringHandle? Result = FollowPath.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
@@ -231,7 +276,7 @@ namespace GameServer.Component
                 }
             }
 
-                // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
+            // 속력을 완전 0으로 만들어주는 플래그 (강제 멈춤, 위치 강제 조정)
             if (HasFlag(MoveType.VelocityStop))
             {
                 CharacterData.Velocity = Vector3.Zero;
@@ -281,7 +326,7 @@ namespace GameServer.Component
                 }
             }
 
-            if(HasFlag(MoveType.OreintationChange))
+            if (HasFlag(MoveType.OreintationChange))
             {
                 // 방향을 현재 속력에 따라 바꾼는 플래그
                 CharacterData.Orientation = ConvertMathUtility.GetNewOrientationByVelocity(CharacterData.Orientation, CharacterData.Velocity);
