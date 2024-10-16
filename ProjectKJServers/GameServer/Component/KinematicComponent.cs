@@ -158,9 +158,9 @@ namespace GameServer.Component
                 // AdjustPosition을 CurrentPosition에서 SlideDirection을 더한 값으로 설정
                 Vector2 AdjustPosition = CurrentPosition + SlideDirection;
 
-                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}이 원에 막혀 위치가 조정됩니다. {AdjustPosition}");
-                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 슬라이드 방향 및 조정전 위치. {SlideDirection}, {CurrentPosition}");
-                LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 Next랑 HitNormal. {NewPosition}, {HitNormals[DebugCount]} {DebugCount}");
+                //LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}이 원에 막혀 위치가 조정됩니다. {AdjustPosition}");
+                //LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 슬라이드 방향 및 조정전 위치. {SlideDirection}, {CurrentPosition}");
+                //LogManager.GetSingletone.WriteLog($"캐릭터 {Owner.GetAccountID()}의 Next랑 HitNormal. {NewPosition}, {HitNormals[DebugCount]} {DebugCount}");
 
                 // 조정된 위치로 업데이트
                 CharacterData.Position = new Vector3(AdjustPosition.X, AdjustPosition.Y, 0);
@@ -283,7 +283,7 @@ namespace GameServer.Component
                 TempHandle.Linear = Vector3.Zero;
                 CharacterData.Position = Target.Position;
                 RemoveMoveFlag(MoveType.VelocityStop);
-                LogManager.GetSingletone.WriteLog($"강제로 멈춤 {CharacterData.Position}");
+                LogManager.GetSingletone.WriteLog($"도착! {CharacterData.Position}");
             }
 
             // 속도 업데이트
