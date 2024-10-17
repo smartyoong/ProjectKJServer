@@ -318,8 +318,8 @@ namespace GameServer.PacketPipeLine
                 System.Numerics.Vector3 Destination = Character.GetMovementComponent().TargetStaticData.Position;
                 System.Numerics.Vector3 Position = Character.GetMovementComponent().CharcaterStaticData.Position;
                 string NickName = MainProxy.GetSingletone.GetNickName(User.GetAccountID());
-                // 목표점이 없다는건 이동할 곳이 없다는 것이다.
-                if(Destination == System.Numerics.Vector3.Zero)
+                // 목표점이 이동점과 같다는 것은 이동중이 아니라는 것을 의미한다.
+                if (Destination == Position)
                 {
                     Destination.X = -1;
                     Destination.Y = -1;

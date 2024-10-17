@@ -91,7 +91,7 @@ namespace GameServer.Component
             this.MaxRotation = MaxRotation;
             this.Radius = Radius;
             MaxAngular = 30;
-            Target = new Kinematic(Vector3.Zero, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
+            Target = new Kinematic(Position, Vector3.Zero, INVALID_RADIAN, INVALID_RADIAN);
             MoveFlag = (int)MoveType.None;
             BlockRadius = CollisionRadius;
         }
@@ -377,31 +377,6 @@ namespace GameServer.Component
             //AddMoveFlag(MoveType.Move);
             //AddMoveFlag(MoveType.LookAtToMove);
             return true;
-        }
-
-        public void AdjustCurrentPosition(Vector3 Position)
-        {
-            // 아예 이 인스턴스를 잠궈서 다른 Update도 못하게 막아야할듯 데드락 발생하면 수정하자
-            lock (this)
-            {
-                CharacterData.Position = Position;
-            }
-        }
-
-        public void StopMove(Vector3? TargetPosition)
-        {
-            //일단은 강제로 멈추게 해보자 그리고 이동관련 로직을 좀 쳐내자
-            //일단 CollisionComponent 밖으로 밀어내고 멈추도록 수정해보자
-            ClearAllFlag();
-            if (TargetPosition != null)
-            {
-                Target.Position = TargetPosition.Value;
-            }
-            else
-            {
-                Target.Position = CharacterData.Position;
-            }
-            AddMoveFlag(MoveType.VelocityStop);
         }
     }
 
