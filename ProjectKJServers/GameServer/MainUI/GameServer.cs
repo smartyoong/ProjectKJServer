@@ -153,6 +153,11 @@ namespace GameServer
             WriteFileLog("DB 서버와 연결되었습니다.");
             WriteFileLog("클라이언트의 연결을 받겠습니다..");
             MainProxy.GetSingletone.StartAcceptClient();
+
+            // 임시 테스트 코드
+            ArcKinematicComponent Test = new ArcKinematicComponent(new System.Numerics.Vector3(0,0,0), new System.Numerics.Vector3(100, 100, 0), 500000);
+            MainProxy.GetSingletone.AddArcKinematicComponent(Test);
+            LogManager.GetSingletone.WriteLog("테스트 시작.");
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)

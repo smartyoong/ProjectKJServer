@@ -14,9 +14,8 @@ namespace GameServer.Component
     {
         private Vector3 CurrentPosition;
         private Vector3 Gravity;
-        private float ElapsedTime;
         private Vector3 TargetPosition;
-        private float Threshold = 0.3f;
+        private float Threshold = 1f;
         private bool IsAlreadyArrived = false;
         private Vector3? Velocity = Vector3.Zero;
         private float Speed;
@@ -25,7 +24,6 @@ namespace GameServer.Component
         {
             TargetPosition = End;
             Gravity = new Vector3(0,0,-9.8f);
-            ElapsedTime = 0;
             CurrentPosition = Start;
             Speed = MuzzleV;
         }
@@ -40,12 +38,13 @@ namespace GameServer.Component
             return true;
         }
 
+        // 여길 좀더 테스트해야하나
         private static Vector3? CalculateFiringSolution(Vector3 Start, Vector3 End, float MuzzleV, Vector3 Gravity)
         {
             Vector3 Delta = End - Start;
             float a = Gravity.LengthSquared();
-            float b = -4 * (Vector3.Dot(Gravity * Delta, Gravity * Delta) + MuzzleV * MuzzleV);
-            float c = Delta.LengthSquared();
+            float b = -4 * (Vector3.Dot(Gravity,Delta) + MuzzleV * MuzzleV);
+            float c = 4 * Delta.LengthSquared();
 
             float Discriminant = b * b - 4 * a * c;
             if (Discriminant < 0)
@@ -60,9 +59,13 @@ namespace GameServer.Component
             if (Time0 < 0)
             {
                 if (Time1 < 0)
+                {
                     return null;
+                }
                 else
+                {
                     ttt = Time1;
+                }
             }
             else
             {
@@ -100,6 +103,7 @@ namespace GameServer.Component
 
             // 로그를 통해 현재 위치를 출력
             LogManager.GetSingletone.WriteLog($"Current Position: {CurrentPosition}");
+            LogManager.GetSingletone.WriteLog($"Velocity : {Velocity}");
 
             // 목표 위치에 도달했는지 확인
             if (Vector3.Distance(CurrentPosition, TargetPosition) <= Threshold)
