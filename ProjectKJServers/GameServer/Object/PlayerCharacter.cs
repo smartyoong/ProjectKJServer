@@ -92,6 +92,7 @@ namespace GameServer.Object
             LineTracerComponent.BeginCollideWithObstacleDelegate = OnObstacleBlock;
             CircleCollisionComponent.EndCollideWithObstacleDelegate = OnEndObsatcleBlock;
             LineTracerComponent.EndCollideWithObstacleDelegate = OnEndObsatcleBlock;
+            CircleCollisionComponent.CollideWithPawnDelegate = OnPawnBlock;
 
             PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
             MainProxy.GetSingletone.AddUserToMap(this);
@@ -182,6 +183,11 @@ namespace GameServer.Object
                     IsLineCollideObstacle = false;
                     break;
             }
+        }
+
+        public void OnPawnBlock(CollisionType Type, PawnType PAwnType, Pawn Who, Vector2 Normal, Vector2 HitPoint)
+        {
+            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Who.GetAccountID()}에게 {Type} 충돌했습니다.");
         }
     }
 }

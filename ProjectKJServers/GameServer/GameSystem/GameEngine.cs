@@ -21,15 +21,17 @@ namespace GameServer.GameSystem
         private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
 
-        CollisionSystem CollisionSystem;
-        KinematicMoveSystem KinematicMovementSystem;
-        ResourceLoader ResourceLoader;
+        private CollisionSystem CollisionSystem;
+        private KinematicMoveSystem KinematicMovementSystem;
+        private ResourceLoader ResourceLoader;
+        private ArcKinematicSystem ArcKinematicSystem;
 
         public GameEngine()
         {
             CollisionSystem = new CollisionSystem();
             KinematicMovementSystem = new KinematicMoveSystem();
             ResourceLoader = new ResourceLoader();
+            ArcKinematicSystem = new ArcKinematicSystem();
         }
 
         public void Start()
@@ -54,6 +56,7 @@ namespace GameServer.GameSystem
                 {
                     CollisionSystem.Update();
                     KinematicMovementSystem.Update();
+                    ArcKinematicSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -94,6 +97,16 @@ namespace GameServer.GameSystem
         public void RemoveKinematicComponentFromSystem(KinematicComponent Component, int Count)
         {
             KinematicMovementSystem.RemoveComponent(Component, Count);
+        }
+
+        public void AddArcKinematicComponentToSystem(ArcKinematicComponent Component)
+        {
+            ArcKinematicSystem.AddComponent(Component);
+        }
+
+        public void RemoveArcKinematicComponentFromSystem(ArcKinematicComponent Component, int Count)
+        {
+            ArcKinematicSystem.RemoveComponent(Component, Count);
         }
 
         public void AddUserToMap(Pawn Character)
