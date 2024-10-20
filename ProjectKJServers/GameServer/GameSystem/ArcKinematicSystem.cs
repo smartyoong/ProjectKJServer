@@ -12,7 +12,7 @@ namespace GameServer.GameSystem
     internal class ArcKinematicSystem
     {
         private ConcurrentBag<ArcKinematicComponent> ArcKinematicComponents;
-        private long LastTickCount = 0;
+        private long LastTickCount = Environment.TickCount64;
         public ArcKinematicSystem()
         {
             ArcKinematicComponents = new ConcurrentBag<ArcKinematicComponent>();
