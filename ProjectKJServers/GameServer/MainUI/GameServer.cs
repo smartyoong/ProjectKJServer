@@ -155,9 +155,16 @@ namespace GameServer
             MainProxy.GetSingletone.StartAcceptClient();
 
             // 임시 테스트 코드
-            ArcKinematicComponent Test = new ArcKinematicComponent(new System.Numerics.Vector3(0,0,0), new System.Numerics.Vector3(100, 100, 0), 500000);
-            MainProxy.GetSingletone.AddArcKinematicComponent(Test);
-            LogManager.GetSingletone.WriteLog("테스트 시작.");
+            ArcKinematicComponent Test = new ArcKinematicComponent(new System.Numerics.Vector3(0,0,0), new System.Numerics.Vector3(10, 10, 0), 0);
+            if(Test.CalculateTrajectory())
+            {
+                MainProxy.GetSingletone.AddArcKinematicComponent(Test);
+                LogManager.GetSingletone.WriteLog("테스트 시작.");
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog("테스트 실패.");
+            }
         }
 
         private async void ServerStopButton_Click(object sender, EventArgs e)

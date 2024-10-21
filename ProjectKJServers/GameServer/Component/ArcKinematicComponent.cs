@@ -12,104 +12,112 @@ namespace GameServer.Component
 {
     internal class ArcKinematicComponent
     {
+        public Vector3 StartPosition { get; private set; }
+        public Vector3 TargetPosition { get; private set; }
+        public float InitialSpeed { get; private set; }
+        public Vector3 Gravity { get; private set; } = new Vector3(0, 0, -9.81f);
+
+        private Vector3 Velocity;
         private Vector3 CurrentPosition;
-        private Vector3 Gravity;
-        private Vector3 TargetPosition;
-        private float Threshold = 1f;
-        private bool IsAlreadyArrived = false;
-        private Vector3? Velocity = Vector3.Zero;
-        private float Speed;
+        private float ElapsedTime;
+        private bool IsLaunched = false;
 
-        public ArcKinematicComponent(Vector3 Start, Vector3 End, float MuzzleV)
+        public ArcKinematicComponent(Vector3 Start, Vector3 Target, float Speed)
         {
-            TargetPosition = End;
-            Gravity = new Vector3(0,0,-9.8f);
-            CurrentPosition = Start;
-            Speed = MuzzleV;
-        }
-
-        public static bool CheckCanShoot(Vector3 Start, Vector3 End, float MuzzleV, Vector3 Gravity)
-        {
-            Vector3? Solution = CalculateFiringSolution(Start, End, MuzzleV, Gravity);
-            if (Solution == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        // 여길 좀더 테스트해야하나
-        private static Vector3? CalculateFiringSolution(Vector3 Start, Vector3 End, float MuzzleV, Vector3 Gravity)
-        {
-            Vector3 Delta = End - Start;
-            float a = Gravity.LengthSquared();
-            float b = -4 * (Vector3.Dot(Gravity,Delta) + MuzzleV * MuzzleV);
-            float c = 4 * Delta.LengthSquared();
-
-            float Discriminant = b * b - 4 * a * c;
-            if (Discriminant < 0)
-            {
-                return null;
-            }
-
-            float Time0 = (float)Math.Sqrt((-b + Math.Sqrt(Discriminant)) / (2 * a));
-            float Time1 = (float)Math.Sqrt((-b - Math.Sqrt(Discriminant)) / (2 * a));
-
-            float ttt = 0;
-            if (Time0 < 0)
-            {
-                if (Time1 < 0)
-                {
-                    return null;
-                }
-                else
-                {
-                    ttt = Time1;
-                }
-            }
+            StartPosition = Start;
+            TargetPosition = Target;
+            if(Speed > 0)
+                InitialSpeed = Speed;
             else
+                InitialSpeed = CalculateInitialSpeed(Start, Target, 45, Gravity);
+            CurrentPosition = Start;
+        }
+
+        // 궤적을 계산해서 발사가 가능한지 확인
+        public bool CalculateTrajectory()
+        {
+            Vector3 ToTarget = TargetPosition - StartPosition; // 거리 벡터
+            float HorizontalDistance = new Vector3(ToTarget.X, ToTarget.Y, 0).Length(); // 수평 거리
+            float Height = ToTarget.Z; // 높이
+
+            // 발사각 계산
+            float Angle = CalculateLaunchAngle(HorizontalDistance, Height, InitialSpeed, Math.Abs(Gravity.Z));
+            if (!float.IsNaN(Angle))
             {
-                if (Time1 < 0)
-                {
-                    ttt = Time0;
-                }
-                else
-                {
-                    ttt = Math.Min(Time0, Time1); // Max를 리턴하면 높은 궤적을 선택하게됨
-                }
+                LogManager.GetSingletone.WriteLog($"Launch angle: {Angle * 180 / Math.PI:F2} degrees");
+                LogManager.GetSingletone.WriteLog($"Initial speed: {InitialSpeed:F2} m/s");
+                // 유효하면 발사
+                SetVelocity(Angle);
+                return true;
             }
 
-            return (Delta * 2 - Gravity * (ttt * ttt)) / (2 * MuzzleV * ttt);
+            return false;
+        }
+
+        //주어진 각도로 계산하기 위한 속도 계산 (45도 발사는 가장 빠름)
+        private float CalculateInitialSpeed(Vector3 Start, Vector3 Target, float Angle, Vector3 Gravity)
+        {
+            Vector3 ToTarget = Target - Start; // 거리 벡터
+            float HorizontalDistance = new Vector3(ToTarget.X, ToTarget.Y, 0).Length(); // 수평 거리
+            float Height = ToTarget.Z; // 높이
+
+            float AngleRad = Angle * (float)Math.PI / 180.0f; // 각도를 라디안으로 변환
+            float CosAngle = (float)Math.Cos(AngleRad); // 코사인 X
+            float SinAngle = (float)Math.Sin(AngleRad); // 사인 Y
+            float TanAngle = (float)Math.Tan(AngleRad); // 탄젠트 Z
+
+            // 발사체 운동 공식 속도^2 = (중력 * 수평거리^2) / (2 * 코사인 * 코사인 * (높이 - 수평거리 * 탄젠트))
+            float SpeedSquared = (Gravity.Z * HorizontalDistance * HorizontalDistance) / (2 * CosAngle * CosAngle * (Height - HorizontalDistance * TanAngle));
+            return (float)Math.Sqrt(Math.Abs(SpeedSquared)); // 속도의 절대값을 사용하여 음수 방지
+        }
+
+        // 주어진 속도 높이 등을 기반으로 발사 각도 계산
+        private float CalculateLaunchAngle(float HorizontalDistance, float Height, float Speed, float Gravity)
+        {
+            float SpeedSquared = Speed * Speed; // 속도 제곱
+            // 루트값 계산
+            float Root = (float)Math.Sqrt(SpeedSquared * SpeedSquared - Gravity * (Gravity * HorizontalDistance * HorizontalDistance + 2 * Height * SpeedSquared));
+            // 첫번째 항
+            float Term1 = SpeedSquared + Root;
+            // 두번째 항
+            float Term2 = Gravity * HorizontalDistance;
+            // 발사각도 = 아크탄젠트(첫번째항 / 두번째항)
+            return (float)Math.Atan2(Term1, Term2);
+        }
+        // 최종적으로 발사체 속도를 지정한다. (발사된다)
+        private void SetVelocity(float Angle)
+        {
+            Vector3 ToTarget = TargetPosition - StartPosition; // 거리 벡터
+            Vector3 Horizontal = Vector3.Normalize(new Vector3(ToTarget.X, ToTarget.Y, 0)); // 수평 거리
+            Velocity = Horizontal * InitialSpeed * (float)Math.Cos(Angle); // 수평 속도
+            Velocity.Z = InitialSpeed * (float)Math.Sin(Angle); // 수직 속도
+            IsLaunched = true;
         }
 
         public void Update(float DeltaTime)
         {
-            if (IsAlreadyArrived)
+            if (!IsLaunched) 
                 return;
 
-            DeltaTime /= 1000; // DeltaTime을 초 단위로 변환
+            // 밀리초를 초로 변환
+            DeltaTime /= 1000f;
+            ElapsedTime += DeltaTime;
 
-            Velocity = CalculateFiringSolution(CurrentPosition, TargetPosition, Speed, Gravity);
+            // 현재 위치 계산 (이동거리 = 속도 * 시간 + 0.5 * 중력 * 시간^2) 운동방정식
+            Vector3 Displacement = Velocity * ElapsedTime + 0.5f * Gravity * ElapsedTime * ElapsedTime;
+            CurrentPosition = StartPosition + Displacement;
+            // 로깅용 현재 속도 계산
+            Vector3 CurrentVelocity = Velocity + Gravity * ElapsedTime;
 
-            if (Velocity == null)
+            // 로깅 (필요에 따라 주석 처리 또는 제거 가능)
+            LogManager.GetSingletone.WriteLog($"Time: {ElapsedTime:F2}s, Position: {CurrentPosition}, Velocity: {CurrentVelocity}");
+
+            if (Displacement.Z <= 0 && ElapsedTime > 0.1f)
             {
-                LogManager.GetSingletone.WriteLog($"Cannot shoot the target! {CurrentPosition} {TargetPosition}");
-                IsAlreadyArrived = true;
-                return;
-            }
-
-            // 위치 = 속도 * 시간
-            CurrentPosition += Velocity.Value * DeltaTime;
-
-            // 로그를 통해 현재 위치를 출력
-            LogManager.GetSingletone.WriteLog($"Current Position: {CurrentPosition}");
-            LogManager.GetSingletone.WriteLog($"Velocity : {Velocity}");
-
-            // 목표 위치에 도달했는지 확인
-            if (Vector3.Distance(CurrentPosition, TargetPosition) <= Threshold)
-            {
-                LogManager.GetSingletone.WriteLog("Target reached!");
-                IsAlreadyArrived = true;
+                float t = (-Velocity.Z - (float)Math.Sqrt(Velocity.Z * Velocity.Z - 2 * Gravity.Z * (StartPosition.Z - TargetPosition.Z))) / Gravity.Z;
+                CurrentPosition = StartPosition + Velocity * t + 0.5f * Gravity * t * t;
+                LogManager.GetSingletone.WriteLog($"Target reached at: {CurrentPosition}");
+                IsLaunched = false;
             }
         }
 
@@ -118,9 +126,9 @@ namespace GameServer.Component
             return CurrentPosition;
         }
 
-        public bool IsArrived()
+        public bool HasReachedTarget()
         {
-            return IsAlreadyArrived;
+            return !IsLaunched;
         }
     }
 }
