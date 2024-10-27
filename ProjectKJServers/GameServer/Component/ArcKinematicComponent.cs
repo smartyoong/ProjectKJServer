@@ -40,6 +40,12 @@ namespace GameServer.Component
             float HorizontalDistance = new Vector3(ToTarget.X, ToTarget.Y, 0).Length(); // 수평 거리
             float Height = ToTarget.Z; // 높이
 
+            if(HorizontalDistance == 0)
+            {
+                LogManager.GetSingletone.WriteLog("Target is at the same position as the start");
+                return false;
+            }
+
             // 발사각 계산
             float Angle = CalculateLaunchAngle(HorizontalDistance, Height, InitialSpeed, Math.Abs(Gravity.Z));
             if (!float.IsNaN(Angle))
