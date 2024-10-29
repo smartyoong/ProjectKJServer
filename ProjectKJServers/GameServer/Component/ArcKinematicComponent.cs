@@ -21,6 +21,7 @@ namespace GameServer.Component
         private Vector3 CurrentPosition;
         private float ElapsedTime;
         private bool IsLaunched = false;
+        public Action? WhenArrived;
 
         public ArcKinematicComponent(Vector3 Start, Vector3 Target, float Speed)
         {
@@ -124,6 +125,8 @@ namespace GameServer.Component
                 CurrentPosition = StartPosition + Velocity * t + 0.5f * Gravity * t * t;
                 LogManager.GetSingletone.WriteLog($"Target reached at: {CurrentPosition}");
                 IsLaunched = false;
+                //도착했으니 도착 델리게이트를 활성화 시킨다.
+                WhenArrived?.Invoke();
             }
         }
 
