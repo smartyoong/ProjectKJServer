@@ -129,15 +129,5 @@ namespace GameServer.Component
                 WhenArrived?.Invoke();
             }
         }
-
-        public Vector3 GetCurrentPosition()
-        {
-            return CurrentPosition;
-        }
-
-        public bool HasReachedTarget()
-        {
-            return !IsLaunched;
-        }
     }
 }
