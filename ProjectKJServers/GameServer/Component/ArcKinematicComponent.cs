@@ -15,7 +15,7 @@ namespace GameServer.Component
         public Vector3 StartPosition { get; private set; }
         public Vector3 TargetPosition { get; private set; }
         public float InitialSpeed { get; private set; }
-        public Vector3 Gravity { get; private set; } = new Vector3(0, 0, -9.81f);
+        public Vector3 Gravity { get; private set; } = new Vector3(0, 0, -980f);
 
         private Vector3 Velocity;
         private Vector3 CurrentPosition;
@@ -113,10 +113,10 @@ namespace GameServer.Component
             Vector3 Displacement = Velocity * ElapsedTime + 0.5f * Gravity * ElapsedTime * ElapsedTime;
             CurrentPosition = StartPosition + Displacement;
             // 로깅용 현재 속도 계산
-            Vector3 CurrentVelocity = Velocity + Gravity * ElapsedTime;
+            //Vector3 CurrentVelocity = Velocity + Gravity * ElapsedTime;
 
             // 로깅 (필요에 따라 주석 처리 또는 제거 가능)
-            LogManager.GetSingletone.WriteLog($"Time: {ElapsedTime:F2}s, Position: {CurrentPosition}, Velocity: {CurrentVelocity}");
+            //LogManager.GetSingletone.WriteLog($"Time: {ElapsedTime:F2}s, Position: {CurrentPosition}, Velocity: {CurrentVelocity}");
 
             if (Displacement.Z <= 0 && ElapsedTime > 0.1f)
             {
