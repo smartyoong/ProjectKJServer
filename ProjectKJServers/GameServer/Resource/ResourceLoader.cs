@@ -76,9 +76,9 @@ namespace GameServer.Resource
                     continue;
                 }
                 List<ConvertObstacles> ConvertObstacles = new List<ConvertObstacles>();
-                foreach(var Obs in Data.Obstacles)
+                foreach (var Obs in Data.Obstacles)
                 {
-                    switch(Obs.MeshName)
+                    switch (Obs.MeshName)
                     {
                         case "SM_Floor":
                             break;
@@ -89,7 +89,7 @@ namespace GameServer.Resource
                             ConvertObstacles.Add(ConvertMathUtility.CalculateSphereVertex(Obs, Obs.MeshName));
                             break;
                         default:
-                            ConvertObstacles.Add(ConvertMathUtility.CalculateSquareVertex(Obs,Obs.MeshName));
+                            ConvertObstacles.Add(ConvertMathUtility.CalculateSquareVertex(Obs, Obs.MeshName));
                             break;
                     }
                 }
@@ -100,7 +100,7 @@ namespace GameServer.Resource
             }
         }
 
-        public void LoadCharacterPreset(ref Dictionary<int, CharacterPresetData> MapDataDictionary)
+        public void LoadCharacterPreset(ref Dictionary<int, CharacterPresetData> CharPrestDataDictionary)
         {
             LogManager.GetSingletone.WriteLog("캐릭터 외형 정보를 로드합니다.");
             foreach (string JsonFile in Directory.GetFiles(Path.Combine(GameServerSettings.Default.ResourceDicrectory, "CharacterPreset"), "*.json"))
@@ -119,9 +119,20 @@ namespace GameServer.Resource
                 }
 
                 if (Data != null)
-                    MapDataDictionary.Add(Data.PresetID,Data);
+                    CharPrestDataDictionary.Add(Data.PresetID, Data);
                 else
                     LogManager.GetSingletone.WriteLog($"캐릭터 외형 정보를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
+            }
+        }
+
+        public void MakeMapGraph(ref Dictionary<int, Graph> MapGraphDictionary, ref readonly Dictionary<int, MapData> MapDataDictionary)
+        {
+            LogManager.GetSingletone.WriteLog("맵 그래프를 생성합니다.");
+            MapGraph GraphMaker = new MapGraph();
+            foreach (var Data in MapDataDictionary)
+            {
+                Graph MapGraph = GraphMaker.MakeGraph(Data.Value, 100); // 100으로 하니까 너무 많다
+                MapGraphDictionary.Add(Data.Key, MapGraph);
             }
         }
     }

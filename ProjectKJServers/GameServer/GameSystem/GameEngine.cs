@@ -18,6 +18,7 @@ namespace GameServer.GameSystem
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
+        private Dictionary<int, Graph> MapGraphDictionary = new Dictionary<int, Graph>();
         private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
 
@@ -46,6 +47,7 @@ namespace GameServer.GameSystem
             ResourceLoader.LoadMapData(ref MapDataDictionary);
             CollisionSystem.SetMapData(ref MapDataDictionary);
             ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
+            ResourceLoader.MakeMapGraph(ref MapGraphDictionary, in MapDataDictionary);
         }
 
         private void Run()
