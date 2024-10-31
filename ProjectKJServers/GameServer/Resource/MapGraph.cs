@@ -14,53 +14,44 @@ namespace GameServer.Resource
     {
         private bool CanMove;
         private int NodeID;
-        private List<int> ConnectedNodeID;
+        private List<KeyValuePair<int, float>> ConnectedNodeID;
         private float X;
         private float Y;
+        // 추후 A*에서 사용할때 휴리스틱을 캐싱할 변수
+        private float Heuristic;
 
         public Node(int NodeID, float x, float y)
         {
             this.NodeID = NodeID;
             CanMove = true;
-            ConnectedNodeID = new List<int>();
+            ConnectedNodeID = new List<KeyValuePair<int, float>>();
             X = x;
             Y = y;
+            // 휴리스틱은 -1로 초기화 현재 할당이 안되었다는 뜻
+            Heuristic = -1;
         }
 
-        public void AddConnectedNode(int NodeID)
+        public void AddConnectedNode(int NodeID, float Weight)
         {
-            ConnectedNodeID.Add(NodeID);
+            ConnectedNodeID.Add(new KeyValuePair<int, float>(NodeID, Weight));
         }
 
         public void RemoveConnectedNode(int NodeID)
         {
-            ConnectedNodeID.Remove(NodeID);
+            ConnectedNodeID.RemoveAll(kvp => kvp.Key == NodeID);
         }
 
-        public void SetCanMove(bool CanMove)
-        {
-            this.CanMove = CanMove;
-        }
+        public void SetCanMove(bool CanMove) => this.CanMove = CanMove;
 
-        public int GetNodeID()
-        {
-            return NodeID;
-        }
+        public int GetNodeID() => NodeID;
 
-        public List<int> GetConnectedNodes()
-        {
-            return ConnectedNodeID;
-        }
+        public List<KeyValuePair<int, float>> GetConnectedNodes() => ConnectedNodeID;
 
-        public float GetX()
-        {
-            return X;
-        }
+        public float GetX() => X;
 
-        public float GetY()
-        {
-            return Y;
-        }
+        public float GetY() => Y;
+        public float GetHeuristic() => Heuristic;
+        public void SetHeuristic(float heuristic) => Heuristic = heuristic;
     }
 
 
@@ -188,49 +179,49 @@ namespace GameServer.Resource
                 // 오른쪽 노드 연결
                 if (NodeDict.ContainsKey((x + NodeSize, y)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y)].GetNodeID(), 1f);
                 }
 
                 // 위쪽 노드 연결
                 if (NodeDict.ContainsKey((x, y + NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x, y + NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x, y + NodeSize)].GetNodeID(), 1f);
                 }
 
                 // 왼쪽 노드 연결
                 if (NodeDict.ContainsKey((x - NodeSize, y)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y)].GetNodeID(), 1f);
                 }
 
                 // 아래쪽 노드 연결
                 if (NodeDict.ContainsKey((x, y - NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x, y - NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x, y - NodeSize)].GetNodeID(), 1f);
                 }
 
-                // 오른쪽 위 대각선 노드 연결
+                // 오른쪽 위 대각선 노드 연결 대각선은 피타고라스 정리에 의해 루트2로 가중치를 둔다
                 if (NodeDict.ContainsKey((x + NodeSize, y + NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y + NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y + NodeSize)].GetNodeID(), 1.414f);
                 }
 
                 // 오른쪽 아래 대각선 노드 연결
                 if (NodeDict.ContainsKey((x + NodeSize, y - NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y - NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x + NodeSize, y - NodeSize)].GetNodeID(), 1.414f);
                 }
 
                 // 왼쪽 위 대각선 노드 연결
                 if (NodeDict.ContainsKey((x - NodeSize, y + NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y + NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y + NodeSize)].GetNodeID(), 1.414f);
                 }
 
                 // 왼쪽 아래 대각선 노드 연결
                 if (NodeDict.ContainsKey((x - NodeSize, y - NodeSize)))
                 {
-                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y - NodeSize)].GetNodeID());
+                    CurrentNode.AddConnectedNode(NodeDict[(x - NodeSize, y - NodeSize)].GetNodeID(), 1.414f);
                 }
 
                 // 디버깅용
