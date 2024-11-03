@@ -48,6 +48,50 @@ namespace GameServer.GameSystem
             CollisionSystem.SetMapData(ref MapDataDictionary);
             ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
             ResourceLoader.MakeMapGraph(ref MapGraphDictionary, in MapDataDictionary);
+#if DEBUG
+            LogManager.GetSingletone.WriteLog("A* 알고리즘을 테스트합니다.");
+            EuclideanHuristic HuristicMethod = new EuclideanHuristic();
+            AStarPathFindSystem AStarPathFindSystem = new AStarPathFindSystem();
+            List<Node>? Result = AStarPathFindSystem.FindPath(MapGraphDictionary[0], new Node(200, 200), new Node(2800, 3200), HuristicMethod);
+
+            float MaxX = MapDataDictionary[0].MapBoundX;
+            float MaxY = MapDataDictionary[0].MapBoundY;
+            float MinX = 0;
+            float MinY = 0;
+            int NodeSize = 100;
+            string[,] map = new string[(int)MaxX + 1, (int)MaxY + 1];
+            for (int i = (int)MinX; i <= (int)MaxX; i += (int)NodeSize)
+            {
+                for (int j = (int)MinY; j <= (int)MaxY; j += (int)NodeSize)
+                {
+                    map[i, j] = "-     ";
+                }
+            }
+
+            if (Result == null)
+                LogManager.GetSingletone.WriteLog("경로를 찾을 수 없습니다.");
+            else
+            {
+                LogManager.GetSingletone.WriteLog("경로를 찾았습니다.");
+
+                foreach (var Node in Result)
+                {
+                    LogManager.GetSingletone.WriteLog($"Node ({Node.GetX()}, {Node.GetY()})");
+                    map[(int)Node.GetX(), (int)Node.GetY()] = "*     ";
+                }
+            }
+
+            for (int j = (int)MaxX; j >= (int)MinX; j--)
+            {
+                string DebugString = string.Empty;
+                for (int i = (int)MinY; i <= (int)MaxY; i += (int)NodeSize)
+                {
+                    DebugString += map[j, i];
+                }
+                if (DebugString != string.Empty)
+                    LogManager.GetSingletone.WriteLog(DebugString);
+            }
+#endif
         }
 
         private void Run()

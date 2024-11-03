@@ -10,7 +10,7 @@ using System.Xml.Linq;
 
 namespace GameServer.Resource
 {
-    public class Node
+    public struct Node
     {
         private float X;
         private float Y;
@@ -24,6 +24,33 @@ namespace GameServer.Resource
         public float GetX() => X;
 
         public float GetY() => Y;
+
+        // 길찾기에서 편한하게 사용하려고 오버로딩
+        public static bool operator == (Node lhs, Node rhs)
+        {
+            return lhs.X == rhs.X && lhs.Y == rhs.Y;
+        }
+
+        public static bool operator != (Node lhs, Node rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is Node other)
+            {
+                return this == other;
+            }
+            return false;
+        }
+
+        // HashSet을 작동시키기 위해서 오버로딩
+        public override int GetHashCode()
+        {
+            return X.GetHashCode() ^ Y.GetHashCode();
+        }
+
     }
 
     public class Connection
