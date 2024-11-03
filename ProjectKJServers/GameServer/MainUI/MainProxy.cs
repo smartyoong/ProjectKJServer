@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GameServer.Component;
 using GameServer.Object;
+using GameServer.Resource;
 
 namespace GameServer.MainUI
 {
@@ -145,6 +146,11 @@ namespace GameServer.MainUI
         public PlayerCharacter? GetCharacterByAccountID(string AccountID)
         {
             return GameEngineClass.GetCharacterByAccountID(AccountID);
+        }
+
+        public Graph? GetMapGraph(int MapID)
+        {
+            return GameEngineClass.GetMapGraph(MapID);
         }
 
         ////////////////////////////////////////////////////////////////////////

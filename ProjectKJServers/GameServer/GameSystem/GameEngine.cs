@@ -265,5 +265,12 @@ namespace GameServer.GameSystem
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 찾을 수 없습니다.");
             }
         }
+
+        public Graph? GetMapGraph(int MapID)
+        {
+            if(MapGraphDictionary.ContainsKey(MapID))
+                return MapGraphDictionary[MapID];
+            return null;
+        }
     }
 }
