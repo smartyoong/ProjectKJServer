@@ -7,14 +7,25 @@ using System.Threading.Tasks;
 
 namespace GameServer.Component
 {
-    internal class BehaviorTree
+    internal class BehaviorTreeComponent
     {
         BlackBoard Board;
-        RootBehavior Root;
-        public BehaviorTree()
+        RootBehavior RootBehavior;
+        public BehaviorTreeComponent(IBehavior StartNode)
         {
             Board = new BlackBoard();
-            Root = new RootBehavior();
+            RootBehavior = new RootBehavior(StartNode);
+        }
+        public bool IsRunningNow()
+        {
+            return RootBehavior.IsRunningNow()  == 0 ? false : true;
+        }
+        public void Run()
+        {
+            Task.Run(async () =>
+            {
+                await RootBehavior.Run(Board);
+            });
         }
     }
 }

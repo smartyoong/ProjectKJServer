@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using GameServer.Component;
 using CoreUtility.Utility;
+using CoreUtility.GlobalVariable;
 
 namespace GameServer.GameSystem
 {
-    internal class ArcKinematicSystem
+    internal class ArcKinematicSystem : IComponentSystem
     {
         private ConcurrentBag<ArcKinematicComponent> ArcKinematicComponents;
         private long LastTickCount = Environment.TickCount64;

@@ -26,6 +26,7 @@ namespace GameServer.GameSystem
         private KinematicMoveSystem KinematicMovementSystem;
         private ResourceLoader ResourceLoader;
         private ArcKinematicSystem ArcKinematicSystem;
+        private BehaviorTreeSystem BehaviorSystem;
 
         public GameEngine()
         {
@@ -33,6 +34,7 @@ namespace GameServer.GameSystem
             KinematicMovementSystem = new KinematicMoveSystem();
             ResourceLoader = new ResourceLoader();
             ArcKinematicSystem = new ArcKinematicSystem();
+            BehaviorSystem = new BehaviorTreeSystem();
         }
 
         public void Start()
@@ -103,6 +105,7 @@ namespace GameServer.GameSystem
                     CollisionSystem.Update();
                     KinematicMovementSystem.Update();
                     ArcKinematicSystem.Update();
+                    BehaviorSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -133,6 +136,16 @@ namespace GameServer.GameSystem
                 GameEngineCancleToken.Dispose();
             }
             IsAlreadyDisposed = true;
+        }
+
+        public void AddBehaviorTreeComponentToSystem(BehaviorTreeComponent Behavior)
+        {
+            BehaviorSystem.AddComponent(Behavior);
+        }
+
+        public void RemoveBehaviorTreeComponentFromSystem(BehaviorTreeComponent Behavior, int Count)
+        {
+            BehaviorSystem.RemoveComponent(Behavior, Count);
         }
 
         public void AddKinematicComponentToSystem(KinematicComponent Component)

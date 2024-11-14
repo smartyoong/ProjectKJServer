@@ -161,5 +161,18 @@ namespace CoreUtility.Utility
             }
             return ConvertObstacles;
         }
+
+        public static void DurstenfeldShuffle<T>(List<T> Elements)
+        {
+            int n = Elements.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = random.Next(n + 1);
+                T value = Elements[k];
+                Elements[k] = Elements[n];
+                Elements[n] = value;
+            }
+        }
     }
 }

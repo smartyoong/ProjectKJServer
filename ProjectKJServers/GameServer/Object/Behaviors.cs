@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CoreUtility.Utility;
 
 namespace GameServer.Object
 {
@@ -69,10 +71,43 @@ namespace GameServer.Object
         void Terminate(CancellationToken CancleToken);
     }
 
-    public class RootBehavior : IBehavior, ISequence
+    public class RootBehavior
+    {
+        private IBehavior Behavior;
+        private int IsRunning = 0;
+        public int IsRunningNow()
+        {
+            return IsRunning;
+        }
+        public RootBehavior(IBehavior Behavior)
+        {
+            this.Behavior = Behavior;
+        }
+
+        public async Task Run(BlackBoard? Board)
+        {
+            if (Interlocked.CompareExchange(ref IsRunning, 1, 0) == 0)
+            {
+                try
+                {
+                    await Task.Run(() => Behavior.Run(Board));
+                }
+                catch (Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog(e);
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref IsRunning, 0);
+                }
+            }
+        }
+    }
+
+    public class SequenceBehavior : IBehavior, ISequence
     {
         public List<IBehavior> Behaviors { get; set; }
-        public RootBehavior()
+        public SequenceBehavior()
         {
             Behaviors = new List<IBehavior>();
         }
@@ -92,4 +127,114 @@ namespace GameServer.Object
             return true;
         }
     }
+
+    public class SelectorBehavior : IBehavior, ISelector
+    {
+        public List<IBehavior> Behaviors { get; set; }
+        public SelectorBehavior()
+        {
+            Behaviors = new List<IBehavior>();
+        }
+        public bool Run(BlackBoard? Board)
+        {
+            return SelectBehavior(Board);
+        }
+        public bool SelectBehavior(BlackBoard? Board)
+        {
+            foreach (var Behavior in Behaviors)
+            {
+                if (Behavior.Run(Board))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    // 단일 노드를 실행하는 노드
+    public class RandomSelectorBehavior : IBehavior, ISelector
+    {
+        public List<IBehavior> Behaviors { get; set; }
+        private readonly Random Random = new Random();
+        public RandomSelectorBehavior()
+        {
+            Behaviors = new List<IBehavior>();
+        }
+        public bool Run(BlackBoard? Board)
+        {
+            return SelectBehavior(Board);
+        }
+        public bool SelectBehavior(BlackBoard? Board)
+        {
+            while(true)
+            {
+                int Index = RandomSelector();
+                if (Behaviors[Index].Run(Board))
+                {
+                    return true;
+                }
+            }
+        }
+        private int RandomSelector()
+        {
+            return Random.Next(0, Behaviors.Count);
+        }
+    }
+
+    // 무작위 순서로 순회하는 셀렉터
+    public class NoDeterministicSelector : IBehavior, ISelector
+    {
+        public List<IBehavior> Behaviors { get; set; }
+        public NoDeterministicSelector()
+        {
+            Behaviors = new List<IBehavior>();
+        }
+        public bool Run(BlackBoard? Board)
+        {
+            ConvertMathUtility.DurstenfeldShuffle(Behaviors);
+            return SelectBehavior(Board);
+        }
+
+        public bool SelectBehavior(BlackBoard? Board)
+        {
+            foreach (var Behavior in Behaviors)
+            {
+                if (Behavior.Run(Board))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    // 무작위 순서로 순회하는 시퀀스
+    public class NoDeterministicSequence : IBehavior, ISequence
+    {
+        public List<IBehavior> Behaviors { get; set; }
+        public NoDeterministicSequence()
+        {
+            Behaviors = new List<IBehavior>();
+        }
+
+        public bool Run(BlackBoard? Board)
+        {
+            ConvertMathUtility.DurstenfeldShuffle(Behaviors);
+            return RunBehaviors(Board);
+        }
+
+        public bool RunBehaviors(BlackBoard? Board)
+        {
+            foreach (var Behavior in Behaviors)
+            {
+                if (!Behavior.Run(Board))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    // 내일 데코레이터랑 병렬 노드 구현하자
 }

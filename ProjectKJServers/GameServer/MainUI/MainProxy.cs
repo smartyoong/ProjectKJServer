@@ -64,6 +64,16 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
+        public void AddBehaviorTreeComponent(BehaviorTreeComponent Component)
+        {
+            GameEngineClass.AddBehaviorTreeComponentToSystem(Component);
+        }
+
+        public void RemoveBehaviorTreeComponent(BehaviorTreeComponent Component, int Count)
+        {
+            GameEngineClass.RemoveBehaviorTreeComponentFromSystem(Component, Count);
+        }
+
         public void AddKinematicMoveComponent(KinematicComponent Component)
         {
             GameEngineClass.AddKinematicComponentToSystem(Component);
