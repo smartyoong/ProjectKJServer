@@ -335,7 +335,7 @@ namespace GameServer.Object
         }
     }
 
-    public class WaitAction : IAction
+    public class WaitAction : IBehavior, IAction
     {
         private float WaitTime;
         public WaitAction(float WaitTime)
@@ -401,6 +401,45 @@ namespace GameServer.Object
         }
     }
 
-    // 인터럽트는 원자적으로 다른 행동노드에게 조건 변수 값을 변경 시키는건데 
-    // 구현은 가능하겠는데 이게 노드간 건너뛰는거라서 일단 구현을 배제하자 구조적 정통성이 깨진다.
+    // 아래의 클래스들은 디버그용이다.
+    public class LogAction : IBehavior, IAction
+    {
+        private string LogMessage;
+        public LogAction(string LogMessage)
+        {
+            this.LogMessage = LogMessage;
+        }
+        public bool Run(BlackBoard? Board)
+        {
+            return Execute(Board);
+        }
+
+        public bool Execute(BlackBoard? Board)
+        {
+            LogManager.GetSingletone.WriteLog(LogMessage);
+            return true;
+        }
+    }
+
+    public class RandomCondition : IBehavior, ICondition
+    {
+
+        private float Probability;
+        private Random Random;
+        public RandomCondition(float Probability)
+        {
+            this.Probability = Probability;
+            Random = new Random();
+        }
+        public bool Check(BlackBoard? Board)
+        {
+            return Random.NextDouble() < Probability;
+        }
+        public bool Run(BlackBoard? Board)
+        {
+            return Check(Board);
+        }
+    }
+        // 인터럽트는 원자적으로 다른 행동노드에게 조건 변수 값을 변경 시키는건데 
+        // 구현은 가능하겠는데 이게 노드간 건너뛰는거라서 일단 구현을 배제하자 구조적 정통성이 깨진다.
 }

@@ -4,6 +4,7 @@ using CoreUtility.Utility;
 using GameServer.Component;
 using GameServer.GameSystem;
 using GameServer.MainUI;
+using GameServer.Object;
 using GameServer.PacketPipeLine;
 using GameServer.SocketConnect;
 using System.Net.Sockets;
