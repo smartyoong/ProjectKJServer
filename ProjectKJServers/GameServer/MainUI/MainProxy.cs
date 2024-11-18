@@ -64,6 +64,15 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
+        public void AddGOAPComponent(GOAPComponent Component)
+        {
+            GameEngineClass.AddGOAPComponentToSystem(Component);
+        }
+
+        public void RemoveGOAPComponent(GOAPComponent Component, int Count)
+        {
+            GameEngineClass.RemoveGOAPComponentFromSystem(Component, Count);
+        }
         public void AddBehaviorTreeComponent(BehaviorTreeComponent Component)
         {
             GameEngineClass.AddBehaviorTreeComponentToSystem(Component);

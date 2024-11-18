@@ -27,6 +27,7 @@ namespace GameServer.GameSystem
         private ResourceLoader ResourceLoader;
         private ArcKinematicSystem ArcKinematicSystem;
         private BehaviorTreeSystem BehaviorSystem;
+        private GOAPSystem GOAPSystem;
 
         public GameEngine()
         {
@@ -35,6 +36,7 @@ namespace GameServer.GameSystem
             ResourceLoader = new ResourceLoader();
             ArcKinematicSystem = new ArcKinematicSystem();
             BehaviorSystem = new BehaviorTreeSystem();
+            GOAPSystem = new GOAPSystem();
         }
 
         public void Start()
@@ -43,14 +45,9 @@ namespace GameServer.GameSystem
             Task.Run(() => Run());
         }
 
-        private void LoadResource()
-        {
-            LogManager.GetSingletone.WriteLog("리소스를 로드합니다.");
-            ResourceLoader.LoadMapData(ref MapDataDictionary);
-            CollisionSystem.SetMapData(ref MapDataDictionary);
-            ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
-            ResourceLoader.MakeMapGraph(ref MapGraphDictionary, in MapDataDictionary);
 #if DEBUG
+        private void TestAStar()
+        {
             LogManager.GetSingletone.WriteLog("A* 알고리즘을 테스트합니다.");
             EuclideanHuristic HuristicMethod = new EuclideanHuristic();
             AStarPathFindSystem AStarPathFindSystem = new AStarPathFindSystem();
@@ -93,7 +90,16 @@ namespace GameServer.GameSystem
                 if (DebugString != string.Empty)
                     LogManager.GetSingletone.WriteLog(DebugString);
             }
+        }
 #endif
+
+        private void LoadResource()
+        {
+            LogManager.GetSingletone.WriteLog("리소스를 로드합니다.");
+            ResourceLoader.LoadMapData(ref MapDataDictionary);
+            CollisionSystem.SetMapData(ref MapDataDictionary);
+            ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
+            ResourceLoader.MakeMapGraph(ref MapGraphDictionary, in MapDataDictionary);
         }
 
         private void Run()
@@ -106,6 +112,7 @@ namespace GameServer.GameSystem
                     KinematicMovementSystem.Update();
                     ArcKinematicSystem.Update();
                     BehaviorSystem.Update();
+                    GOAPSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -138,6 +145,15 @@ namespace GameServer.GameSystem
             IsAlreadyDisposed = true;
         }
 
+        public void AddGOAPComponentToSystem(GOAPComponent Component)
+        {
+            GOAPSystem.AddComponent(Component);
+        }
+
+        public void RemoveGOAPComponentFromSystem(GOAPComponent Component, int Count)
+        {
+            GOAPSystem.RemoveComponent(Component, Count);
+        }
         public void AddBehaviorTreeComponentToSystem(BehaviorTreeComponent Behavior)
         {
             BehaviorSystem.AddComponent(Behavior);
