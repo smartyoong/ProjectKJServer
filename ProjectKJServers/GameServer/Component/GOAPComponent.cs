@@ -15,6 +15,12 @@ namespace GameServer.Component
         public List<GOAPGoal> GoalList { get { return Goals; } }
         public List<IGOAPAction> ActionList { get { return Actions; } }
 
+        public GOAPComponent()
+        {
+            Goals = new List<GOAPGoal>();
+            Actions = new List<IGOAPAction>();
+        }
+
         // 나중에 액션 매니저를 만들어서 액션 큐에 아무것도 없을때, 액션 계획을 실행시키도록 하자
         // Update 메서드에서 ActionManager에게 액션을 추가하도록하자
         public void Update()
