@@ -25,10 +25,15 @@ namespace GameServer.Component
         // Update 메서드에서 ActionManager에게 액션을 추가하도록하자
         public void Update()
         {
+            IGOAPAction? Action = ChooseAction();
+            if (Action != null)
+            {
+                // ActionManager.AddAction(Action);
+            }
         }
 
         // 우선 액션 매니저를 구현하고 난다음에, 전체효용성, 타이밍, 조합 계획 구현하자
-        public IGOAPAction? ChooseAction()
+        private IGOAPAction? ChooseAction()
         {
             IGOAPAction? BestAction = null;
             float BestScore = 0;
