@@ -64,6 +64,16 @@ namespace GameServer.MainUI
             GameEngineClass.Stop();
         }
 
+        public void AddActionManager(ActionManager Action)
+        {
+            GameEngineClass.AddActionManagerComponentToSystem(Action);
+        }
+
+        public void RemoveActionManager(ActionManager Action, int Count)
+        {
+            GameEngineClass.RemoveActionManagerComponentFromSystem(Action, Count);
+        }
+
         public void AddGOAPComponent(GOAPComponent Component)
         {
             GameEngineClass.AddGOAPComponentToSystem(Component);

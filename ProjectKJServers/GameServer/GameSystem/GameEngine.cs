@@ -28,6 +28,7 @@ namespace GameServer.GameSystem
         private ArcKinematicSystem ArcKinematicSystem;
         private BehaviorTreeSystem BehaviorSystem;
         private GOAPSystem GOAPSystem;
+        private ActionManagerSystem ActionManagerSystem;
 
         public GameEngine()
         {
@@ -37,6 +38,7 @@ namespace GameServer.GameSystem
             ArcKinematicSystem = new ArcKinematicSystem();
             BehaviorSystem = new BehaviorTreeSystem();
             GOAPSystem = new GOAPSystem();
+            ActionManagerSystem = new ActionManagerSystem();
         }
 
         public void Start()
@@ -113,6 +115,7 @@ namespace GameServer.GameSystem
                     ArcKinematicSystem.Update();
                     BehaviorSystem.Update();
                     GOAPSystem.Update();
+                    ActionManagerSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -143,6 +146,16 @@ namespace GameServer.GameSystem
                 GameEngineCancleToken.Dispose();
             }
             IsAlreadyDisposed = true;
+        }
+
+        public void AddActionManagerComponentToSystem(ActionManager Component)
+        {
+            ActionManagerSystem.AddComponent(Component);
+        }
+
+        public void RemoveActionManagerComponentFromSystem(ActionManager Component, int Count)
+        {
+            ActionManagerSystem.RemoveComponent(Component, Count);
         }
 
         public void AddGOAPComponentToSystem(GOAPComponent Component)
