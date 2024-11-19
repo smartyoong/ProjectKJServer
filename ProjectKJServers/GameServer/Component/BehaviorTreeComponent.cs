@@ -22,10 +22,7 @@ namespace GameServer.Component
         }
         public void Run()
         {
-            Task.Run(async () =>
-            {
-                await RootBehavior.Run(Board);
-            });
+            RootBehavior.Run(Board);
         }
     }
 }

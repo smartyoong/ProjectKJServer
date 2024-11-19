@@ -35,43 +35,31 @@ namespace GameServer.Object
         bool Run(BlackBoard? Board);
     }
 
-    public interface ICondition
+    public interface IBTCondition
     {
         bool Check(BlackBoard? Board);
     }
 
-    public interface IAction // 시간이 필요한 행동은 행동이 진행되는 동안 다시 Root로 못가게하자
+    public interface IBTAction // 시간이 필요한 행동은 행동이 진행되는 동안 다시 Root로 못가게하자
     {
         bool Execute(BlackBoard? Board);
     }
 
-    public interface ISelector
+    public interface IBTSelector
     {
         List<IBehavior> Behaviors { get; set; }
         bool SelectBehavior(BlackBoard? Board);
     }
 
-    public interface ISequence
+    public interface IBTSequence
     {
         List<IBehavior> Behaviors { get; set; }
         bool RunBehaviors(BlackBoard? Board);
     }
-    public interface IDecorator
+    public interface IBTDecorator
     {
         IBehavior Behavior { get; set; }
         bool RunBehavior(BlackBoard? Board);
-    }
-    public interface IParallel // 이걸 실제로 사용할 일이 있는지 모르겠네?
-    {
-        //Task Run을 사용하자
-        List<IParallelAction> Behaviors { get; set; }
-        bool RunBehaviors(BlackBoard? Board);
-        void Terminate();
-    }
-
-    public interface IParallelAction
-    {
-        bool Run(BlackBoard? Board, CancellationToken CancleToken);
     }
 
     public class RootBehavior
@@ -87,13 +75,13 @@ namespace GameServer.Object
             this.Behavior = Behavior;
         }
 
-        public async Task Run(BlackBoard? Board)
+        public void Run(BlackBoard? Board)
         {
             if (Interlocked.CompareExchange(ref IsRunning, 1, 0) == 0)
             {
                 try
                 {
-                    await Task.Run(() => Behavior.Run(Board));
+                    Behavior.Run(Board);
                 }
                 catch (Exception e)
                 {
@@ -107,7 +95,7 @@ namespace GameServer.Object
         }
     }
 
-    public class SequenceBehavior : IBehavior, ISequence
+    public class SequenceBehavior : IBehavior, IBTSequence
     {
         public List<IBehavior> Behaviors { get; set; }
         public SequenceBehavior()
@@ -131,7 +119,7 @@ namespace GameServer.Object
         }
     }
 
-    public class SelectorBehavior : IBehavior, ISelector
+    public class SelectorBehavior : IBehavior, IBTSelector
     {
         public List<IBehavior> Behaviors { get; set; }
         public SelectorBehavior()
@@ -156,7 +144,7 @@ namespace GameServer.Object
     }
 
     // 단일 노드를 실행하는 노드
-    public class RandomSelectorBehavior : IBehavior, ISelector
+    public class RandomSelectorBehavior : IBehavior, IBTSelector
     {
         public List<IBehavior> Behaviors { get; set; }
         private readonly Random Random = new Random();
@@ -186,7 +174,7 @@ namespace GameServer.Object
     }
 
     // 무작위 순서로 순회하는 셀렉터
-    public class NoDeterministicSelector : IBehavior, ISelector
+    public class NoDeterministicSelector : IBehavior, IBTSelector
     {
         public List<IBehavior> Behaviors { get; set; }
         public NoDeterministicSelector()
@@ -212,7 +200,7 @@ namespace GameServer.Object
         }
     }
     // 무작위 순서로 순회하는 시퀀스
-    public class NoDeterministicSequence : IBehavior, ISequence
+    public class NoDeterministicSequence : IBehavior, IBTSequence
     {
         public List<IBehavior> Behaviors { get; set; }
         public NoDeterministicSequence()
@@ -240,7 +228,7 @@ namespace GameServer.Object
     }
 
 
-    public class LimitDecorator : IBehavior, IDecorator
+    public class LimitDecorator : IBehavior, IBTDecorator
     {
         public IBehavior Behavior { get; set; }
         private int LimitCount;
@@ -266,7 +254,7 @@ namespace GameServer.Object
         }
     }
 
-    public class UntilFailDecorator : IBehavior, IDecorator
+    public class UntilFailDecorator : IBehavior, IBTDecorator
     {
         public IBehavior Behavior { get; set; }
         public UntilFailDecorator(IBehavior Behavior)
@@ -287,7 +275,7 @@ namespace GameServer.Object
         }
     }
 
-    public class InverterDecorator : IBehavior, IDecorator
+    public class InverterDecorator : IBehavior, IBTDecorator
     {
         public IBehavior Behavior { get; set; }
         public InverterDecorator(IBehavior Behavior)
@@ -305,7 +293,7 @@ namespace GameServer.Object
     }
 
     // 이걸 쓸일이 있을까?
-    public class SemaphoreDecorator : IBehavior, IDecorator
+    public class SemaphoreDecorator : IBehavior, IBTDecorator
     {
         public IBehavior Behavior { get; set; }
         private Semaphore Sema;
@@ -335,7 +323,7 @@ namespace GameServer.Object
         }
     }
 
-    public class WaitAction : IBehavior, IAction
+    public class WaitAction : IBehavior, IBTAction
     {
         private float WaitTime;
         public WaitAction(float WaitTime)
@@ -354,55 +342,9 @@ namespace GameServer.Object
             return true;
         }
     }
-    // 애초에 사용을 할까나?
-    public class ParallelBehavior : IBehavior, IParallel
-    {
-        public List<IParallelAction> Behaviors { get; set; }
-        private List<Task> RunningAction;
-        private CancellationTokenSource CancleTokenSource;
-        public ParallelBehavior()
-        {
-            Behaviors = new List<IParallelAction>();
-            CancleTokenSource = new CancellationTokenSource();
-            RunningAction = new List<Task>();
-        }
-        public bool Run(BlackBoard? Board)
-        {
-            return RunBehaviors(Board);
-        }
-        public bool RunBehaviors(BlackBoard? Board)
-        {
-            bool Result = true;
-            CancleTokenSource = new CancellationTokenSource();
-            RunningAction.Clear();
-            foreach (var Behavior in Behaviors)
-            {
-                RunningAction.Add(Task.Run(() =>
-                {
-                    if (!Behavior.Run(Board, CancleTokenSource.Token))
-                    {
-                        Interlocked.Exchange(ref Result, false);
-                        Terminate();
-                    }
-                }));
-            }
-
-            if(CancleTokenSource.Token.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            Task.WaitAll(RunningAction.ToArray(),CancleTokenSource.Token);
-            return Result;
-        }
-        public void Terminate()
-        {
-            CancleTokenSource.Cancel();
-        }
-    }
 
     // 아래의 클래스들은 디버그용이다.
-    public class LogAction : IBehavior, IAction
+    public class LogAction : IBehavior, IBTAction
     {
         private string LogMessage;
         public LogAction(string LogMessage)
@@ -421,7 +363,7 @@ namespace GameServer.Object
         }
     }
 
-    public class RandomCondition : IBehavior, ICondition
+    public class RandomCondition : IBehavior, IBTCondition
     {
 
         private float Probability;
@@ -440,6 +382,4 @@ namespace GameServer.Object
             return Check(Board);
         }
     }
-        // 인터럽트는 원자적으로 다른 행동노드에게 조건 변수 값을 변경 시키는건데 
-        // 구현은 가능하겠는데 이게 노드간 건너뛰는거라서 일단 구현을 배제하자 구조적 정통성이 깨진다.
 }
