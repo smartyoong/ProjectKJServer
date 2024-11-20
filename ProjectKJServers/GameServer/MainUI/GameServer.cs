@@ -108,6 +108,16 @@ namespace GameServer
                     });
                 }
              );
+            UIEvent.GetSingletone.SubscribeCPUUsageEvent(UpdateCPUUsage);
+            UIEvent.GetSingletone.SubscribeMemoryUsageEvent(UpdateMemoryUsage);
+            UIEvent.GetSingletone.SubscribeFileIOEvent(UpdateFileIO);
+            UIEvent.GetSingletone.SubscribeGarbageCollectionEvent(UpdateGarbageCollection);
+            UIEvent.GetSingletone.SubscribeCPUTemperatureEvent(UpdateCPUTemperature);
+            UIEvent.GetSingletone.SubscribeSystemLogEvent(UpdateSystemLog);
+            UIEvent.GetSingletone.SubscribeNetworkUsageEvent(UpdateNetworkUsage);
+            UIEvent.GetSingletone.SubscribePageUsageEvent(UpdatePageUsage);
+            UIEvent.GetSingletone.SubscribeDiskIOEvent(UpdateDiskIO);
+            UIEvent.GetSingletone.SubscribeThreadUsageEvent(UpdateThreadUsage);
             ServerStopButton.Enabled = false;
             LoginServerStatusTextBox.BackColor = Color.Red;
             DBServerStatusTextBox.BackColor = Color.Red;
@@ -195,6 +205,57 @@ namespace GameServer
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));
             Application.Exit();
+        }
+
+        private void UpdateCPUUsage(float CPUUsage)
+        {
+            CPUUsageTextBox.Text = CPUUsage.ToString();
+        }
+
+        private void UpdateMemoryUsage(float MemoryUsage)
+        {
+            MemoryUsageTextBox.Text = MemoryUsage.ToString();
+        }
+
+        private void UpdateFileIO(float FileIO)
+        {
+            FileIOTextBox.Text = FileIO.ToString();
+        }
+
+        private void UpdateGarbageCollection(long GarbageCollection)
+        {
+            GarbageCollectionTextBox.Text = GarbageCollection.ToString();
+        }
+
+        private void UpdateCPUTemperature(float CPUTemperature)
+        {
+            CPUTemperatureTextBox.Text = CPUTemperature.ToString();
+        }
+
+        private void UpdateSystemLog(string Log)
+        {
+            SystemLogBox.Items.Add(Log);
+            SystemLogBox.TopIndex = SystemLogBox.Items.Count - 1;
+        }
+
+        private void UpdateNetworkUsage(float NetworkUsage)
+        {
+            NetworkIOTextBox.Text = NetworkUsage.ToString();
+        }
+
+        private void UpdatePageUsage(float PageUsage)
+        {
+            PageUsageTextBox.Text = PageUsage.ToString();
+        }
+
+        private void UpdateDiskIO(float DiskIO)
+        {
+            DiskIOTextBox.Text = DiskIO.ToString();
+        }
+
+        private void UpdateThreadUsage(int ThreadUsage)
+        {
+            ThreadUsageTextBox.Text = ThreadUsage.ToString();
         }
     }
 }

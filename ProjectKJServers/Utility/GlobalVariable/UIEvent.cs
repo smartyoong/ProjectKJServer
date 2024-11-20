@@ -29,6 +29,36 @@
         /// <value> 로그 에러 전용 메세지 박스 출력용 이벤트.</value>
         private event Action<string>? LogErrorEvent;
 
+        /// <value> CPU 사용량 출력용 이벤트.</value>
+        private event Action<float>? CPUUsageEvent;
+
+        /// <value> 메모리 사용량 출력용 이벤트.</value>
+        private event Action<float>? MemoryUsageEvent;
+
+        /// <value> 스레드 사용량 출력용 이벤트.</value>
+        private event Action<int>? ThreadUsageEvent;
+
+        /// <value> 디스크 사용량 출력용 이벤트.</value>
+        private event Action<float>? DiskIOEvent;
+
+        /// <value> 네트워크 사용량 출력용 이벤트.</value>
+        private event Action<float>? NetworkUsageEvent;
+
+        /// <value> 페이지 사용량 출력용 이벤트.</value>
+        private event Action<float>? PageUsageEvent;
+
+        /// <value> 파일 사용량 출력용 이벤트.</value>
+        private event Action<float>? FileIOEvent;
+
+        /// <value> 2세대 가비지컬렉션 출력용 이벤트.</value>
+        private event Action<long>? GarbageCollectionEvent;
+
+        /// <value> CPU 온도 출력용 이벤트.</value>
+        private event Action<float>? CPUTemperatureEvent;
+
+        /// <value> 시스템 로그 출력용 이벤트.</value>
+        private event Action<string>? SystemLogEvent;
+
         private UIEvent()
         {
         }
@@ -116,6 +146,106 @@
             LogErrorEvent -= action;
         }
 
+        public void SubscribeCPUUsageEvent(Action<float> action)
+        {
+            CPUUsageEvent += action;
+        }
+
+        public void UnsubscribeCPUUsageEvent(Action<float> action)
+        {
+            CPUUsageEvent -= action;
+        }
+
+        public void SubscribeMemoryUsageEvent(Action<float> action)
+        {
+            MemoryUsageEvent += action;
+        }
+
+        public void UnsubscribeMemoryUsageEvent(Action<float> action)
+        {
+            MemoryUsageEvent -= action;
+        }
+
+        public void SubscribeThreadUsageEvent(Action<int> action)
+        {
+            ThreadUsageEvent += action;
+        }
+
+        public void UnsubscribeThreadUsageEvent(Action<int> action)
+        {
+            ThreadUsageEvent -= action;
+        }
+
+        public void SubscribeDiskIOEvent(Action<float> action)
+        {
+            DiskIOEvent += action;
+        }
+
+        public void UnsubscribeDiskIOEvent(Action<float> action)
+        {
+            DiskIOEvent -= action;
+        }
+
+        public void SubscribeNetworkUsageEvent(Action<float> action)
+        {
+            NetworkUsageEvent += action;
+        }
+
+        public void UnsubscribeNetworkUsageEvent(Action<float> action)
+        {
+            NetworkUsageEvent -= action;
+        }
+
+        public void SubscribePageUsageEvent(Action<float> action)
+        {
+            PageUsageEvent += action;
+        }
+
+        public void UnsubscribePageUsageEvent(Action<float> action)
+        {
+            PageUsageEvent -= action;
+        }
+
+        public void SubscribeFileIOEvent(Action<float> action)
+        {
+            FileIOEvent += action;
+        }
+
+        public void UnsubscribeFileIOEvent(Action<float> action)
+        {
+            FileIOEvent -= action;
+        }
+
+        public void SubscribeGarbageCollectionEvent(Action<long> action)
+        {
+            GarbageCollectionEvent += action;
+        }
+
+        public void UnsubscribeGarbageCollectionEvent(Action<long> action)
+        {
+            GarbageCollectionEvent -= action;
+        }
+
+        public void SubscribeCPUTemperatureEvent(Action<float> action)
+        {
+            CPUTemperatureEvent += action;
+        }
+
+        public void UnsubscribeCPUTemperatureEvent(Action<float> action)
+        {
+            CPUTemperatureEvent -= action;
+        }
+
+        public void SubscribeSystemLogEvent(Action<string> action)
+        {
+            SystemLogEvent += action;
+        }
+
+        public void UnsubscribeSystemLogEvent(Action<string> action)
+        {
+            SystemLogEvent -= action;
+        }
+
         public void AddLogToUI(string log)
         {
             LogEvent?.Invoke(log);
@@ -153,6 +283,55 @@
             LogErrorEvent?.Invoke(Log);
         }
 
+        public void UpdateCPUUsage(float Usage)
+        {
+            CPUUsageEvent?.Invoke(Usage);
+        }
+
+        public void UpdateMemoryUsage(float Usage)
+        {
+            MemoryUsageEvent?.Invoke(Usage);
+        }
+
+        public void UpdateThreadUsage(int Usage)
+        {
+            ThreadUsageEvent?.Invoke(Usage);
+        }
+
+        public void UpdateDiskIO(float Usage)
+        {
+            DiskIOEvent?.Invoke(Usage);
+        }
+
+        public void UpdateNetworkUsage(float Usage)
+        {
+            NetworkUsageEvent?.Invoke(Usage);
+        }
+
+        public void UpdatePageUsage(float Usage)
+        {
+            PageUsageEvent?.Invoke(Usage);
+        }
+
+        public void UpdateFileIO(float Usage)
+        {
+            FileIOEvent?.Invoke(Usage);
+        }
+
+        public void UpdateGarbageCollection(long Usage)
+        {
+            GarbageCollectionEvent?.Invoke(Usage);
+        }
+
+        public void UpdateCPUTemperature(float Usage)
+        {
+            CPUTemperatureEvent?.Invoke(Usage);
+        }
+
+        public void UpdateSystemLog(string Log)
+        {
+            SystemLogEvent?.Invoke(Log);
+        }
 
     }
 }

@@ -36,6 +36,25 @@
             UserCountLabel = new Label();
             CurrentUserCountTextBox = new TextBox();
             ServerStatusTextBox = new TextBox();
+            CPUUsageTextBox = new TextBox();
+            CPUUsageLabel = new Label();
+            CPUTemperatureTextBox = new TextBox();
+            CPUTemperatureLabel = new Label();
+            MemoryUsageTextBox = new TextBox();
+            MemoryUsageLabel = new Label();
+            ThreadUsageTextBox = new TextBox();
+            ThreadUsageLabel = new Label();
+            DiskIOTextBox = new TextBox();
+            DiskIOLabel = new Label();
+            NetworkIOTextBox = new TextBox();
+            NetworkIOLabel = new Label();
+            PageUsageTextBox = new TextBox();
+            PageUsageLabel = new Label();
+            FileIOTextBox = new TextBox();
+            FileIOLabel = new Label();
+            GarbageCollectionTextBox = new TextBox();
+            GarbageCollectionLabel = new Label();
+            SystemLogBox = new ListBox();
             SuspendLayout();
             // 
             // ServerStopButton
@@ -126,11 +145,221 @@
             ServerStatusTextBox.Text = "Status";
             ServerStatusTextBox.TextAlign = HorizontalAlignment.Center;
             // 
+            // CPUUsageTextBox
+            // 
+            CPUUsageTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            CPUUsageTextBox.Location = new Point(899, 12);
+            CPUUsageTextBox.Name = "CPUUsageTextBox";
+            CPUUsageTextBox.ReadOnly = true;
+            CPUUsageTextBox.Size = new Size(95, 21);
+            CPUUsageTextBox.TabIndex = 12;
+            CPUUsageTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // CPUUsageLabel
+            // 
+            CPUUsageLabel.AutoSize = true;
+            CPUUsageLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            CPUUsageLabel.Location = new Point(807, 20);
+            CPUUsageLabel.Name = "CPUUsageLabel";
+            CPUUsageLabel.Size = new Size(76, 13);
+            CPUUsageLabel.TabIndex = 11;
+            CPUUsageLabel.Text = "CPU 사용량 : ";
+            // 
+            // CPUTemperatureTextBox
+            // 
+            CPUTemperatureTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            CPUTemperatureTextBox.Location = new Point(899, 39);
+            CPUTemperatureTextBox.Name = "CPUTemperatureTextBox";
+            CPUTemperatureTextBox.ReadOnly = true;
+            CPUTemperatureTextBox.Size = new Size(95, 21);
+            CPUTemperatureTextBox.TabIndex = 14;
+            CPUTemperatureTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // CPUTemperatureLabel
+            // 
+            CPUTemperatureLabel.AutoSize = true;
+            CPUTemperatureLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            CPUTemperatureLabel.Location = new Point(807, 47);
+            CPUTemperatureLabel.Name = "CPUTemperatureLabel";
+            CPUTemperatureLabel.Size = new Size(65, 13);
+            CPUTemperatureLabel.TabIndex = 13;
+            CPUTemperatureLabel.Text = "CPU 온도 : ";
+            // 
+            // MemoryUsageTextBox
+            // 
+            MemoryUsageTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            MemoryUsageTextBox.Location = new Point(899, 67);
+            MemoryUsageTextBox.Name = "MemoryUsageTextBox";
+            MemoryUsageTextBox.ReadOnly = true;
+            MemoryUsageTextBox.Size = new Size(95, 21);
+            MemoryUsageTextBox.TabIndex = 16;
+            MemoryUsageTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // MemoryUsageLabel
+            // 
+            MemoryUsageLabel.AutoSize = true;
+            MemoryUsageLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            MemoryUsageLabel.Location = new Point(807, 75);
+            MemoryUsageLabel.Name = "MemoryUsageLabel";
+            MemoryUsageLabel.Size = new Size(86, 13);
+            MemoryUsageLabel.TabIndex = 15;
+            MemoryUsageLabel.Text = "메모리 사용량 : ";
+            // 
+            // ThreadUsageTextBox
+            // 
+            ThreadUsageTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            ThreadUsageTextBox.Location = new Point(899, 94);
+            ThreadUsageTextBox.Name = "ThreadUsageTextBox";
+            ThreadUsageTextBox.ReadOnly = true;
+            ThreadUsageTextBox.Size = new Size(95, 21);
+            ThreadUsageTextBox.TabIndex = 18;
+            ThreadUsageTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // ThreadUsageLabel
+            // 
+            ThreadUsageLabel.AutoSize = true;
+            ThreadUsageLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            ThreadUsageLabel.Location = new Point(807, 102);
+            ThreadUsageLabel.Name = "ThreadUsageLabel";
+            ThreadUsageLabel.Size = new Size(86, 13);
+            ThreadUsageLabel.TabIndex = 17;
+            ThreadUsageLabel.Text = "스레드 사용량 : ";
+            // 
+            // DiscIOTextBox
+            // 
+            DiskIOTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            DiskIOTextBox.Location = new Point(899, 121);
+            DiskIOTextBox.Name = "DiscIOTextBox";
+            DiskIOTextBox.ReadOnly = true;
+            DiskIOTextBox.Size = new Size(95, 21);
+            DiskIOTextBox.TabIndex = 20;
+            DiskIOTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // DiscIOLabel
+            // 
+            DiskIOLabel.AutoSize = true;
+            DiskIOLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            DiskIOLabel.Location = new Point(807, 129);
+            DiskIOLabel.Name = "DiscIOLabel";
+            DiskIOLabel.Size = new Size(70, 13);
+            DiskIOLabel.TabIndex = 19;
+            DiskIOLabel.Text = "디스크 I/O : ";
+            // 
+            // NetworkIOTextBox
+            // 
+            NetworkIOTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            NetworkIOTextBox.Location = new Point(899, 148);
+            NetworkIOTextBox.Name = "NetworkIOTextBox";
+            NetworkIOTextBox.ReadOnly = true;
+            NetworkIOTextBox.Size = new Size(95, 21);
+            NetworkIOTextBox.TabIndex = 22;
+            NetworkIOTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // NetworkIOLabel
+            // 
+            NetworkIOLabel.AutoSize = true;
+            NetworkIOLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            NetworkIOLabel.Location = new Point(807, 156);
+            NetworkIOLabel.Name = "NetworkIOLabel";
+            NetworkIOLabel.Size = new Size(81, 13);
+            NetworkIOLabel.TabIndex = 21;
+            NetworkIOLabel.Text = "네트워크 I/O : ";
+            // 
+            // PageUsageTextBox
+            // 
+            PageUsageTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            PageUsageTextBox.Location = new Point(899, 175);
+            PageUsageTextBox.Name = "PageUsageTextBox";
+            PageUsageTextBox.ReadOnly = true;
+            PageUsageTextBox.Size = new Size(95, 21);
+            PageUsageTextBox.TabIndex = 24;
+            PageUsageTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // PageUsageLabel
+            // 
+            PageUsageLabel.AutoSize = true;
+            PageUsageLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            PageUsageLabel.Location = new Point(807, 183);
+            PageUsageLabel.Name = "PageUsageLabel";
+            PageUsageLabel.Size = new Size(86, 13);
+            PageUsageLabel.TabIndex = 23;
+            PageUsageLabel.Text = "페이지 사용량 : ";
+            // 
+            // FileIOTextBox
+            // 
+            FileIOTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            FileIOTextBox.Location = new Point(899, 202);
+            FileIOTextBox.Name = "FileIOTextBox";
+            FileIOTextBox.ReadOnly = true;
+            FileIOTextBox.Size = new Size(95, 21);
+            FileIOTextBox.TabIndex = 26;
+            FileIOTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // FileIOLabel
+            // 
+            FileIOLabel.AutoSize = true;
+            FileIOLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            FileIOLabel.Location = new Point(807, 210);
+            FileIOLabel.Name = "FileIOLabel";
+            FileIOLabel.Size = new Size(59, 13);
+            FileIOLabel.TabIndex = 25;
+            FileIOLabel.Text = "파일 I/O : ";
+            // 
+            // GarbegeCollectionTextBox
+            // 
+            GarbageCollectionTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            GarbageCollectionTextBox.Location = new Point(899, 229);
+            GarbageCollectionTextBox.Name = "GarbegeCollectionTextBox";
+            GarbageCollectionTextBox.ReadOnly = true;
+            GarbageCollectionTextBox.Size = new Size(95, 21);
+            GarbageCollectionTextBox.TabIndex = 28;
+            GarbageCollectionTextBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // GarbageCollectionLabel
+            // 
+            GarbageCollectionLabel.AutoSize = true;
+            GarbageCollectionLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            GarbageCollectionLabel.Location = new Point(807, 237);
+            GarbageCollectionLabel.Name = "GarbageCollectionLabel";
+            GarbageCollectionLabel.Size = new Size(82, 13);
+            GarbageCollectionLabel.TabIndex = 27;
+            GarbageCollectionLabel.Text = "2세대 가비지 : ";
+            // 
+            // SystemLogBox
+            // 
+            SystemLogBox.FormattingEnabled = true;
+            SystemLogBox.HorizontalScrollbar = true;
+            SystemLogBox.Location = new Point(807, 256);
+            SystemLogBox.Name = "SystemLogBox";
+            SystemLogBox.ScrollAlwaysVisible = true;
+            SystemLogBox.SelectionMode = SelectionMode.None;
+            SystemLogBox.Size = new Size(250, 169);
+            SystemLogBox.TabIndex = 29;
+            // 
             // GameServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(1072, 450);
+            Controls.Add(SystemLogBox);
+            Controls.Add(GarbageCollectionTextBox);
+            Controls.Add(GarbageCollectionLabel);
+            Controls.Add(FileIOTextBox);
+            Controls.Add(FileIOLabel);
+            Controls.Add(PageUsageTextBox);
+            Controls.Add(PageUsageLabel);
+            Controls.Add(NetworkIOTextBox);
+            Controls.Add(NetworkIOLabel);
+            Controls.Add(DiskIOTextBox);
+            Controls.Add(DiskIOLabel);
+            Controls.Add(ThreadUsageTextBox);
+            Controls.Add(ThreadUsageLabel);
+            Controls.Add(MemoryUsageTextBox);
+            Controls.Add(MemoryUsageLabel);
+            Controls.Add(CPUTemperatureTextBox);
+            Controls.Add(CPUTemperatureLabel);
+            Controls.Add(CPUUsageTextBox);
+            Controls.Add(CPUUsageLabel);
             Controls.Add(ServerStatusTextBox);
             Controls.Add(CurrentUserCountTextBox);
             Controls.Add(UserCountLabel);
@@ -155,5 +384,24 @@
         private Label UserCountLabel;
         private TextBox CurrentUserCountTextBox;
         private TextBox ServerStatusTextBox;
+        private TextBox CPUUsageTextBox;
+        private Label CPUUsageLabel;
+        private TextBox CPUTemperatureTextBox;
+        private Label CPUTemperatureLabel;
+        private TextBox MemoryUsageTextBox;
+        private Label MemoryUsageLabel;
+        private TextBox ThreadUsageTextBox;
+        private Label ThreadUsageLabel;
+        private TextBox DiskIOTextBox;
+        private Label DiskIOLabel;
+        private TextBox NetworkIOTextBox;
+        private Label NetworkIOLabel;
+        private TextBox PageUsageTextBox;
+        private Label PageUsageLabel;
+        private TextBox FileIOTextBox;
+        private Label FileIOLabel;
+        private TextBox GarbageCollectionTextBox;
+        private Label GarbageCollectionLabel;
+        private ListBox SystemLogBox;
     }
 }
