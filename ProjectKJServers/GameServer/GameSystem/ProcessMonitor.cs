@@ -4,109 +4,108 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Management;
+using System.Diagnostics.Tracing;
 
 namespace GameServer.GameSystem
 {
-    internal class ProcessMonitor
+    // 내일 여기 Dispose 패턴 구현하자
+    internal class ProcessMonitor : IDisposable
     {
-        public static float GetCpuUsage()
+        private PerformanceCounter CpuCounter;
+        private PerformanceCounter MemoryCounter;
+        private PerformanceCounter ThreadCounter;
+        private PerformanceCounter DiskCounter;
+        private PerformanceCounter NetCounter;
+        private PerformanceCounter PageFileCounter;
+        private PerformanceCounter HandleCounter;
+        private PerformanceCounter FileIOCounter;
+        private PerformanceCounter CpuTemperatureCounter;
+
+        public ProcessMonitor()
         {
-            using (PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total"))
-            {
-                cpuCounter.NextValue();
-                System.Threading.Thread.Sleep(1000);
-                return cpuCounter.NextValue();
-            }
+            CpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            MemoryCounter = new PerformanceCounter("Memory", "Available MBytes");
+            ThreadCounter = new PerformanceCounter("Process", "Thread Count", Process.GetCurrentProcess().ProcessName);
+            DiskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
+            NetCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "YourNetworkInterfaceName");
+            PageFileCounter = new PerformanceCounter("Paging File", "% Usage", "_Total");
+            HandleCounter = new PerformanceCounter("Process", "Handle Count", Process.GetCurrentProcess().ProcessName);
+            FileIOCounter = new PerformanceCounter("System", "File Read Bytes/sec");
+            CpuTemperatureCounter = new PerformanceCounter("Thermal Zone Information", "Temperature", "ACPI\\ThermalZone\\THM0");
+        }
+        private float GetCpuUsage()
+        {
+            return CpuCounter.NextValue();
         }
 
-        public static float GetMemoryUsage()
+        private float GetMemoryUsage()
         {
-            using (PerformanceCounter memCounter = new PerformanceCounter("Memory", "Available MBytes"))
-            {
-                return memCounter.NextValue();
-            }
+            return MemoryCounter.NextValue();
         }
 
-        public static int GetThreadCount()
+        private float GetThreadCount()
         {
-            using (PerformanceCounter threadCounter = new PerformanceCounter("Process", "Thread Count", Process.GetCurrentProcess().ProcessName))
-            {
-                return (int)threadCounter.NextValue();
-            }
+            return ThreadCounter.NextValue();
         }
 
-        public static float GetDiskIO()
+        private float GetDiskIO()
         {
-            using (PerformanceCounter diskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total"))
-            {
-                diskCounter.NextValue();
-                System.Threading.Thread.Sleep(1000);
-                return diskCounter.NextValue();
-            }
+            return DiskCounter.NextValue();
         }
 
-        public static float GetNetworkUsage()
+        private float GetNetworkUsage()
         {
-            using (PerformanceCounter netCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "YourNetworkInterfaceName"))
-            {
-                netCounter.NextValue();
-                System.Threading.Thread.Sleep(1000);
-                return netCounter.NextValue();
-            }
+            return NetCounter.NextValue();
         }
 
-        public static float GetPageFileUsage()
+        private float GetPageFileUsage()
         {
-            using (PerformanceCounter pageFileCounter = new PerformanceCounter("Paging File", "% Usage", "_Total"))
-            {
-                return pageFileCounter.NextValue();
-            }
+            return PageFileCounter.NextValue();
         }
 
-        public static int GetHandleCount()
+        private float GetHandleCount()
         {
-            using (PerformanceCounter handleCounter = new PerformanceCounter("Process", "Handle Count", Process.GetCurrentProcess().ProcessName))
-            {
-                return (int)handleCounter.NextValue();
-            }
+            return HandleCounter.NextValue();
         }
 
-        public static float GetFileIO()
+        private float GetFileIO()
         {
-            using (PerformanceCounter fileIOCounter = new PerformanceCounter("System", "File Read Bytes/sec"))
-            {
-                fileIOCounter.NextValue();
-                System.Threading.Thread.Sleep(1000);
-                return fileIOCounter.NextValue();
-            }
+
+            return FileIOCounter.NextValue();
         }
 
-        public static long GetGarbageCollectionCount()
+        private long GetGarbageCollectionCount()
         {
-            return GC.CollectionCount(0);
+            return GC.CollectionCount(2);
         }
 
-        public static float GetCpuTemperature()
+        private float GetCpuTemperature()
         {
-            float temperature = 0;
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature");
-
-            foreach (ManagementObject obj in searcher.Get())
+            float Temperature = 0;
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature"))
             {
-                temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
-                temperature = (temperature - 2732) / 10.0f;
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    Temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
+                    // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
+                    Temperature = (Temperature - 2732) / 10.0f;
+                }
             }
-
-            return temperature;
+            return Temperature;
         }
 
-        public static void GetSystemEvents()
+        private List<string> GetSystemEvents()
         {
-            EventLog eventLog = new EventLog("System");
-            foreach (EventLogEntry entry in eventLog.Entries)
+            List<string> EventLogs = new List<string>();
+            using (EventLog eventLog = new EventLog("System"))
             {
-                Console.WriteLine($"Entry Type: {entry.EntryType}, Message: {entry.Message}");
+                foreach (EventLogEntry entry in eventLog.Entries)
+                {
+                    EventLogs.Add($"Entry Type: {entry.EntryType}, Message: {entry.Message}");
+                }
             }
+            return EventLogs;
         }
 
     }

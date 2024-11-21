@@ -253,7 +253,7 @@ namespace GameServer
             DiskIOTextBox.Text = DiskIO.ToString();
         }
 
-        private void UpdateThreadUsage(int ThreadUsage)
+        private void UpdateThreadUsage(float ThreadUsage)
         {
             ThreadUsageTextBox.Text = ThreadUsage.ToString();
         }

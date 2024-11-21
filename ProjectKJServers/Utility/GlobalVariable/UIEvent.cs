@@ -36,7 +36,7 @@
         private event Action<float>? MemoryUsageEvent;
 
         /// <value> 스레드 사용량 출력용 이벤트.</value>
-        private event Action<int>? ThreadUsageEvent;
+        private event Action<float>? ThreadUsageEvent;
 
         /// <value> 디스크 사용량 출력용 이벤트.</value>
         private event Action<float>? DiskIOEvent;
@@ -166,12 +166,12 @@
             MemoryUsageEvent -= action;
         }
 
-        public void SubscribeThreadUsageEvent(Action<int> action)
+        public void SubscribeThreadUsageEvent(Action<float> action)
         {
             ThreadUsageEvent += action;
         }
 
-        public void UnsubscribeThreadUsageEvent(Action<int> action)
+        public void UnsubscribeThreadUsageEvent(Action<float> action)
         {
             ThreadUsageEvent -= action;
         }
@@ -293,7 +293,7 @@
             MemoryUsageEvent?.Invoke(Usage);
         }
 
-        public void UpdateThreadUsage(int Usage)
+        public void UpdateThreadUsage(float Usage)
         {
             ThreadUsageEvent?.Invoke(Usage);
         }
