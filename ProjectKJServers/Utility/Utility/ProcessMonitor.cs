@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Management;
-using System.Diagnostics.Tracing;
+using System.Diagnostics;
+using System.Runtime.Versioning;
 
-namespace GameServer.GameSystem
+namespace CoreUtility.Utility
 {
-    // 내일 여기 Dispose 패턴 구현하자
+    [SupportedOSPlatform("windows")]
     internal class ProcessMonitor : IDisposable
     {
         private PerformanceCounter CpuCounter;
@@ -82,16 +82,9 @@ namespace GameServer.GameSystem
 
         private float GetCpuTemperature()
         {
-            float Temperature = 0;
-            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature"))
-            {
-                foreach (ManagementObject obj in searcher.Get())
-                {
-                    Temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
-                    // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
-                    Temperature = (Temperature - 2732) / 10.0f;
-                }
-            }
+            float Temperature = CpuTemperatureCounter.NextValue();
+            // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
+            Temperature = (Temperature - 2732) / 10.0f;
             return Temperature;
         }
 
