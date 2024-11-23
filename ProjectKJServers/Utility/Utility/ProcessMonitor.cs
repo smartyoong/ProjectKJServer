@@ -21,6 +21,7 @@ namespace CoreUtility.Utility
         private PerformanceCounter HandleCounter;
         private PerformanceCounter FileIOCounter;
         private PerformanceCounter CpuTemperatureCounter;
+        private bool IsAlreadyDisposed = false;
 
         public ProcessMonitor()
         {
@@ -99,6 +100,43 @@ namespace CoreUtility.Utility
                 }
             }
             return EventLogs;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if(IsAlreadyDisposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                CpuCounter.Dispose();
+                MemoryCounter.Dispose();
+                ThreadCounter.Dispose();
+                DiskCounter.Dispose();
+                NetCounter.Dispose();
+                PageFileCounter.Dispose();
+                HandleCounter.Dispose();
+                FileIOCounter.Dispose();
+                CpuTemperatureCounter.Dispose();
+            }
+            IsAlreadyDisposed = true;
+        }
+
+        public void Dispose()
+        {
+            if (IsAlreadyDisposed)
+            {
+                return;
+            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~ProcessMonitor()
+        {
+            Dispose(false);
         }
 
     }
