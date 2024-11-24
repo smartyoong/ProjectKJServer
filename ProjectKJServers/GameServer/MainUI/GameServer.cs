@@ -133,6 +133,15 @@ namespace GameServer
             CurrentUserCountTextBox.Text = CurrentUserCount.ToString();
             WriteFileLog = LogManager.GetSingletone.WriteLog;
             WriteErrorLog = LogManager.GetSingletone.WriteLog;
+            CPUUsageTextBox.Text = "0";
+            MemoryUsageTextBox.Text = "0";
+            FileIOTextBox.Text = "0";
+            GarbageCollectionTextBox.Text = "0";
+            CPUTemperatureTextBox.Text = "0";
+            NetworkIOTextBox.Text = "0";
+            PageUsageTextBox.Text = "0";
+            DiskIOTextBox.Text = "0";
+            ThreadUsageTextBox.Text = "0";
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -7,6 +7,8 @@ using System.Management;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using CoreUtility.GlobalVariable;
+using System.Net.NetworkInformation;
+using System.Diagnostics.Tracing;
 
 namespace CoreUtility.Utility
 {
@@ -21,21 +23,20 @@ namespace CoreUtility.Utility
         private PerformanceCounter PageFileCounter;
         private PerformanceCounter HandleCounter;
         private PerformanceCounter FileIOCounter;
-        private PerformanceCounter CpuTemperatureCounter;
         private bool IsAlreadyDisposed = false;
         private long LastTickCount = 0;
 
         public ProcessMonitor()
         {
-            CpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-            MemoryCounter = new PerformanceCounter("Memory", "Available MBytes");
+            //여기 손보자
+            CpuCounter = new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+            MemoryCounter = new PerformanceCounter("Process", "Working Set - Private", Process.GetCurrentProcess().ProcessName);
             ThreadCounter = new PerformanceCounter("Process", "Thread Count", Process.GetCurrentProcess().ProcessName);
-            DiskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
-            NetCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "YourNetworkInterfaceName");
-            PageFileCounter = new PerformanceCounter("Paging File", "% Usage", "_Total");
+            DiskCounter = new PerformanceCounter("Process", "IO Read Bytes/sec", Process.GetCurrentProcess().ProcessName);
+            NetCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "Realtek Gaming 2.5GbE Family Controller");
+            PageFileCounter = new PerformanceCounter("Process", "Page File Bytes", Process.GetCurrentProcess().ProcessName);
             HandleCounter = new PerformanceCounter("Process", "Handle Count", Process.GetCurrentProcess().ProcessName);
-            FileIOCounter = new PerformanceCounter("System", "File Read Bytes/sec");
-            CpuTemperatureCounter = new PerformanceCounter("Thermal Zone Information", "Temperature", "ACPI\\ThermalZone\\THM0");
+            FileIOCounter = new PerformanceCounter("Process", "IO Write Bytes/sec", Process.GetCurrentProcess().ProcessName);
         }
 
         public void Update()
@@ -45,46 +46,52 @@ namespace CoreUtility.Utility
             {
                 return;
             }
-            LastTickCount = CurrentTickCount;
-            float CpuUsage = GetCpuUsage();
-            float MemoryUsage = GetMemoryUsage();
-            float ThreadCount = GetThreadCount();
-            float DiskIO = GetDiskIO();
-            float NetworkUsage = GetNetworkUsage();
-            float PageFileUsage = GetPageFileUsage();
-            float HandleCount = GetHandleCount();
-            float FileIO = GetFileIO();
-            long GarbageCollectionCount = GetGarbageCollectionCount();
-            float CpuTemperature = GetCpuTemperature();
-            List<string> SystemEvents = GetSystemEvents();
-            UIEvent.GetSingletone.UpdateCPUUsage(CpuUsage);
-            UIEvent.GetSingletone.UpdateMemoryUsage(MemoryUsage);
-            UIEvent.GetSingletone.UpdateThreadUsage(ThreadCount);
-            UIEvent.GetSingletone.UpdateDiskIO(DiskIO);
-            UIEvent.GetSingletone.UpdateNetworkUsage(NetworkUsage);
-            UIEvent.GetSingletone.UpdatePageUsage(PageFileUsage);
-            UIEvent.GetSingletone.UpdateDiskIO(HandleCount);
-            UIEvent.GetSingletone.UpdateFileIO(FileIO);
-            UIEvent.GetSingletone.UpdateGarbageCollection(GarbageCollectionCount);
-            UIEvent.GetSingletone.UpdateCPUTemperature(CpuTemperature);
-            foreach (string EventLog in SystemEvents)
+            try
             {
-                UIEvent.GetSingletone.UpdateSystemLog(EventLog);
+                LastTickCount = CurrentTickCount;
+                float CpuUsage = GetCpuUsage();
+                float MemoryUsage = GetMemoryUsage();
+                float ThreadCount = GetThreadCount();
+                float DiskIO = GetDiskIO();
+                float NetworkUsage = GetNetworkUsage();
+                float PageFileUsage = GetPageFileUsage();
+                float HandleCount = GetHandleCount();
+                float FileIO = GetFileIO();
+                long GarbageCollectionCount = GetGarbageCollectionCount();
+                float CpuTemperature = GetCpuTemperature();
+                List<string> SystemEvents = GetSystemEvents();
+                UIEvent.GetSingletone.UpdateCPUUsage(CpuUsage);
+                UIEvent.GetSingletone.UpdateMemoryUsage(MemoryUsage);
+                UIEvent.GetSingletone.UpdateThreadUsage(ThreadCount);
+                UIEvent.GetSingletone.UpdateDiskIO(DiskIO);
+                UIEvent.GetSingletone.UpdateNetworkUsage(NetworkUsage);
+                UIEvent.GetSingletone.UpdatePageUsage(PageFileUsage);
+                UIEvent.GetSingletone.UpdateDiskIO(HandleCount);
+                UIEvent.GetSingletone.UpdateFileIO(FileIO);
+                UIEvent.GetSingletone.UpdateGarbageCollection(GarbageCollectionCount);
+                UIEvent.GetSingletone.UpdateCPUTemperature(CpuTemperature);
+                foreach (string EventLog in SystemEvents)
+                {
+                    UIEvent.GetSingletone.UpdateSystemLog(EventLog);
+                }
+                LogManager.GetSingletone.WriteLog($"CPU Usage: {CpuUsage}");
+                LogManager.GetSingletone.WriteLog($"Memory Usage: {MemoryUsage}");
+                LogManager.GetSingletone.WriteLog($"Thread Count: {ThreadCount}");
+                LogManager.GetSingletone.WriteLog($"Disk IO: {DiskIO}");
+                LogManager.GetSingletone.WriteLog($"Network Usage: {NetworkUsage}");
+                LogManager.GetSingletone.WriteLog($"Page File Usage: {PageFileUsage}");
+                LogManager.GetSingletone.WriteLog($"Handle Count: {HandleCount}");
+                LogManager.GetSingletone.WriteLog($"File IO: {FileIO}");
+                LogManager.GetSingletone.WriteLog($"Garbage Collection Count: {GarbageCollectionCount}");
+                LogManager.GetSingletone.WriteLog($"CPU Temperature: {CpuTemperature}");
+                foreach (string EventLog in SystemEvents)
+                {
+                    LogManager.GetSingletone.WriteLog($"System Event: {EventLog}");
+                }
             }
-
-            LogManager.GetSingletone.WriteLog($"CPU Usage: {CpuUsage}");
-            LogManager.GetSingletone.WriteLog($"Memory Usage: {MemoryUsage}");
-            LogManager.GetSingletone.WriteLog($"Thread Count: {ThreadCount}");
-            LogManager.GetSingletone.WriteLog($"Disk IO: {DiskIO}");
-            LogManager.GetSingletone.WriteLog($"Network Usage: {NetworkUsage}");
-            LogManager.GetSingletone.WriteLog($"Page File Usage: {PageFileUsage}");
-            LogManager.GetSingletone.WriteLog($"Handle Count: {HandleCount}");
-            LogManager.GetSingletone.WriteLog($"File IO: {FileIO}");
-            LogManager.GetSingletone.WriteLog($"Garbage Collection Count: {GarbageCollectionCount}");
-            LogManager.GetSingletone.WriteLog($"CPU Temperature: {CpuTemperature}");
-            foreach (string EventLog in SystemEvents)
+            catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog($"System Event: {EventLog}");
+                LogManager.GetSingletone.WriteLog(e);
             }
         }
         private float GetCpuUsage()
@@ -135,20 +142,32 @@ namespace CoreUtility.Utility
 
         private float GetCpuTemperature()
         {
-            float Temperature = CpuTemperatureCounter.NextValue();
-            // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
-            Temperature = (Temperature - 2732) / 10.0f;
+            // 현재 프로세스 관리자 권한으로 실행시키도록 해야함
+            float Temperature = 0.0f;
+            ManagementObjectSearcher Searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature");
+
+            foreach (ManagementObject obj in Searcher.Get())
+            {
+                // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
+                Temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
+                Temperature = (Temperature - 2732) / 10.0f;
+            }
+
             return Temperature;
         }
 
         private List<string> GetSystemEvents()
         {
             List<string> EventLogs = new List<string>();
-            using (EventLog eventLog = new EventLog("System"))
+            using (EventLog EventLog = new EventLog("System"))
             {
-                foreach (EventLogEntry entry in eventLog.Entries)
+                foreach (EventLogEntry entry in EventLog.Entries)
                 {
-                    EventLogs.Add($"Entry Type: {entry.EntryType}, Message: {entry.Message}");
+                    // 현재 프로세스와 관련된 치명적인 에러 로그만 필터링
+                    if (entry.Source == Process.GetCurrentProcess().ProcessName && entry.EntryType == EventLogEntryType.Error)
+                    {
+                        EventLogs.Add($"Entry Type: {entry.EntryType}, Message: {entry.Message}");
+                    }
                 }
             }
             return EventLogs;
@@ -171,7 +190,6 @@ namespace CoreUtility.Utility
                 PageFileCounter.Dispose();
                 HandleCounter.Dispose();
                 FileIOCounter.Dispose();
-                CpuTemperatureCounter.Dispose();
             }
             IsAlreadyDisposed = true;
         }

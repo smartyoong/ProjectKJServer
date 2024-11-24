@@ -225,25 +225,25 @@
             ThreadUsageLabel.TabIndex = 17;
             ThreadUsageLabel.Text = "스레드 사용량 : ";
             // 
-            // DiscIOTextBox
+            // DiskIOTextBox
             // 
             DiskIOTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             DiskIOTextBox.Location = new Point(899, 121);
-            DiskIOTextBox.Name = "DiscIOTextBox";
+            DiskIOTextBox.Name = "DiskIOTextBox";
             DiskIOTextBox.ReadOnly = true;
             DiskIOTextBox.Size = new Size(95, 21);
             DiskIOTextBox.TabIndex = 20;
             DiskIOTextBox.TextAlign = HorizontalAlignment.Center;
             // 
-            // DiscIOLabel
+            // DiskIOLabel
             // 
             DiskIOLabel.AutoSize = true;
             DiskIOLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             DiskIOLabel.Location = new Point(807, 129);
-            DiskIOLabel.Name = "DiscIOLabel";
-            DiskIOLabel.Size = new Size(70, 13);
+            DiskIOLabel.Name = "DiskIOLabel";
+            DiskIOLabel.Size = new Size(71, 13);
             DiskIOLabel.TabIndex = 19;
-            DiskIOLabel.Text = "디스크 I/O : ";
+            DiskIOLabel.Text = "파일 Read : ";
             // 
             // NetworkIOTextBox
             // 
@@ -301,15 +301,15 @@
             FileIOLabel.Font = new Font("나눔스퀘어라운드 Bold", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             FileIOLabel.Location = new Point(807, 210);
             FileIOLabel.Name = "FileIOLabel";
-            FileIOLabel.Size = new Size(59, 13);
+            FileIOLabel.Size = new Size(74, 13);
             FileIOLabel.TabIndex = 25;
-            FileIOLabel.Text = "파일 I/O : ";
+            FileIOLabel.Text = "파일 Write : ";
             // 
-            // GarbegeCollectionTextBox
+            // GarbageCollectionTextBox
             // 
             GarbageCollectionTextBox.Font = new Font("나눔스퀘어라운드 Regular", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             GarbageCollectionTextBox.Location = new Point(899, 229);
-            GarbageCollectionTextBox.Name = "GarbegeCollectionTextBox";
+            GarbageCollectionTextBox.Name = "GarbageCollectionTextBox";
             GarbageCollectionTextBox.ReadOnly = true;
             GarbageCollectionTextBox.Size = new Size(95, 21);
             GarbageCollectionTextBox.TabIndex = 28;
