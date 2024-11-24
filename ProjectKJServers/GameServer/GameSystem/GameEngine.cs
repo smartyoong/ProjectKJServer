@@ -29,6 +29,7 @@ namespace GameServer.GameSystem
         private BehaviorTreeSystem BehaviorSystem;
         private GOAPSystem GOAPSystem;
         private ActionManagerSystem ActionManagerSystem;
+        private ProcessMonitor ProcessMonitorSystem;
 
         public GameEngine()
         {
@@ -39,6 +40,7 @@ namespace GameServer.GameSystem
             BehaviorSystem = new BehaviorTreeSystem();
             GOAPSystem = new GOAPSystem();
             ActionManagerSystem = new ActionManagerSystem();
+            ProcessMonitorSystem = new ProcessMonitor();
         }
 
         public void Start()
@@ -116,6 +118,7 @@ namespace GameServer.GameSystem
                     BehaviorSystem.Update();
                     GOAPSystem.Update();
                     ActionManagerSystem.Update();
+                    ProcessMonitorSystem.Update();
                 }
                 catch (Exception e)
                 {

@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 using System.Management;
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using CoreUtility.GlobalVariable;
 
 namespace CoreUtility.Utility
 {
     [SupportedOSPlatform("windows")]
-    internal class ProcessMonitor : IDisposable
+    public class ProcessMonitor : IDisposable
     {
         private PerformanceCounter CpuCounter;
         private PerformanceCounter MemoryCounter;
@@ -22,6 +23,7 @@ namespace CoreUtility.Utility
         private PerformanceCounter FileIOCounter;
         private PerformanceCounter CpuTemperatureCounter;
         private bool IsAlreadyDisposed = false;
+        private long LastTickCount = 0;
 
         public ProcessMonitor()
         {
@@ -34,6 +36,56 @@ namespace CoreUtility.Utility
             HandleCounter = new PerformanceCounter("Process", "Handle Count", Process.GetCurrentProcess().ProcessName);
             FileIOCounter = new PerformanceCounter("System", "File Read Bytes/sec");
             CpuTemperatureCounter = new PerformanceCounter("Thermal Zone Information", "Temperature", "ACPI\\ThermalZone\\THM0");
+        }
+
+        public void Update()
+        {
+            long CurrentTickCount = Environment.TickCount;
+            if (CurrentTickCount - LastTickCount < 2 * TimeSpan.MillisecondsPerMinute)
+            {
+                return;
+            }
+            LastTickCount = CurrentTickCount;
+            float CpuUsage = GetCpuUsage();
+            float MemoryUsage = GetMemoryUsage();
+            float ThreadCount = GetThreadCount();
+            float DiskIO = GetDiskIO();
+            float NetworkUsage = GetNetworkUsage();
+            float PageFileUsage = GetPageFileUsage();
+            float HandleCount = GetHandleCount();
+            float FileIO = GetFileIO();
+            long GarbageCollectionCount = GetGarbageCollectionCount();
+            float CpuTemperature = GetCpuTemperature();
+            List<string> SystemEvents = GetSystemEvents();
+            UIEvent.GetSingletone.UpdateCPUUsage(CpuUsage);
+            UIEvent.GetSingletone.UpdateMemoryUsage(MemoryUsage);
+            UIEvent.GetSingletone.UpdateThreadUsage(ThreadCount);
+            UIEvent.GetSingletone.UpdateDiskIO(DiskIO);
+            UIEvent.GetSingletone.UpdateNetworkUsage(NetworkUsage);
+            UIEvent.GetSingletone.UpdatePageUsage(PageFileUsage);
+            UIEvent.GetSingletone.UpdateDiskIO(HandleCount);
+            UIEvent.GetSingletone.UpdateFileIO(FileIO);
+            UIEvent.GetSingletone.UpdateGarbageCollection(GarbageCollectionCount);
+            UIEvent.GetSingletone.UpdateCPUTemperature(CpuTemperature);
+            foreach (string EventLog in SystemEvents)
+            {
+                UIEvent.GetSingletone.UpdateSystemLog(EventLog);
+            }
+
+            LogManager.GetSingletone.WriteLog($"CPU Usage: {CpuUsage}");
+            LogManager.GetSingletone.WriteLog($"Memory Usage: {MemoryUsage}");
+            LogManager.GetSingletone.WriteLog($"Thread Count: {ThreadCount}");
+            LogManager.GetSingletone.WriteLog($"Disk IO: {DiskIO}");
+            LogManager.GetSingletone.WriteLog($"Network Usage: {NetworkUsage}");
+            LogManager.GetSingletone.WriteLog($"Page File Usage: {PageFileUsage}");
+            LogManager.GetSingletone.WriteLog($"Handle Count: {HandleCount}");
+            LogManager.GetSingletone.WriteLog($"File IO: {FileIO}");
+            LogManager.GetSingletone.WriteLog($"Garbage Collection Count: {GarbageCollectionCount}");
+            LogManager.GetSingletone.WriteLog($"CPU Temperature: {CpuTemperature}");
+            foreach (string EventLog in SystemEvents)
+            {
+                LogManager.GetSingletone.WriteLog($"System Event: {EventLog}");
+            }
         }
         private float GetCpuUsage()
         {
