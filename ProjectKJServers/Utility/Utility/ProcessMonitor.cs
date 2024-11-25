@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Management;
+﻿using CoreUtility.GlobalVariable;
 using System.Diagnostics;
+using System.Management;
 using System.Runtime.Versioning;
-using CoreUtility.GlobalVariable;
-using System.Net.NetworkInformation;
-using System.Diagnostics.Tracing;
 
 namespace CoreUtility.Utility
 {
@@ -21,7 +14,6 @@ namespace CoreUtility.Utility
         private PerformanceCounter DiskCounter;
         private PerformanceCounter NetCounter;
         private PerformanceCounter PageFileCounter;
-        private PerformanceCounter HandleCounter;
         private PerformanceCounter FileIOCounter;
         private bool IsAlreadyDisposed = false;
         private long LastTickCount = 0;
@@ -35,7 +27,6 @@ namespace CoreUtility.Utility
             DiskCounter = new PerformanceCounter("Process", "IO Read Bytes/sec", Process.GetCurrentProcess().ProcessName);
             NetCounter = new PerformanceCounter("Network Interface", "Bytes Total/sec", "Realtek Gaming 2.5GbE Family Controller");
             PageFileCounter = new PerformanceCounter("Process", "Page File Bytes", Process.GetCurrentProcess().ProcessName);
-            HandleCounter = new PerformanceCounter("Process", "Handle Count", Process.GetCurrentProcess().ProcessName);
             FileIOCounter = new PerformanceCounter("Process", "IO Write Bytes/sec", Process.GetCurrentProcess().ProcessName);
         }
 
@@ -46,53 +37,53 @@ namespace CoreUtility.Utility
             {
                 return;
             }
-            try
+            UpdateAllInfo();
+            LastTickCount = CurrentTickCount;
+        }
+
+        private void UpdateAllInfo()
+        {
+            float CpuUsage = GetCpuUsage();
+            float MemoryUsage = GetMemoryUsage();
+            float ThreadCount = GetThreadCount();
+            float DiskIO = GetDiskIO();
+            float NetworkUsage = GetNetworkUsage();
+            float PageFileUsage = GetPageFileUsage();
+            float FileIO = GetFileIO();
+            long GarbageCollectionCount = GetGarbageCollectionCount();
+            float CpuTemperature = GetCpuTemperature();
+            List<string> SystemEvents = GetSystemEvents();
+            UIEvent.GetSingletone.UpdateCPUUsage(CpuUsage);
+            UIEvent.GetSingletone.UpdateMemoryUsage(MemoryUsage);
+            UIEvent.GetSingletone.UpdateThreadUsage(ThreadCount);
+            UIEvent.GetSingletone.UpdateDiskIO(DiskIO);
+            UIEvent.GetSingletone.UpdateNetworkUsage(NetworkUsage);
+            UIEvent.GetSingletone.UpdatePageUsage(PageFileUsage);
+            UIEvent.GetSingletone.UpdateFileIO(FileIO);
+            UIEvent.GetSingletone.UpdateGarbageCollection(GarbageCollectionCount);
+            UIEvent.GetSingletone.UpdateCPUTemperature(CpuTemperature);
+            foreach (string EventLog in SystemEvents)
             {
-                LastTickCount = CurrentTickCount;
-                float CpuUsage = GetCpuUsage();
-                float MemoryUsage = GetMemoryUsage();
-                float ThreadCount = GetThreadCount();
-                float DiskIO = GetDiskIO();
-                float NetworkUsage = GetNetworkUsage();
-                float PageFileUsage = GetPageFileUsage();
-                float HandleCount = GetHandleCount();
-                float FileIO = GetFileIO();
-                long GarbageCollectionCount = GetGarbageCollectionCount();
-                float CpuTemperature = GetCpuTemperature();
-                List<string> SystemEvents = GetSystemEvents();
-                UIEvent.GetSingletone.UpdateCPUUsage(CpuUsage);
-                UIEvent.GetSingletone.UpdateMemoryUsage(MemoryUsage);
-                UIEvent.GetSingletone.UpdateThreadUsage(ThreadCount);
-                UIEvent.GetSingletone.UpdateDiskIO(DiskIO);
-                UIEvent.GetSingletone.UpdateNetworkUsage(NetworkUsage);
-                UIEvent.GetSingletone.UpdatePageUsage(PageFileUsage);
-                UIEvent.GetSingletone.UpdateDiskIO(HandleCount);
-                UIEvent.GetSingletone.UpdateFileIO(FileIO);
-                UIEvent.GetSingletone.UpdateGarbageCollection(GarbageCollectionCount);
-                UIEvent.GetSingletone.UpdateCPUTemperature(CpuTemperature);
-                foreach (string EventLog in SystemEvents)
-                {
-                    UIEvent.GetSingletone.UpdateSystemLog(EventLog);
-                }
-                LogManager.GetSingletone.WriteLog($"CPU Usage: {CpuUsage}");
-                LogManager.GetSingletone.WriteLog($"Memory Usage: {MemoryUsage}");
-                LogManager.GetSingletone.WriteLog($"Thread Count: {ThreadCount}");
-                LogManager.GetSingletone.WriteLog($"Disk IO: {DiskIO}");
-                LogManager.GetSingletone.WriteLog($"Network Usage: {NetworkUsage}");
-                LogManager.GetSingletone.WriteLog($"Page File Usage: {PageFileUsage}");
-                LogManager.GetSingletone.WriteLog($"Handle Count: {HandleCount}");
-                LogManager.GetSingletone.WriteLog($"File IO: {FileIO}");
-                LogManager.GetSingletone.WriteLog($"Garbage Collection Count: {GarbageCollectionCount}");
-                LogManager.GetSingletone.WriteLog($"CPU Temperature: {CpuTemperature}");
-                foreach (string EventLog in SystemEvents)
-                {
-                    LogManager.GetSingletone.WriteLog($"System Event: {EventLog}");
-                }
+                UIEvent.GetSingletone.UpdateSystemLog(EventLog);
             }
-            catch (Exception e)
+            LogManager.GetSingletone.WriteLog("\n\n///////////////////////////////////////");
+            LogManager.GetSingletone.WriteLog("Process Monitor Update");
+            LogManager.GetSingletone.WriteLog("///////////////////////////////////////\n\n");
+            LogManager.GetSingletone.WriteLog($"CPU Usage: {CpuUsage}");
+            LogManager.GetSingletone.WriteLog($"Memory Usage: {MemoryUsage}");
+            LogManager.GetSingletone.WriteLog($"Thread Count: {ThreadCount}");
+            LogManager.GetSingletone.WriteLog($"Disk IO: {DiskIO}");
+            LogManager.GetSingletone.WriteLog($"Network Usage: {NetworkUsage}");
+            LogManager.GetSingletone.WriteLog($"Page File Usage: {PageFileUsage}");
+            LogManager.GetSingletone.WriteLog($"File IO: {FileIO}");
+            LogManager.GetSingletone.WriteLog($"Garbage Collection Count: {GarbageCollectionCount}");
+            LogManager.GetSingletone.WriteLog($"CPU Temperature: {CpuTemperature}");
+            foreach (string EventLog in SystemEvents)
             {
-                LogManager.GetSingletone.WriteLog(e);
+                LogManager.GetSingletone.WriteLog($"System Event: {EventLog}");
             }
+            LogManager.GetSingletone.WriteLog("///////////////////////////////////////\n\n");
+
         }
         private float GetCpuUsage()
         {
@@ -122,11 +113,6 @@ namespace CoreUtility.Utility
         private float GetPageFileUsage()
         {
             return PageFileCounter.NextValue();
-        }
-
-        private float GetHandleCount()
-        {
-            return HandleCounter.NextValue();
         }
 
         private float GetFileIO()
@@ -175,7 +161,7 @@ namespace CoreUtility.Utility
 
         protected virtual void Dispose(bool disposing)
         {
-            if(IsAlreadyDisposed)
+            if (IsAlreadyDisposed)
             {
                 return;
             }
@@ -188,7 +174,6 @@ namespace CoreUtility.Utility
                 DiskCounter.Dispose();
                 NetCounter.Dispose();
                 PageFileCounter.Dispose();
-                HandleCounter.Dispose();
                 FileIOCounter.Dispose();
             }
             IsAlreadyDisposed = true;

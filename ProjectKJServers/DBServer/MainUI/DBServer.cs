@@ -12,10 +12,12 @@ namespace DBServer
         private TaskCompletionSource<bool> GameServerReadyEvent = new TaskCompletionSource<bool>();
         private TaskCompletionSource<bool> SQLReadyEvent = new TaskCompletionSource<bool>();
 
-        delegate void DelegateWriteLog(string Log);
-        delegate void DelegateWriteErrorLog(Exception ex);
-        DelegateWriteLog WriteFileLog;
-        DelegateWriteErrorLog WriteErrorLog;
+        private delegate void DelegateWriteLog(string Log);
+        private delegate void DelegateWriteErrorLog(Exception ex);
+        private DelegateWriteLog WriteFileLog;
+        private DelegateWriteErrorLog WriteErrorLog;
+        private ProcessMonitor ProcessManager;
+        private CancellationTokenSource ProcessManagerToken;
 
         public DBServer()
         {
@@ -33,6 +35,8 @@ namespace DBServer
             SubscribeAllEvent();
             WriteFileLog = LogManager.GetSingletone.WriteLog;
             WriteErrorLog = LogManager.GetSingletone.WriteLog;
+            ProcessManager = new ProcessMonitor();
+            ProcessManagerToken = new CancellationTokenSource();
         }
 
         private void SubscribeAllEvent()
@@ -77,6 +81,16 @@ namespace DBServer
             }
             );
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
+            UIEvent.GetSingletone.SubscribeCPUUsageEvent(UpdateCPUUsage);
+            UIEvent.GetSingletone.SubscribeMemoryUsageEvent(UpdateMemoryUsage);
+            UIEvent.GetSingletone.SubscribeFileIOEvent(UpdateFileIO);
+            UIEvent.GetSingletone.SubscribeGarbageCollectionEvent(UpdateGarbageCollection);
+            UIEvent.GetSingletone.SubscribeCPUTemperatureEvent(UpdateCPUTemperature);
+            UIEvent.GetSingletone.SubscribeSystemLogEvent(UpdateSystemLog);
+            UIEvent.GetSingletone.SubscribeNetworkUsageEvent(UpdateNetworkUsage);
+            UIEvent.GetSingletone.SubscribePageUsageEvent(UpdatePageUsage);
+            UIEvent.GetSingletone.SubscribeDiskIOEvent(UpdateDiskIO);
+            UIEvent.GetSingletone.SubscribeThreadUsageEvent(UpdateThreadUsage);
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -98,6 +112,7 @@ namespace DBServer
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
             WriteFileLog("서버를 가동합니다.");
+            CheckProcessMonitor();
             await MainProxy.GetSingletone.ConnectToSQLServer(SQLReadyEvent);
             await SQLReadyEvent.Task;
             WriteFileLog("SQL 서버와 연결되었습니다.");
@@ -126,9 +141,77 @@ namespace DBServer
             await Task.Delay(TimeSpan.FromSeconds(2));
             WriteFileLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
+            ProcessManagerToken.Cancel();
+            WriteFileLog("프로세스 모니터링을 중단합니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             await Task.Delay(TimeSpan.FromSeconds(2));
             Application.Exit();
+        }
+        private void UpdateCPUUsage(float CPUUsage)
+        {
+            CPUUsageTextBox.Text = CPUUsage.ToString();
+        }
+
+        private void UpdateMemoryUsage(float MemoryUsage)
+        {
+            MemoryUsageTextBox.Text = MemoryUsage.ToString();
+        }
+
+        private void UpdateFileIO(float FileIO)
+        {
+            FileIOTextBox.Text = FileIO.ToString();
+        }
+
+        private void UpdateGarbageCollection(long GarbageCollection)
+        {
+            GarbageCollectionTextBox.Text = GarbageCollection.ToString();
+        }
+
+        private void UpdateCPUTemperature(float CPUTemperature)
+        {
+            CPUTemperatureTextBox.Text = CPUTemperature.ToString();
+        }
+
+        private void UpdateSystemLog(string Log)
+        {
+            SystemLogBox.Items.Add(Log);
+            SystemLogBox.TopIndex = SystemLogBox.Items.Count - 1;
+        }
+
+        private void UpdateNetworkUsage(float NetworkUsage)
+        {
+            NetworkIOTextBox.Text = NetworkUsage.ToString();
+        }
+
+        private void UpdatePageUsage(float PageUsage)
+        {
+            PageUsageTextBox.Text = PageUsage.ToString();
+        }
+
+        private void UpdateDiskIO(float DiskIO)
+        {
+            DiskIOTextBox.Text = DiskIO.ToString();
+        }
+
+        private void UpdateThreadUsage(float ThreadUsage)
+        {
+            ThreadUsageTextBox.Text = ThreadUsage.ToString();
+        }
+        private void CheckProcessMonitor()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    while(!ProcessManagerToken.Token.IsCancellationRequested)
+                        ProcessManager.Update();
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    WriteErrorLog(ex);
+                }
+            },ProcessManagerToken.Token);
         }
     }
 }

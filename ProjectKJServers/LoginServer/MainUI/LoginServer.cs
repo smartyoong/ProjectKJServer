@@ -17,6 +17,8 @@ namespace LoginServer
         private int CurrentUserCount = 0;
         private TaskCompletionSource<bool> GameServerReadyEvent = new TaskCompletionSource<bool>();
         private TaskCompletionSource<bool> SQLReadyEvent = new TaskCompletionSource<bool>();
+        private ProcessMonitor ProcessManager;
+        private CancellationTokenSource ProcessManagerToken;
         /// <summary>
         /// LoginServer 생성자입니다.
         /// 모든 LoginServer의 클래스의 초기화 작업을 진행합니다.
@@ -31,6 +33,8 @@ namespace LoginServer
             InitializeComponent();
             Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+            ProcessManager = new ProcessMonitor();
+            ProcessManagerToken = new CancellationTokenSource();
             LogManager.SetLogPath(Settings.Default.LogDirectory);
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
             UIEvent.GetSingletone.SubscribeLogEvent(
@@ -112,6 +116,16 @@ namespace LoginServer
                     });
                 }
              );
+            UIEvent.GetSingletone.SubscribeCPUUsageEvent(UpdateCPUUsage);
+            UIEvent.GetSingletone.SubscribeMemoryUsageEvent(UpdateMemoryUsage);
+            UIEvent.GetSingletone.SubscribeFileIOEvent(UpdateFileIO);
+            UIEvent.GetSingletone.SubscribeGarbageCollectionEvent(UpdateGarbageCollection);
+            UIEvent.GetSingletone.SubscribeCPUTemperatureEvent(UpdateCPUTemperature);
+            UIEvent.GetSingletone.SubscribeSystemLogEvent(UpdateSystemLog);
+            UIEvent.GetSingletone.SubscribeNetworkUsageEvent(UpdateNetworkUsage);
+            UIEvent.GetSingletone.SubscribePageUsageEvent(UpdatePageUsage);
+            UIEvent.GetSingletone.SubscribeDiskIOEvent(UpdateDiskIO);
+            UIEvent.GetSingletone.SubscribeThreadUsageEvent(UpdateThreadUsage);
             ServerStopButton.Enabled = false;
             ServerStatusTextBox.BackColor = Color.Red;
             SQLStatusTextBox.BackColor = Color.Red;
@@ -146,6 +160,7 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
+            CheckProcessMonitor();
             await MainProxy.GetSingletone.ConnectToAccountSQL(SQLReadyEvent);
             await SQLReadyEvent.Task;
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 완료됐습니다.");
@@ -183,11 +198,78 @@ namespace LoginServer
             LogManager.GetSingletone.WriteLog("SQL 서버와 연결이 종료됐습니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             await SocketManager.GetSingletone.Cancel();
-            await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.WriteLog("모든 소켓이 연결 종료되었습니다 로그 매니저 차단후 프로그램 종료됩니다.");
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            ProcessManagerToken.Cancel();
+            LogManager.GetSingletone.WriteLog("프로세스 모니터링을 중단합니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
             Application.Exit();
+        }
+        private void UpdateCPUUsage(float CPUUsage)
+        {
+            CPUUsageTextBox.Text = CPUUsage.ToString();
+        }
+
+        private void UpdateMemoryUsage(float MemoryUsage)
+        {
+            MemoryUsageTextBox.Text = MemoryUsage.ToString();
+        }
+
+        private void UpdateFileIO(float FileIO)
+        {
+            FileIOTextBox.Text = FileIO.ToString();
+        }
+
+        private void UpdateGarbageCollection(long GarbageCollection)
+        {
+            GarbageCollectionTextBox.Text = GarbageCollection.ToString();
+        }
+
+        private void UpdateCPUTemperature(float CPUTemperature)
+        {
+            CPUTemperatureTextBox.Text = CPUTemperature.ToString();
+        }
+
+        private void UpdateSystemLog(string Log)
+        {
+            SystemLogBox.Items.Add(Log);
+            SystemLogBox.TopIndex = SystemLogBox.Items.Count - 1;
+        }
+
+        private void UpdateNetworkUsage(float NetworkUsage)
+        {
+            NetworkIOTextBox.Text = NetworkUsage.ToString();
+        }
+
+        private void UpdatePageUsage(float PageUsage)
+        {
+            PageUsageTextBox.Text = PageUsage.ToString();
+        }
+
+        private void UpdateDiskIO(float DiskIO)
+        {
+            DiskIOTextBox.Text = DiskIO.ToString();
+        }
+
+        private void UpdateThreadUsage(float ThreadUsage)
+        {
+            ThreadUsageTextBox.Text = ThreadUsage.ToString();
+        }
+        private void CheckProcessMonitor()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    while (!ProcessManagerToken.Token.IsCancellationRequested)
+                        ProcessManager.Update();
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    LogManager.GetSingletone.WriteLog(ex);
+                }
+            }, ProcessManagerToken.Token);
         }
     }
 }
