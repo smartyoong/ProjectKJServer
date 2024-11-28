@@ -87,7 +87,9 @@ namespace GameServer.Component
                 }
                 else
                 {
-                    action.Execute();
+                    // 실행중이 아니라면, 실행
+                    if(!action.IsRunning)
+                        action.Execute();
                 }
             }
         }

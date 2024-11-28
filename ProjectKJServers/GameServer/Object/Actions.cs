@@ -8,6 +8,7 @@ namespace GameServer.Object
 {
     public interface IAction
     {
+        public bool IsRunning { get; }
         public int ExpriationTime { get; }
         public int Priority { get; }
         public bool Interrupt();
