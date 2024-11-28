@@ -32,12 +32,12 @@ namespace GameServer.GameSystem
             }
             if (Count > 5)
             {
-                LogManager.GetSingletone.WriteLog("행동트리 컴포넌트 제거 실패");
+                LogManager.GetSingletone.WriteLog("액션 매니저 컴포넌트 제거 실패");
                 return;
             }
             if (!Components.TryTake(out Component))
             {
-                LogManager.GetSingletone.WriteLog("행동트리 컴포넌트 제거 실패 잠시후 재시도");
+                LogManager.GetSingletone.WriteLog("액션 매니저 컴포넌트 제거 실패 잠시후 재시도");
                 Task.Delay(TimeSpan.FromSeconds(1));
                 RemoveComponent(Component, Count++);
             }
