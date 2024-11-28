@@ -8,8 +8,8 @@ namespace GameServer.Object
 {
     public interface IAction
     {
-        public float ExpriationTime { get; }
-        public float Priority { get; }
+        public int ExpriationTime { get; }
+        public int Priority { get; }
         public bool Interrupt();
         public bool CanDoBoth(IAction Other);
         public bool IsComplete();
