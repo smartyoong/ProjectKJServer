@@ -55,7 +55,6 @@ namespace GameServer.GameSystem
                 float DeltaTime = (CurrentTickCount - LastTickCount);
                 Parallel.ForEach(Components, (Component) =>
                 {
-                    // Run을 무한정 호출해도 괜찮을까?
                     Component.Run();
                 });
                 LastTickCount = CurrentTickCount;

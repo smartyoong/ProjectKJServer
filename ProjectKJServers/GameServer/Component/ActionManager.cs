@@ -28,7 +28,6 @@ namespace GameServer.Component
         {
             Execute();
         }
-        // 이 함수 뭔가 빠진거 같은데? 계속 동적 Update를 시키는 함수가 아닌거 같은데
         // 상관 없겠다. 이미 실행중인 함수가 있으면, 준비리스트에서 대기중이겠네
         // 우선 순위가 낮다면, 만료되어서 삭제될 수도 있겠네 실행 못하고
         private void Execute()
