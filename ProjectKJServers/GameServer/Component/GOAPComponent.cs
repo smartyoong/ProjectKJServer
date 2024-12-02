@@ -35,26 +35,34 @@ namespace GameServer.Component
             }
         }
 
-        // 우선 액션 매니저를 구현하고 난다음에, 전체효용성, 타이밍, 조합 계획 구현하자
+        // 타이밍, 조합 계획 적용하자
 
         private IGOAPAction? ChooseAction()
         {
             IGOAPAction? BestAction = null;
-            float BestScore = 0;
+            float BestScore = float.MaxValue;
             foreach (var Action in Actions)
             {
                 float Score = 0;
-                foreach (var Goal in Goals)
-                {
-                    Score += Action.GetGoalChange(Goal);
-                }
-                if (Score > BestScore)
+                Score = CalcDiscontentment(Action);
+                if (Score < BestScore)
                 {
                     BestScore = Score;
                     BestAction = Action;
                 }
             }
             return BestAction;
+        }
+
+        private float CalcDiscontentment(IGOAPAction CompAction)
+        {
+            float Current = 0;
+            foreach (var Goal in Goals)
+            {
+                float NewValue = Goal.Value + CompAction.GetGoalChange(Goal);
+                Current += Goal.GetDiscontentment(NewValue);
+            }
+            return Current;
         }
     }
 }

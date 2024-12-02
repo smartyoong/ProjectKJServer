@@ -15,6 +15,10 @@ namespace GameServer.Object
     {
         public string Name;
         public float Value;
+        public float GetDiscontentment(float NewValue)
+        {
+            return NewValue * NewValue;
+        }
     }
 
     public class TestGOAPAction : IGOAPAction
