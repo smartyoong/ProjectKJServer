@@ -323,10 +323,10 @@ namespace GameServer.Object
         }
     }
 
-    public class WaitAction : IBehavior, IBTAction
+    public class WaitBTAction : IBehavior, IBTAction
     {
         private float WaitTime;
-        public WaitAction(float WaitTime)
+        public WaitBTAction(float WaitTime)
         {
             this.WaitTime = WaitTime;
         }
@@ -344,10 +344,10 @@ namespace GameServer.Object
     }
 
     // 아래의 클래스들은 디버그용이다.
-    public class LogAction : IBehavior, IBTAction
+    public class LogBTAction : IBehavior, IBTAction
     {
         private string LogMessage;
-        public LogAction(string LogMessage)
+        public LogBTAction(string LogMessage)
         {
             this.LogMessage = LogMessage;
         }

@@ -9,6 +9,7 @@ namespace GameServer.Object
     public interface IGOAPAction
     {
         public float GetGoalChange(GOAPGoal goal);
+        public IAction GetAction();
     }
     public struct GOAPGoal
     {
@@ -27,6 +28,11 @@ namespace GameServer.Object
                 default:
                     return 0;
             }
+        }
+
+        public IAction GetAction()
+        {
+            return new WaitAction(10000,1,TimeSpan.FromSeconds(5));
         }
     }
 }

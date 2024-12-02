@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CoreUtility.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -137,6 +138,47 @@ namespace GameServer.Object
                 return;
             ActionList[CurrentIndex].Execute();
             CurrentIndex++;
+        }
+    }
+
+    public class WaitAction : IAction
+    {
+        private bool _IsRunning;
+        private bool IsCompleteFlag;
+        private TimeSpan WaitingTime;
+        public bool IsRunning { get { return _IsRunning; } private set { _IsRunning = value; } }
+        public int ExpriationTime { get; private set; }
+        public int Priority { get; private set; }
+        public WaitAction(int Time, int Priority, TimeSpan WaitTime)
+        {
+            IsRunning = false;
+            ExpriationTime = Time;
+            this.Priority = Priority;
+            WaitingTime = WaitTime;
+            IsCompleteFlag = false;
+        }
+        public void Execute()
+        {
+            LogManager.GetSingletone.WriteLog($"WaitAction 실행 {WaitingTime}초 동안 대기");
+            IsRunning = true;
+            Task.Delay(WaitingTime).Wait();
+            IsRunning = false;
+            IsCompleteFlag = true;
+        }
+
+        public bool Interrupt()
+        {
+            return false;
+        }
+
+        public bool CanDoBoth(IAction Other)
+        {
+            return false;
+        }
+
+        public bool IsComplete()
+        {
+            return IsRunning && IsCompleteFlag;
         }
     }
 }
