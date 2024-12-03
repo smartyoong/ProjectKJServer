@@ -56,7 +56,7 @@ namespace GameServer.GameSystem
                 float DeltaTime = (CurrentTickCount - LastTickCount);
                 Parallel.ForEach(Components, (Component) =>
                 {
-                    // 나중에 액션 매니저를 만들면, 액션 큐에 아무것도 없을때, 액션 계획을 실행시키도록 하자
+                    // 업데이트 조건을 추가할까? 그냥해도 될것 같긴하다
                     Component.Update();
                 });
                 LastTickCount = CurrentTickCount;

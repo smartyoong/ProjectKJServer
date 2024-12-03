@@ -10,6 +10,8 @@ namespace GameServer.Object
     {
         public float GetGoalChange(GOAPGoal goal);
         public IAction GetAction();
+
+        public event Action<float>? GoalChange;
     }
     public struct GOAPGoal
     {
@@ -19,13 +21,19 @@ namespace GameServer.Object
         {
             return NewValue * NewValue;
         }
+
+        public void AddValue(float Value)
+        {
+            this.Value += Value;
+        }
     }
 
     public class TestGOAPAction : IGOAPAction
     {
+        public event Action<float>? GoalChange;
         public float GetGoalChange(GOAPGoal Goal)
         {
-            switch(Goal.Name)
+            switch (Goal.Name)
             {
                 case "Test":
                     return -1;
@@ -38,5 +46,6 @@ namespace GameServer.Object
         {
             return new WaitAction(10000,1,TimeSpan.FromSeconds(5));
         }
+
     }
 }
