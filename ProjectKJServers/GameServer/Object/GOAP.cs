@@ -12,6 +12,7 @@ namespace GameServer.Object
         public IAction GetAction();
 
         public event Action<float>? GoalChange;
+        public TimeSpan GetDurationTime();
     }
     public struct GOAPGoal
     {
@@ -30,7 +31,17 @@ namespace GameServer.Object
 
     public class TestGOAPAction : IGOAPAction
     {
+        private TimeSpan DurationTime;
+        public TestGOAPAction(TimeSpan DurationTime)
+        {
+            this.DurationTime = DurationTime;
+        }
+        public TimeSpan GetDurationTime()
+        {
+            return DurationTime;
+        }
         public event Action<float>? GoalChange;
+
         public float GetGoalChange(GOAPGoal Goal)
         {
             switch (Goal.Name)

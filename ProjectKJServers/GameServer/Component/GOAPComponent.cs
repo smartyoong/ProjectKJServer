@@ -48,7 +48,7 @@ namespace GameServer.Component
             }
         }
 
-        // 타이밍, 조합 계획 적용하자
+        // 조합 계획 적용하자
 
         private IGOAPAction? ChooseAction()
         {
@@ -80,6 +80,8 @@ namespace GameServer.Component
             foreach (var Goal in Goals)
             {
                 float NewValue = Goal.Value + CompAction.GetGoalChange(Goal);
+                NewValue += CompAction.GetDurationTime().Seconds; 
+                // 시간이 지날수록 불만족도가 높아진다. (나중에 Goal에 시간에 따른 변화율을 추가하고 가중평균 구하는 방법도 있음)
                 Current += Goal.GetDiscontentment(NewValue);
             }
             return Current;
