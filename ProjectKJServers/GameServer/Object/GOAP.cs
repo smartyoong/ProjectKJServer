@@ -53,6 +53,14 @@ namespace GameServer.Object
                 Goal.AddValue(Action.GetGoalChange(Goal));
             }
         }
+
+        public void RevertAction(IGOAPAction Action)
+        {
+            foreach (var Goal in Goals)
+            {
+                Goal.AddValue(-Action.GetGoalChange(Goal));
+            }
+        }
         // 재귀 형식으로 사용하면서, 현재의 함수 진행상황을 일시정지했다가 재개했다가 하는 형식이므로
         // 코루틴이 매우 적합하다.
         // C#의 코루틴은 IEnumerator를 통해 외부에서 관리하기때문에, 매개변수로 이 클래스를 넘겨도 문제가 없다.

@@ -10,81 +10,69 @@ namespace GameServer.Component
 {
     internal class GOAPComponent
     {
-        private List<GOAPGoal> Goals;
-        private List<IGOAPAction> Actions;
         private ActionManager Manager;
+        private GOAP Goaps;
+        private IGOAPAction? BestAction;
+        private int MaxDepth = 0;
+        private float BestDiscontentment = float.MaxValue;
 
-        public List<GOAPGoal> GoalList { get { return Goals; } }
-        public List<IGOAPAction> ActionList { get { return Actions; } }
-
-        public GOAPComponent(ActionManager ActionManager, List<GOAPGoal> UserGoal, List<IGOAPAction> UserActions)
+        public GOAPComponent(ActionManager ActionManager, GOAP Goaps)
         {
-            Goals = UserGoal;
-            Actions = UserActions;
             Manager = ActionManager;
+            this.Goaps = Goaps;
+            MaxDepth = Goaps.GetMaxDepth();
         }
 
-        // 나중에 액션 매니저를 만들어서 액션 큐에 아무것도 없을때, 액션 계획을 실행시키도록 하자
-        // Update 메서드에서 ActionManager에게 액션을 추가하도록하자
         public void Update()
         {
-            //만약에 목표치가 0이면, 액션 계획을 실행시킬 필요가 없다.
-            if (Goals.Aggregate(0f, (acc, Goal) => acc + Goal.Value) <= 0f)
+            List<IGOAPAction> Actions = new List<IGOAPAction>();
+            PlanningAction(0,Actions,Goaps);
+            // 다음번 업데이트를 위해서 최고값 초기화
+            BestDiscontentment = float.MaxValue;
+            if (BestAction != null)
             {
+                Manager.AddActionToSchedule(BestAction.GetAction());
+            }
+        }
+
+        // 현재 Goal 상태를 기준으로 실행 가능한 Action 목록중에서 가장 좋은 것을 선택한다. DFS 기반
+        private void PlanningAction(int CurrentDepth, List<IGOAPAction> Actions, GOAP CurrentGOAP)
+        {
+            if(CurrentDepth >= MaxDepth)
+            {
+                float CurrentDiscontentment = Goaps.CalculateDiscontentment();
+                if(CurrentDiscontentment < BestDiscontentment)
+                {
+                    BestDiscontentment = CurrentDiscontentment;
+                    // 현재 실행할 딱 1개의 Action만을 선택하면 되는거다.
+                    BestAction = Actions[0];
+
+                    // 대충 이런식으로 하자 이걸 Pawn이 미리 세팅해두자
+                    // 그리고 Action Execute에서 Event를 Invoke하자
+                    // pawn이 미리 세팅해둬야하는 event 연결 코드 예시
+                    //if (BestAction != null)  
+                    //{
+                    //BestAction.GoalChange += Goals[0].AddValue;
+                    //}
+                }
                 return;
             }
 
-            // 아 근데 여기서 액션을 지정하고 실제로 액션일 실행될때, Goal의 Value를 변경시켜야하는데,,
-            // 그럼 액션 매니저에서 감소를 시켜야하는건가? 아니면 여기서 감소를 시켜야하는건가?
-            // 가장 깔끔한건 Action 매니저에서 감소를 시키는게 좋을것 같다.
-            // 그러면 Action Manager가 Goal을 알아야하나? 아니면 GOAPComponent가 Action Manager에게 알려줘야하나? 아니면 GoalAction이 참조를해야하나?
-            // 아니면 GOAPGoal에 이벤트를 추가해서 Goal이 변경될때마다 알려주는걸로 할까?
-            // 일단 조합 계획까지 다 구현하고 생각해보자
-            // 또한 Goal의 Value도 올려줘야하는 코드가 필요하고, Goal이 0미만으로 안떨어지게 예외처리도 필요하다..
-            IGOAPAction? Action = ChooseAction();
-            if (Action != null)
+            // 코루틴 함수 현재 상태값을 저장하고 멈췄다가 실행했다가하는 가장 좋은 방법인듯
+            IEnumerator<IGOAPAction> ActionEnumerator = CurrentGOAP.GetActionCoroutine();
+
+            while (ActionEnumerator.MoveNext())
             {
-                Manager.AddActionToSchedule(Action.GetAction());
+                IGOAPAction Action = ActionEnumerator.Current;
+                // Action을 실행하고 Goal을 변경한다.
+                CurrentGOAP.ApplyAction(Action);
+                Actions.Add(Action);
+                PlanningAction(CurrentDepth + 1, Actions, CurrentGOAP);
+                // Action을 실행하고 Goal을 변경한 상태에서 다음 Action을 실행하기 위해서는
+                // 이전 Action을 취소해야한다.
+                CurrentGOAP.RevertAction(Action);
+                Actions.Remove(Action);
             }
-        }
-
-        // 조합 계획 적용하자
-
-        private IGOAPAction? ChooseAction()
-        {
-            IGOAPAction? BestAction = null;
-            float BestScore = float.MaxValue;
-            foreach (var Action in Actions)
-            {
-                float Score = 0;
-                Score = CalcDiscontentment(Action);
-                if (Score < BestScore)
-                {
-                    BestScore = Score;
-                    BestAction = Action;
-                }
-            }
-            // 대충 이런식으로 하자 이걸 Pawn이 미리 세팅해두자
-            // 그리고 Action Execute에서 Event를 Invoke하자
-            //if (BestAction != null)
-            //{
-                //BestAction.GoalChange += Goals[0].AddValue;
-            //}
-
-            return BestAction;
-        }
-
-        private float CalcDiscontentment(IGOAPAction CompAction)
-        {
-            float Current = 0;
-            foreach (var Goal in Goals)
-            {
-                float NewValue = Goal.Value + CompAction.GetGoalChange(Goal);
-                NewValue += CompAction.GetDurationTime().Seconds; 
-                // 시간이 지날수록 불만족도가 높아진다. (나중에 Goal에 시간에 따른 변화율을 추가하고 가중평균 구하는 방법도 있음)
-                Current += Goal.GetDiscontentment(NewValue);
-            }
-            return Current;
         }
     }
 }
