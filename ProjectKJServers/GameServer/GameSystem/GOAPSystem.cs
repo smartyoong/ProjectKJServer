@@ -63,7 +63,7 @@ namespace GameServer.GameSystem
             }
             catch (Exception e)
             {
-                LogManager.GetSingletone.WriteLog(e.ToString());
+                LogManager.GetSingletone.WriteLog(e);
             }
         }
     }
