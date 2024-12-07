@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,11 +10,13 @@ namespace GameServer.Object
 {
     public interface IGOAPAction
     {
+        public bool IsComplete { get; }
         public float GetGoalChange(GOAPGoal goal);
         public IAction GetAction();
 
         public event Action<float>? GoalChange;
         public TimeSpan GetDurationTime();
+        public void Run();
     }
     public struct GOAPGoal
     {
@@ -81,15 +84,18 @@ namespace GameServer.Object
 
     public class TestGOAPAction : IGOAPAction
     {
+        private bool Complete = false;
         private TimeSpan DurationTime;
         public TestGOAPAction(TimeSpan DurationTime)
         {
             this.DurationTime = DurationTime;
         }
+        public bool IsComplete { get { return Complete; } }
         public TimeSpan GetDurationTime()
         {
             return DurationTime;
         }
+        // 액션 매니저를 걷어낸다면 필요 없을 코드
         public event Action<float>? GoalChange;
 
         public float GetGoalChange(GOAPGoal Goal)
@@ -103,6 +109,13 @@ namespace GameServer.Object
             }
         }
 
+        public void Run()
+        {
+            Task.Delay(DurationTime);
+            Interlocked.Exchange(ref Complete, true);
+        }
+
+        // 액션 매니저를 걷어낸다면 필요 없을 코드
         public IAction GetAction()
         {
             return new WaitAction(10000,1,TimeSpan.FromSeconds(5));
