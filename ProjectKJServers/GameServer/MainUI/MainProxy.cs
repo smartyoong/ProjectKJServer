@@ -182,6 +182,11 @@ namespace GameServer.MainUI
             return GameEngineClass.GetMapGraph(MapID);
         }
 
+        public List<Node>? FindPath(in Graph G, Node Start, Node End)
+        {
+            return GameEngineClass.FindPath(G, Start, End);
+        }
+
         ////////////////////////////////////////////////////////////////////////
 
         public void StartAcceptLoginServer(TaskCompletionSource<bool> LoginServerReadyEvent)

@@ -59,6 +59,8 @@ namespace GameServer.Object
         private CollisionComponent LineTracerComponent;
         private PathComponent PathComponent;
         private int CurrentMapID = 0;
+        private HealthPointComponent HealthPointComponent;
+        private MagicPointComponent MagicPointComponent;
 
         public bool IsLineCollideObstacle { get; set; } = false;
         public bool IsCircleCollideObstacle { get; set; } = false;

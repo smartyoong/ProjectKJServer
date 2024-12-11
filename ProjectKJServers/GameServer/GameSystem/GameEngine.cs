@@ -30,6 +30,8 @@ namespace GameServer.GameSystem
         private GOAPSystem GOAPSystem;
         private ActionManagerSystem ActionManagerSystem;
         private ProcessMonitor ProcessMonitorSystem;
+        private AStarPathFindSystem AStarPathFindSystem;
+        private EuclideanHuristic EuclidHuristicMethod;
 
         public GameEngine()
         {
@@ -41,6 +43,8 @@ namespace GameServer.GameSystem
             GOAPSystem = new GOAPSystem();
             ActionManagerSystem = new ActionManagerSystem();
             ProcessMonitorSystem = new ProcessMonitor();
+            AStarPathFindSystem = new AStarPathFindSystem();
+            EuclidHuristicMethod = new EuclideanHuristic();
         }
 
         public void Start()
@@ -149,6 +153,12 @@ namespace GameServer.GameSystem
                 GameEngineCancleToken.Dispose();
             }
             IsAlreadyDisposed = true;
+        }
+
+        public List<Node>? FindPath(in Graph G, Node Start, Node End)
+        {
+            List<Node>? Result = AStarPathFindSystem.FindPath(G,Start,End, EuclidHuristicMethod);
+            return Result;
         }
 
         public void AddActionManagerComponentToSystem(ActionManager Component)

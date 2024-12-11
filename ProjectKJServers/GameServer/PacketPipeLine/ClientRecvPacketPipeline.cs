@@ -12,6 +12,13 @@ using CoreUtility.Utility;
 using GameServer.MainUI;
 using GameServer.Object;
 
+// TODO:
+//1. 객체 할당 최소화
+//2. 메모리 관리 최적화
+//3. 가비지 컬렉션 튜닝
+//4. 메모리 누수 방지
+//5. 최적화된 데이터 구조 사용
+
 namespace GameServer.PacketPipeLine
 {
     internal class ClientRecvPacketPipeline
