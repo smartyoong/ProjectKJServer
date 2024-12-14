@@ -104,7 +104,7 @@ namespace GameServer.Object
             ActionList = new List<IAction>();
             CurrentIndex = 0;
         }
-        
+
         // 첫번째 서브 액션을 인터럽트 가능하면 인터럽트가 가능한거다.
         public bool Interrupt()
         {
@@ -176,6 +176,80 @@ namespace GameServer.Object
             return false;
         }
 
+        public bool IsComplete()
+        {
+            return IsRunning && IsCompleteFlag;
+        }
+    }
+
+    public class WaitForSignal : IAction
+    {
+        private bool _IsRunning;
+        private bool IsCompleteFlag;
+        private CancellationToken Signal;
+        public bool IsRunning { get { return _IsRunning; } private set { _IsRunning = value; } }
+        public int ExpriationTime { get; private set; }
+        public int Priority { get; private set; }
+        public WaitForSignal(int Time, int Priority, CancellationToken SignalToken)
+        {
+            IsRunning = false;
+            ExpriationTime = Time;
+            this.Priority = Priority;
+            IsCompleteFlag = false;
+            Signal = SignalToken;
+        }
+        public void Execute()
+        {
+            while (!Signal.IsCancellationRequested)
+            {
+                LogManager.GetSingletone.WriteLog("신호 대기중");
+                Task.Delay(1000).Wait();
+            }
+            LogManager.GetSingletone.WriteLog("신호 도착");
+        }
+        public bool Interrupt()
+        {
+            return true;
+        }
+        public bool CanDoBoth(IAction Other)
+        {
+            return false;
+        }
+        public bool IsComplete()
+        {
+            return IsRunning && IsCompleteFlag;
+        }
+    }
+
+    public class SignalAction : IAction
+    {
+        private bool _IsRunning;
+        private bool IsCompleteFlag;
+        private CancellationTokenSource Signal;
+        public bool IsRunning { get { return _IsRunning; } private set { _IsRunning = value; } }
+        public int ExpriationTime { get; private set; }
+        public int Priority { get; private set; }
+        public SignalAction(int Time, int Priority, CancellationTokenSource SignalToken)
+        {
+            IsRunning = false;
+            ExpriationTime = Time;
+            this.Priority = Priority;
+            IsCompleteFlag = false;
+            Signal = SignalToken;
+        }
+        public void Execute()
+        {
+            LogManager.GetSingletone.WriteLog("신호 발생");
+            Signal.Cancel();
+        }
+        public bool Interrupt()
+        {
+            return true;
+        }
+        public bool CanDoBoth(IAction Other)
+        {
+            return true;
+        }
         public bool IsComplete()
         {
             return IsRunning && IsCompleteFlag;
