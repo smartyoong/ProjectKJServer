@@ -12,7 +12,7 @@ namespace GameServer {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.11.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.12.0.0")]
     internal sealed partial class GameServerSettings : global::System.Configuration.ApplicationSettingsBase {
         
         private static GameServerSettings defaultInstance = ((GameServerSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new GameServerSettings())));
@@ -236,6 +236,30 @@ namespace GameServer {
             }
             set {
                 this["PlayerCollisionRadius"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int LevelHPRate {
+            get {
+                return ((int)(this["LevelHPRate"]));
+            }
+            set {
+                this["LevelHPRate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public int LevelMPRate {
+            get {
+                return ((int)(this["LevelMPRate"]));
+            }
+            set {
+                this["LevelMPRate"] = value;
             }
         }
     }

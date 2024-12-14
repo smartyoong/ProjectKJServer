@@ -8,19 +8,19 @@ namespace GameServer.Component
 {
     internal class MagicPointComponent
     {
-        public uint MaxMagicPoint { get; set; }
-        public uint CurrentMagicPoint { get; set; }
-        public MagicPointComponent(uint MaxMP, uint CurrentMP)
+        public int MaxMagicPoint { get; set; }
+        public int CurrentMagicPoint { get; set; }
+        public MagicPointComponent(int MaxMP, int CurrentMP)
         {
             MaxMagicPoint = MaxMP;
             CurrentMagicPoint = CurrentMP;
         }
 
-        public bool IsEnough(uint ConsumeAmount)
+        public bool IsEnough(int ConsumeAmount)
         {
             return CurrentMagicPoint >= ConsumeAmount;
         }
-        public void Consume(uint ConsumeAmount)
+        public void Consume(int ConsumeAmount)
         {
             CurrentMagicPoint -= ConsumeAmount;
             if (CurrentMagicPoint < 0)
@@ -28,7 +28,7 @@ namespace GameServer.Component
                 CurrentMagicPoint = 0;
             }
         }
-        public void Restore(uint RestoreAmount)
+        public void Restore(int RestoreAmount)
         {
             if (CurrentMagicPoint >= MaxMagicPoint)
             {

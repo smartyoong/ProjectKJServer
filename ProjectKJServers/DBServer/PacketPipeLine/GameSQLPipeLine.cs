@@ -130,7 +130,7 @@ namespace DBServer.PacketPipeLine
                 ResponseDBCharBaseInfoPacket CharBaseInfoPacket = new ResponseDBCharBaseInfoPacket((string)CharacterInfoList[0][0],
                     (int)CharacterInfoList[0][1], (int)CharacterInfoList[0][2], (int)CharacterInfoList[0][3], (int)CharacterInfoList[0][4],
                     (int)CharacterInfoList[0][5], (int)CharacterInfoList[0][6], (int)CharacterInfoList[0][7], (int)CharacterInfoList[0][8], (int)CharacterInfoList[0][9],
-                    (string)Parameters[1].Value);
+                    (string)Parameters[1].Value, (int)CharacterInfoList[0][10], (int)CharacterInfoList[0][11]);
                 MainProxy.GetSingletone.SendToGameServer(DBPacketListID.RESPONSE_CHAR_BASE_INFO, CharBaseInfoPacket);
             }
         }

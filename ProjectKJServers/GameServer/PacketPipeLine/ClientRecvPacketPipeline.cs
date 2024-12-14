@@ -334,7 +334,8 @@ namespace GameServer.PacketPipeLine
                 }
                 SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetName, Character.GetAppearanceInfo.Gender,
                     Character.GetAppearanceInfo.PresetNumber, Character.GetJobInfo.Job, Character.GetJobInfo.Level, Character.GetCurrentMapID,
-                    (int)Position.X, (int)Position.Y, Character.GetLevelInfo.Level, Character.GetLevelInfo.CurrentExp, NickName, (int)Destination.X, (int)Destination.Y);
+                    (int)Position.X, (int)Position.Y, Character.GetLevelInfo.Level, Character.GetLevelInfo.CurrentExp, NickName, (int)Destination.X, (int)Destination.Y
+                    , Character.GetHPComponent.CurrentHealthPoint, Character.GetMPComponent.CurrentMagicPoint);
 
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacketToNewUser, Packet.AccountID);
                 LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetName}의 정보를 보냈습니다.");

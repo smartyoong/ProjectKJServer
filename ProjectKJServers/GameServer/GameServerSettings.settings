@@ -56,5 +56,11 @@
     <Setting Name="PlayerCollisionRadius" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">42</Value>
     </Setting>
+    <Setting Name="LevelHPRate" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="LevelMPRate" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">50</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -8,11 +8,11 @@ namespace GameServer.Component
 {
     internal class HealthPointComponent
     {
-        public uint MaxHealthPoint { get; set; }
-        public uint CurrentHealthPoint { get; set; }
+        public int MaxHealthPoint { get; set; }
+        public int CurrentHealthPoint { get; set; }
         private Action DeathAction;
 
-        public HealthPointComponent(uint MaxHP, uint CurrentHP, Action DeathAction)
+        public HealthPointComponent(int MaxHP, int CurrentHP, Action DeathAction)
         {
             MaxHealthPoint = MaxHP;
             CurrentHealthPoint = CurrentHP;
@@ -29,7 +29,7 @@ namespace GameServer.Component
             DeathAction();
         }
 
-        public void TakeDamage(uint Damage)
+        public void TakeDamage(int Damage)
         {
             CurrentHealthPoint -= Damage;
             if (CurrentHealthPoint < 0)
@@ -39,7 +39,7 @@ namespace GameServer.Component
             }
         }
 
-        public void Heal(uint HealAmount)
+        public void Heal(int HealAmount)
         {
             if(CurrentHealthPoint >= MaxHealthPoint)
             {

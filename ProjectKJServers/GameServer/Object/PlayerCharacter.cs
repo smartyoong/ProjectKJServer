@@ -71,7 +71,7 @@ namespace GameServer.Object
 
         public string GetName { get { return AccountInfo.AccountID; } }
 
-        public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition, uint HP, uint MP)
+        public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition, int HP, int MP)
         {
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);
             JobInfo = new CharacterJobInfo(Job, JobLevel);
@@ -98,6 +98,11 @@ namespace GameServer.Object
             MainProxy.GetSingletone.AddCollisionComponent(LineTracerComponent);
 
             PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
+
+            int MaxHP = JobLevel * GameServerSettings.Default.LevelHPRate;
+            int MaxMP = JobLevel * GameServerSettings.Default.LevelMPRate;
+            HealthPointComponent = new HealthPointComponent(MaxHP, HP,Death);
+            MagicPointComponent = new MagicPointComponent(MaxMP, MP);
         }
 
         public bool MoveToLocation(Vector3 Position)
@@ -160,6 +165,12 @@ namespace GameServer.Object
         private void OnPawnBlock(CollisionType Type, PawnType PAwnType, Pawn Who, Vector2 Normal, Vector2 HitPoint)
         {
             LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Who}에게 {Type} 충돌했습니다.");
+        }
+
+        private void Death()
+        {
+            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 사망했습니다.");
+            // 여기서 캐릭터 사망처리를 하자
         }
     }
 }

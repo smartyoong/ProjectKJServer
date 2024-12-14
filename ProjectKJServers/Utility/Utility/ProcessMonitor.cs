@@ -128,20 +128,17 @@ namespace CoreUtility.Utility
 
         private float GetCpuTemperature()
         {
-            // 현재 프로세스 관리자 권한으로 실행시키도록 해야함
             float Temperature = 0.0f;
-            ManagementObjectSearcher Searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature");
-
-            foreach (ManagementObject obj in Searcher.Get())
+            using (ManagementObjectSearcher Searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature"))
             {
-                // 온도는 Kelvin 단위로 반환되므로, 섭씨로 변환합니다.
-                Temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
-                Temperature = (Temperature - 2732) / 10.0f;
+                foreach (ManagementObject obj in Searcher.Get())
+                {
+                    Temperature = Convert.ToSingle(obj["CurrentTemperature"].ToString());
+                    Temperature = (Temperature - 2732) / 10.0f;
+                }
             }
-
             return Temperature;
         }
-
         private List<string> GetSystemEvents()
         {
             List<string> EventLogs = new List<string>();

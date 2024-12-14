@@ -30,7 +30,7 @@ namespace DBServer.Packet_SPList
         public string NickName { get; set; } = NickName;
     }
     [Serializable]
-    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName)
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP)
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -43,6 +43,8 @@ namespace DBServer.Packet_SPList
         public int Level { get; set; } = Level;
         public int EXP { get; set; } = EXP;
         public string NickName { get; set; } = NickName;
+        public int HP { get; set; } = HP;
+        public int MP { get; set; } = MP;
     }
     [Serializable]
     public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
