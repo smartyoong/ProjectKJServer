@@ -210,6 +210,16 @@ namespace GameServer.GameSystem
             ArcKinematicSystem.RemoveComponent(Component, Count);
         }
 
+        public void AddCollisionComponentToSystem(CollisionComponent Component)
+        {
+            CollisionSystem.AddComponent(Component);
+        }
+
+        public void RemoveCollisionComponentFromSystem(CollisionComponent Component, int Count)
+        {
+            CollisionSystem.RemoveComponent(Component, Count);
+        }
+
         public void AddUserToMap(Pawn Character)
         {
             CollisionSystem.AddUser(Character);
@@ -274,13 +284,14 @@ namespace GameServer.GameSystem
         {
 
             PlayerCharacter NewCharacter = new PlayerCharacter(Info.AccountID, Info.NickName, Info.MapID, Info.Job, 
-                Info.JobLevel, Info.Level, Info.EXP, Info.PresetNumber, Info.Gender, new System.Numerics.Vector3(Info.X, Info.Y, 0));
+                Info.JobLevel, Info.Level, Info.EXP, Info.PresetNumber, Info.Gender, new System.Numerics.Vector3(Info.X, Info.Y, 0)
+                ,0,0); //임시
 
             if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
                 LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
 
             MainProxy.GetSingletone.AddNickName(Info.AccountID, Info.NickName);
-
+            MainProxy.GetSingletone.AddUserToMap(NewCharacter);
         }
 
         public PlayerCharacter? GetCharacter(string AccountID)
@@ -311,6 +322,7 @@ namespace GameServer.GameSystem
                 if(TempChar != null)
                 {
                     TempChar.RemoveCharacter();
+                    MainProxy.GetSingletone.RemoveUserFromMap(TempChar);
                 }
                 LogManager.GetSingletone.WriteLog($"계정 {AccountID}의 캐릭터를 제거했습니다.");
             }

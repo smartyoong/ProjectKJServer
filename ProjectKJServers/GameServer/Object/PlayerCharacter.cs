@@ -8,25 +8,6 @@ using System.Numerics;
 namespace GameServer.Object
 {
     using Vector3 = System.Numerics.Vector3;
-    enum PawnType
-    {
-        Player = 0,
-        Monster = 1,
-        NPC = 2,
-        Projectile = 3
-    }
-
-    interface Pawn
-    {
-        Vector3 GetCurrentPosition();
-        string GetAccountID();
-        float GetOrientation();
-        int GetCurrentMapID();
-        void UpdateCollisionComponents(float DeltaTime, MapData Data, List<Pawn>? Characters);
-        CollisionComponent GetCollisionComponent();
-        PawnType GetPawnType();
-        PathComponent GetPathComponent();
-    }
 
     struct CharacterAccountInfo(string AccountID, string NickName)
     {
@@ -65,15 +46,32 @@ namespace GameServer.Object
         public bool IsLineCollideObstacle { get; set; } = false;
         public bool IsCircleCollideObstacle { get; set; } = false;
 
-        public CharacterAccountInfo GetAccountInfo() => AccountInfo;
-        public CharacterJobInfo GetJobInfo() => JobInfo;
-        public ChracterAppearanceInfo GetAppearanceInfo() => AppearanceInfo;
-        public CharacterLevelInfo GetLevelInfo() => LevelInfo;
-        public KinematicComponent GetMovementComponent() => MovementComponent;
-        public CollisionComponent GetLineComponent() => LineTracerComponent;
-        public PathComponent GetPathComponent() => PathComponent;
+        public CharacterAccountInfo GetAccountInfo { get { return AccountInfo; } }
 
-        public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition)
+        public CharacterJobInfo GetJobInfo { get { return JobInfo; } }
+
+        public ChracterAppearanceInfo GetAppearanceInfo { get { return AppearanceInfo; } }
+
+        public CharacterLevelInfo GetLevelInfo { get { return LevelInfo; } }
+
+        public KinematicComponent GetMovementComponent { get { return MovementComponent; } }
+
+        public CollisionComponent GetLineComponent { get { return LineTracerComponent; } }
+
+        public PathComponent GetPathComponent { get { return PathComponent; } }
+
+        public MagicPointComponent GetMPComponent { get { return MagicPointComponent; } }
+        public HealthPointComponent GetHPComponent { get { return HealthPointComponent; } }
+
+        public int GetCurrentMapID { get { return CurrentMapID; } }
+
+        public CollisionComponent GetCollisionComponent { get { return CircleCollisionComponent; } }
+
+        public PawnType GetPawnType { get { return PawnType.Player; } }
+
+        public string GetName { get { return AccountInfo.AccountID; } }
+
+        public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition, uint HP, uint MP)
         {
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);
             JobInfo = new CharacterJobInfo(Job, JobLevel);
@@ -96,8 +94,10 @@ namespace GameServer.Object
             LineTracerComponent.EndCollideWithObstacleDelegate = OnEndObsatcleBlock;
             CircleCollisionComponent.CollideWithPawnDelegate = OnPawnBlock;
 
+            MainProxy.GetSingletone.AddCollisionComponent(CircleCollisionComponent);
+            MainProxy.GetSingletone.AddCollisionComponent(LineTracerComponent);
+
             PathComponent = new PathComponent(10); // 일단 임시로 이렇게 사용 가능하다~ 알려주기 위함 위에선 null을 줌
-            MainProxy.GetSingletone.AddUserToMap(this);
         }
 
         public bool MoveToLocation(Vector3 Position)
@@ -108,53 +108,23 @@ namespace GameServer.Object
 
         public void RemoveCharacter()
         {
-            MainProxy.GetSingletone.RemoveUserFromMap(this);
             MainProxy.GetSingletone.RemoveKinematicMoveComponent(MovementComponent, 0);
+            MainProxy.GetSingletone.RemoveCollisionComponent(CircleCollisionComponent, 0);
+            MainProxy.GetSingletone.RemoveCollisionComponent(LineTracerComponent, 0);
+        }
+        // 여기서 병목이 일어날 수도 있다. Remove하고 Add하면 알아서 CurrentMapID를 읽어와서 추가한다.
+        public void MoveToAnotherMap(int MapID)
+        {
+            MainProxy.GetSingletone.RemoveUserFromMap(this);
+            CurrentMapID = MapID;
+            MainProxy.GetSingletone.AddUserToMap(this);
         }
 
         public void SendAnotherUserArrivedDestination()
         {
             Vector3 CurrentPosition = MovementComponent.CharcaterStaticData.Position;
-            SendUserMoveArrivedPacket Packet = new SendUserMoveArrivedPacket(GetAccountInfo().AccountID, CurrentMapID, (int)CurrentPosition.X, (int)CurrentPosition.Y);
+            SendUserMoveArrivedPacket Packet = new SendUserMoveArrivedPacket(GetAccountInfo.AccountID, CurrentMapID, (int)CurrentPosition.X, (int)CurrentPosition.Y);
             MainProxy.GetSingletone.SendToSameMap(CurrentMapID, GamePacketListID.SEND_USER_MOVE_ARRIVED, Packet);
-        }
-
-        public Vector3 GetCurrentPosition()
-        {
-            return MovementComponent.CharcaterStaticData.Position;
-        }
-
-        public string GetAccountID()
-        {
-            return AccountInfo.AccountID;
-        }
-
-        public float GetOrientation()
-        {
-            return MovementComponent.CharcaterStaticData.Orientation;
-        }
-
-        public int GetCurrentMapID()
-        {
-            return CurrentMapID;
-        }
-
-        public CollisionComponent GetCollisionComponent()
-        {
-            return CircleCollisionComponent;
-        }
-
-        public void UpdateCollisionComponents(float DeltaTime, MapData Data, List<Pawn>? Characters)
-        {
-            Parallel.ForEach(new CollisionComponent[] { CircleCollisionComponent, LineTracerComponent }, (Component) =>
-            {
-                Component.Update(DeltaTime, Data, Characters);
-            });
-        }
-
-        public PawnType GetPawnType()
-        {
-            return PawnType.Player;
         }
 
         private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle, Vector2 Normal, Vector2 HitPoint)
@@ -187,9 +157,9 @@ namespace GameServer.Object
             }
         }
 
-        public void OnPawnBlock(CollisionType Type, PawnType PAwnType, Pawn Who, Vector2 Normal, Vector2 HitPoint)
+        private void OnPawnBlock(CollisionType Type, PawnType PAwnType, Pawn Who, Vector2 Normal, Vector2 HitPoint)
         {
-            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Who.GetAccountID()}에게 {Type} 충돌했습니다.");
+            LogManager.GetSingletone.WriteLog($"캐릭터 {AccountInfo.NickName}이 {Who}에게 {Type} 충돌했습니다.");
         }
     }
 }

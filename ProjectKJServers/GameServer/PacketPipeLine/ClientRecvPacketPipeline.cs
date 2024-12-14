@@ -317,14 +317,14 @@ namespace GameServer.PacketPipeLine
 
             foreach (var User in MapUsers)
             {
-                PlayerCharacter? Character = MainProxy.GetSingletone.GetCharacterByAccountID(User.GetAccountID());
+                PlayerCharacter? Character = MainProxy.GetSingletone.GetCharacterByAccountID(User.GetName);
                 if (Character == null)
                     continue;
-                if (Character.GetAccountInfo().AccountID == Packet.AccountID)
+                if (Character.GetAccountInfo.AccountID == Packet.AccountID)
                     continue;
-                System.Numerics.Vector3 Destination = Character.GetMovementComponent().TargetStaticData.Position;
-                System.Numerics.Vector3 Position = Character.GetMovementComponent().CharcaterStaticData.Position;
-                string NickName = MainProxy.GetSingletone.GetNickName(User.GetAccountID());
+                System.Numerics.Vector3 Destination = Character.GetMovementComponent.TargetStaticData.Position;
+                System.Numerics.Vector3 Position = Character.GetMovementComponent.CharcaterStaticData.Position;
+                string NickName = MainProxy.GetSingletone.GetNickName(User.GetName);
                 // 목표점이 이동점과 같다는 것은 이동중이 아니라는 것을 의미한다.
                 if (Destination == Position)
                 {
@@ -332,12 +332,12 @@ namespace GameServer.PacketPipeLine
                     Destination.Y = -1;
                     Destination.Z = -1;
                 }
-                SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetAccountID(), Character.GetAppearanceInfo().Gender,
-                    Character.GetAppearanceInfo().PresetNumber, Character.GetJobInfo().Job, Character.GetJobInfo().Level, Character.GetCurrentMapID(),
-                    (int)Position.X, (int)Position.Y, Character.GetLevelInfo().Level, Character.GetLevelInfo().CurrentExp, NickName, (int)Destination.X, (int)Destination.Y);
+                SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetName, Character.GetAppearanceInfo.Gender,
+                    Character.GetAppearanceInfo.PresetNumber, Character.GetJobInfo.Job, Character.GetJobInfo.Level, Character.GetCurrentMapID,
+                    (int)Position.X, (int)Position.Y, Character.GetLevelInfo.Level, Character.GetLevelInfo.CurrentExp, NickName, (int)Destination.X, (int)Destination.Y);
 
                 MainProxy.GetSingletone.SendToClient(GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacketToNewUser, Packet.AccountID);
-                LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetAccountID()}의 정보를 보냈습니다.");
+                LogManager.GetSingletone.WriteLog($"Func_ResponseCharBaseInfo: {Packet.AccountID}에게 {User.GetName}의 정보를 보냈습니다.");
             }
         }
 

@@ -4,6 +4,7 @@ using GameServer.Component;
 using GameServer.MainUI;
 using GameServer.Object;
 using GameServer.PacketList;
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 
 namespace GameServer.GameSystem
@@ -17,9 +18,11 @@ namespace GameServer.GameSystem
         //ConCurrentBag는 편의성 좋은 메서드가 하나도 없네, AddRemove때만 Lock을 잘 걸자
         private List<List<Pawn>>? MapUserList;
         private long LastTickCount = 0;
+        private ConcurrentBag<CollisionComponent> Components;
 
         public CollisionSystem()
         {
+            Components = new ConcurrentBag<CollisionComponent>();
         }
 
         public void SetMapData(ref Dictionary<int, MapData> MapDataDictionary)
@@ -32,6 +35,30 @@ namespace GameServer.GameSystem
             for (int i = 0; i < MaxMapID; i++)
             {
                 MapUserList.Add(new List<Pawn>());
+            }
+        }
+
+        public void AddComponent(CollisionComponent Component)
+        {
+            Components.Add(Component);
+        }
+
+        public void RemoveComponent(CollisionComponent? Component, int Count)
+        {
+            if (Component == null)
+            {
+                return;
+            }
+            if (Count > 5)
+            {
+                LogManager.GetSingletone.WriteLog("컴포넌트 제거 실패");
+                return;
+            }
+            if (!Components.TryTake(out Component))
+            {
+                LogManager.GetSingletone.WriteLog("컴포넌트 제거 실패 잠시후 재시도");
+                Task.Delay(TimeSpan.FromSeconds(1));
+                RemoveComponent(Component, Count++);
             }
         }
 
@@ -51,15 +78,11 @@ namespace GameServer.GameSystem
                 if (MapUserList == null)
                     return;
 
-                // 2중 for문 미쳤네 ㅋㅋ
-                Parallel.ForEach(MapUserList, pawnList =>
+                // 3중 포문도 없이 개깔끔하게 리팩토링 성공이다!
+                Parallel.ForEach(Components, (Component) =>
                 {
-                    foreach (var pawn in pawnList)
-                    {
-                        int MapID = pawn.GetCurrentMapID();
-                        // 각 캐릭터가 CollisionComponent를 업데이트 시키도록하자 각 캐릭터가 몇개의 CollisionComponent를 가지고 있는지는 알 수 없다.
-                        pawn.UpdateCollisionComponents(DeltaTime, MapDataDictionary[MapID], GetMapUsers(MapID));
-                    }
+                    Pawn Owner = Component.GetOwner;
+                    Component.Update(DeltaTime, MapDataDictionary[Owner.GetCurrentMapID], GetMapUsers(Owner.GetCurrentMapID));
                 });
 
                 LastTickCount = CurrentTickCount;
@@ -77,7 +100,7 @@ namespace GameServer.GameSystem
                 LogManager.GetSingletone.WriteLog("맵 유저 리스트가 초기화 되지 않았습니다.");
                 return false;
             }
-            int MapID = Character.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID;
             if (MapUserList.Count <= MapID)
             {
                 LogManager.GetSingletone.WriteLog($"맵 ID {MapID}에 해당하는 맵 정보가 없습니다.");
@@ -92,7 +115,7 @@ namespace GameServer.GameSystem
             {
                 return;
             }
-            int MapID = Character.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID;
             lock (_lock)
             {
                 MapUserList![MapID].Add(Character);
@@ -105,7 +128,7 @@ namespace GameServer.GameSystem
             {
                 return;
             }
-            int MapID = Character.GetCurrentMapID();
+            int MapID = Character.GetCurrentMapID;
 
             if (MapUserList![MapID] == null)
             {
@@ -168,7 +191,7 @@ namespace GameServer.GameSystem
 
             foreach (Pawn User in MapUserList![MapID])
             {
-                Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetAccountID());
+                Socket? Sock = MainProxy.GetSingletone.GetClientSocketByAccountID(User.GetName);
                 if (Sock != null)
                     MainProxy.GetSingletone.SendToClient(PacketID, Packet, MainProxy.GetSingletone.GetClientID(Sock));
             }

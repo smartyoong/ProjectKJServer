@@ -113,6 +113,16 @@ namespace GameServer.MainUI
             GameEngineClass.RemoveArcKinematicComponentFromSystem(Component, Count);
         }
 
+        public void AddCollisionComponent(CollisionComponent Component)
+        {
+            GameEngineClass.AddCollisionComponentToSystem(Component);
+        }
+
+        public void RemoveCollisionComponent(CollisionComponent Component, int Count)
+        {
+            GameEngineClass.RemoveCollisionComponentFromSystem(Component, Count);
+        }
+
         public void AddUserToMap(Pawn Character)
         {
             GameEngineClass.AddUserToMap(Character);

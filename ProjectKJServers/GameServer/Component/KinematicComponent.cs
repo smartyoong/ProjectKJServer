@@ -133,7 +133,7 @@ namespace GameServer.Component
             List<ConvertObstacles> HitObstacles = new List<ConvertObstacles>();
             List<Vector2> HitPoints = new List<Vector2>();
             List<Vector2> HitNormals = new List<Vector2>();
-            if (Owner.GetCollisionComponent().CheckPositionBlockByWall(Owner.GetCurrentMapID(), NextPosition, BlockRadius, ref HitObstacles, ref HitNormals, ref HitPoints))
+            if (Owner.GetCollisionComponent.CheckPositionBlockByWall(Owner.GetCurrentMapID, NextPosition, BlockRadius, ref HitObstacles, ref HitNormals, ref HitPoints))
             {
                 // 캐릭터의 현재 위치를 가져옵니다.
                 Vector2 NewPosition = new Vector2(NextPosition.X, NextPosition.Y);
@@ -199,12 +199,12 @@ namespace GameServer.Component
             if (HasFlag(MoveType.FollwPath))
             {
                 //경로가 없으면 행동을 안한다.
-                if (Owner.GetPathComponent() == null)
+                if (Owner.GetPathComponent == null)
                 {
                     RemoveMoveFlag(MoveType.FollwPath);
                     return;
                 }
-                PathComponent Path = Owner.GetPathComponent();
+                PathComponent Path = Owner.GetPathComponent;
                 FollowPathMethod FollowPath = new FollowPathMethod(ref Path);
                 SteeringHandle? Result = FollowPath.GetSteeringHandle(1, CharacterData, Target, MaxSpeed, MaxAccelerate, MaxRotation, MaxAngular, Radius, SlowRadius, TIME_TO_TARGET);
                 if (Result != null)
@@ -350,17 +350,6 @@ namespace GameServer.Component
             {
                 CharacterData.Rotation = MaxRotation;
             }
-        }
-
-        private void ClearAllFlag()
-        {
-            MoveFlag = (int)MoveType.None;
-        }
-
-
-        private bool IsMovingNow()
-        {
-            return Math.Abs(CharacterData.Rotation) > 1f || CharacterData.Velocity.Length() > 3f;
         }
 
         public bool MoveToLocation(int MapID, Vector3 Target)

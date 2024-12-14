@@ -44,6 +44,8 @@ namespace GameServer.Component
         public Action<CollisionType, ConvertObstacles, Vector2, Vector2>? BeginCollideWithObstacleDelegate;
         public Action<CollisionType, ConvertObstacles>? EndCollideWithObstacleDelegate;
         public Action<CollisionType,PawnType, Pawn, Vector2, Vector2>? CollideWithPawnDelegate;
+        
+        public Pawn GetOwner { get { return Owner; } }
 
         public CollisionComponent(int MapID, Pawn Provider, Vector3 StartPosition, CollisionType type, float Size, OwnerType ownerType)
         {
@@ -58,8 +60,8 @@ namespace GameServer.Component
 
         public void Update(float DeltaTime, in MapData Data, in List<Pawn>? Characters)
         {
-            Position = Owner.GetCurrentPosition();
-            Orientation = Owner.GetOrientation();
+            Position = Owner.GetMovementComponent.CharcaterStaticData.Position;
+            Orientation = Owner.GetMovementComponent.CharcaterStaticData.Orientation;
             switch (Type)
             {
                 case CollisionType.Line:
@@ -83,7 +85,6 @@ namespace GameServer.Component
             {
                 for(int i = 0; i < HitObstacles.Count; ++i)
                 {
-                    // 추후에 Owner혹은 장애물에게 시그널을 보내자
                     BeginCollideWithObstacleDelegate?.Invoke(Type, HitObstacles[i], ImpactNormals[i], HitPoints[i]);
                 }
             }
@@ -95,9 +96,7 @@ namespace GameServer.Component
                     if (HitPawns[i] == Owner)
                         continue;
 
-                    CollideWithPawnDelegate?.Invoke(Type, HitPawns[i].GetPawnType(), HitPawns[i], ImpactNormals[i], HitPoints[i]);
-                    LogManager.GetSingletone.WriteLog($"{Owner.GetAccountID()}가 {HitPawns[i].GetAccountID()}와 충돌했습니다.");
-                    // 추후에 Owner혹은 Pawn에게 시그널을 보내자
+                    CollideWithPawnDelegate?.Invoke(Type, HitPawns[i].GetPawnType, HitPawns[i], ImpactNormals[i], HitPoints[i]);
                 }
             }
 
@@ -137,15 +136,6 @@ namespace GameServer.Component
             SquarePoints[2] = Position + new Vector3(-Radius, Radius, 0);
             SquarePoints[3] = Position + new Vector3(Radius, Radius, 0);
         }
-
-        public void MoveToAnotherMap(int MapID)
-        {
-            // 맵 이동 관련 처리가 필요할 경우 여기서 진행함
-            // 추후 포탈 기능 만들면 포탈이랑 이게 충돌하면 다른맵으로 이동하도록 하자
-            // 나중에 맵 이동할 때 CollisionSystem 리스트에서 값 변경하는것도 잊지말자
-            this.MapID = MapID;
-        }
-
 
         private bool CollideObstacleCheck(in MapData Data, ref List<ConvertObstacles> HitObstacles, ref List<Vector2> ImpactNormals, ref List<Vector2> HitPoints)
         {
@@ -212,7 +202,7 @@ namespace GameServer.Component
 
             Parallel.ForEach(PawnList, (Pawns) =>
             {
-                CollisionComponent Component =  Pawns.GetCollisionComponent();
+                CollisionComponent Component =  Pawns.GetCollisionComponent;
                 bool LocalResult = false;
                 Vector2 ImpactNormal = Vector2.Zero;
                 Vector2 HitPoint = Vector2.Zero;
