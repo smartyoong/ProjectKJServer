@@ -135,5 +135,42 @@ namespace GameServer.Resource
                 MapGraphDictionary.Add(Data.Key, MapGraph);
             }
         }
+
+        public void LoadRequireEXP(ref List<int> RequireEXPList)
+        {
+            LogManager.GetSingletone.WriteLog("레벨별 필요 경험치를 로드합니다.");
+            foreach (string JsonFile in Directory.GetFiles(Path.Combine(GameServerSettings.Default.ResourceDicrectory, "RequireEXP"), "*.json"))
+            {
+                string Json = File.ReadAllText(JsonFile);
+                RequireEXPInfoData? Data;
+                try
+                {
+                    Data = JsonSerializer.Deserialize<RequireEXPInfoData>(Json);
+                }
+                catch (Exception e)
+                {
+                    LogManager.GetSingletone.WriteLog($"레벨별 필요 경험치를 로드하는데 실패했습니다. 파일명 : {JsonFile}");
+                    LogManager.GetSingletone.WriteLog(e.Message);
+                    continue;
+                }
+
+                if (Data != null)
+                {
+                    if (Data.Level < 0)
+                    {
+                        LogManager.GetSingletone.WriteLog($"레벨별 필요 경험치를 로드하는데 값이 0이하인 파일이 존재합니다. 파일명 : {JsonFile}");
+                        continue;
+                    }
+
+                    if (Data.Level >= RequireEXPList.Count)
+                    {
+                        LogManager.GetSingletone.WriteLog($"레벨별 필요 경험치를 로드하는데 값이 너무 큽니다. 파일명 : {JsonFile}");
+                        continue;
+                    }
+
+                    RequireEXPList[Data.Level-1] = Data.RequireEXP;
+                }
+            }
+        }
     }
 }

@@ -55,6 +55,31 @@ namespace DBServer.PacketPipeLine
             Task.Run(SQLProcess);
         }
 
+        public void DispatchSQLPacket(IGameSQLPacket Packet)
+        {
+            switch (Packet)
+            {
+                case GameSQLReadCharacterPacket ReadCharacterPacket:
+                    SQL_READ_CHARACTER(ReadCharacterPacket.AccountID, ReadCharacterPacket.NickName);
+                    break;
+                case GameSQLCreateCharacterPacket CreateCharacterPacket:
+                    SQL_CREATE_CHARACTER(CreateCharacterPacket.AccountID, CreateCharacterPacket.Gender, CreateCharacterPacket.PresetID);
+                    break;
+                case GameSQLUpdateHealthPoint UpdateHealthPacket:
+                    SQL_UPDATE_HP(UpdateHealthPacket.AccountID, UpdateHealthPacket.CurrentHP);
+                    break;
+                case GameSQLUpdateMagicPoint UpdateMagicPacket:
+                    SQL_UPDATE_MP(UpdateMagicPacket.AccountID, UpdateMagicPacket.CurrentMP);
+                    break;
+                case GameSQLUpdateLevelEXP UpdateLevelEXPPacket:
+                    SQL_UPDATE_LEVEL_EXP(UpdateLevelEXPPacket.AccountID, UpdateLevelEXPPacket.Level, UpdateLevelEXPPacket.CurrentEXP);
+                    break;
+                default:
+                    LogManager.GetSingletone.WriteLog($"Unknown SQL Packet Type : {Packet.GetType().Name}");
+                    break;
+            }
+        }
+
         private async Task SQLProcess()
         {
             while (!SQLCancelToken.IsCancellationRequested)
@@ -71,6 +96,15 @@ namespace DBServer.PacketPipeLine
                                 break;
                             case DB_SP.SP_CREATE_CHARACTER:
                                 await CALL_SQL_CREATE_CHARACTER(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_HP:
+                                await CALL_SQL_UPDATE_HP(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_MP:
+                                await CALL_SQL_UPDATE_MP(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_LEVEL_EXP:
+                                await CALL_SQL_UPDATE_LEVEL_EXP(item.parameters);
                                 break;
                             default:
                                 break;
@@ -109,6 +143,38 @@ namespace DBServer.PacketPipeLine
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_CREATE_CHARACTER, sqlParameters));
         }
+
+        public void SQL_UPDATE_HP(string AccountID, int CurrentHP)
+        {
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@CurrentHP", SqlDbType.Int) { Value = CurrentHP },
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_HP, sqlParameters));
+        }
+
+        public void SQL_UPDATE_MP(string AccountID, int CurrentMP)
+        {
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@CurrentMP", SqlDbType.Int) { Value = CurrentMP }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_MP, sqlParameters));
+        }
+
+        public void SQL_UPDATE_LEVEL_EXP(string AccountID, int Level, int CurrentEXP)
+        {
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@Level", SqlDbType.Int) { Value = Level },
+                new SqlParameter("@CurrentEXP", SqlDbType.Int) { Value = CurrentEXP }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_LEVEL_EXP, sqlParameters));
+        }
+
         public async Task CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
         {
             const int NEED_TO_MAKE_CHARACTER = -1;
@@ -143,6 +209,39 @@ namespace DBServer.PacketPipeLine
             // 캐릭 생성중 에러 발생 에러 패킷 전송(Error는 -1)
             ResponseDBCreateCharacterPacket Packet = new ResponseDBCreateCharacterPacket((string)Parameters[0].Value, ReturnValue);
             MainProxy.GetSingletone.SendToGameServer(DBPacketListID.RESPONSE_CREATE_CHARACTER, Packet);
+        }
+
+        public async Task CALL_SQL_UPDATE_HP(SqlParameter[] Parameters)
+        {
+            const int SUCCESS = 0;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_HP.ToString(), Parameters).ConfigureAwait(false);
+            if(ReturnValue != SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"HP, MP 업데이트 실패 {(string)Parameters[0].Value}");
+            }
+        }
+
+        public async Task CALL_SQL_UPDATE_MP(SqlParameter[] Parameters)
+        {
+            const int SUCCESS = 0;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_MP.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"MP 업데이트 실패 {(string)Parameters[0].Value}");
+            }
+        }
+
+        public async Task CALL_SQL_UPDATE_LEVEL_EXP(SqlParameter[] Parameters)
+        {
+            const int SUCCESS = 0;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_LEVEL_EXP.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"Level, EXP 업데이트 실패 {(string)Parameters[0].Value}");
+            }
         }
     }
 }

@@ -11,7 +11,10 @@ namespace DBServer.Packet_SPList
         SP_INVALID = 0,
         SP_TEST = 1,
         SP_READ_CHARACTER = 2,
-        SP_CREATE_CHARACTER = 3
+        SP_CREATE_CHARACTER = 3,
+        SP_UPDATE_HP = 4,
+        SP_UPDATE_MP = 5,
+        SP_UPDATE_LEVEL_EXP = 6
     }
 
     public interface IGameSQLPacket
@@ -30,5 +33,24 @@ namespace DBServer.Packet_SPList
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
         public int PresetID { get; set; } = PresetID;
+    }
+
+    public record GameSQLUpdateHealthPoint(string AccountID, int CurrentHP) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentHP { get; set; } = CurrentHP;
+    }
+
+    public record GameSQLUpdateMagicPoint(string AccountID, int CurrentMP) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentMP { get; set; } = CurrentMP;
+    }
+
+    public record GameSQLUpdateLevelEXP(string AccountID, int Level, int CurrentEXP) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+        public int CurrentEXP { get; set; } = CurrentEXP;
     }
 }

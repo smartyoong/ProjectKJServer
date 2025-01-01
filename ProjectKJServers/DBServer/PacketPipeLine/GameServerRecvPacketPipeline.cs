@@ -150,6 +150,15 @@ namespace DBServer.PacketPipeLine
                 case RequestDBCreateCharacterPacket CreateCharacterPacket:
                     SP_ReuquestCreateCharacter(CreateCharacterPacket);
                     break;
+                case RequestDBUpdateHealthPointPacket UpdateHealthPointPacket:
+                    SP_RequestUpdateHealthPoint(UpdateHealthPointPacket);
+                    break;
+                case RequestDBUpdateMagicPointPacket UpdateMagicPointPacket:
+                    SP_RequestUpdateMagicPoint(UpdateMagicPointPacket);
+                    break;
+                case RequestDBUpdateLevelExpPacket UpdateLevelExpPacket:
+                    SP_RequestUpdateLevelEXP(UpdateLevelExpPacket);
+                    break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
@@ -170,6 +179,30 @@ namespace DBServer.PacketPipeLine
                 return;
             GameSQLCreateCharacterPacket CreateCharacterPacket = new GameSQLCreateCharacterPacket(packet.AccountID, packet.Gender, packet.PresetID);
             MainProxy.GetSingletone.HandleSQLPacket(CreateCharacterPacket);
+        }
+
+        private void SP_RequestUpdateHealthPoint(RequestDBUpdateHealthPointPacket Packet)
+        {
+            if(IsErrorPacket(Packet, "RequestUpdateHealth"))
+                return;
+            GameSQLUpdateHealthPoint UpdateHealthPacket = new GameSQLUpdateHealthPoint(Packet.AccountID, Packet.CurrentHP);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateHealthPacket);
+        }
+
+        private void SP_RequestUpdateMagicPoint(RequestDBUpdateMagicPointPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdateHealth"))
+                return;
+            GameSQLUpdateMagicPoint UpdateMagicPacket = new GameSQLUpdateMagicPoint(Packet.AccountID, Packet.CurrentMP);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateMagicPacket);
+        }
+
+        private void SP_RequestUpdateLevelEXP(RequestDBUpdateLevelExpPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdateHealth"))
+                return;
+            GameSQLUpdateLevelEXP UpdateLevelExpPacket = new GameSQLUpdateLevelEXP(Packet.AccountID, Packet.Level, Packet.CurrentEXP);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateLevelExpPacket);
         }
     }
 }

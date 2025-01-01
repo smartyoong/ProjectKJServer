@@ -41,18 +41,7 @@ namespace DBServer.MainUI
 
         public void HandleSQLPacket(IGameSQLPacket Packet)
         {
-            switch (Packet)
-            {
-                case GameSQLReadCharacterPacket ReadCharacterPacket:
-                    SQLPipeLineClass.SQL_READ_CHARACTER(ReadCharacterPacket.AccountID,ReadCharacterPacket.NickName);
-                    break;
-                case GameSQLCreateCharacterPacket CreateCharacterPacket:
-                    SQLPipeLineClass.SQL_CREATE_CHARACTER(CreateCharacterPacket.AccountID, CreateCharacterPacket.Gender, CreateCharacterPacket.PresetID);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog($"Unknown SQL Packet Type : {Packet.GetType().Name}");
-                    break;
-            }
+            SQLPipeLineClass.DispatchSQLPacket(Packet);
         }
 
         ////////////////////////////////////////////////////////////////////////

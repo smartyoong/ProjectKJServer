@@ -18,6 +18,7 @@ namespace GameServer.GameSystem
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
+        private List<int> RequireEXPList = new List<int>(GameServerSettings.Default.MaxLevel);
         private Dictionary<int, Graph> MapGraphDictionary = new Dictionary<int, Graph>();
         private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();
@@ -32,6 +33,8 @@ namespace GameServer.GameSystem
         private ProcessMonitor ProcessMonitorSystem;
         private AStarPathFindSystem AStarPathFindSystem;
         private EuclideanHuristic EuclidHuristicMethod;
+        private EXPSystem EXPSystem;
+        private HealthSystem HealthSystem;
 
         public GameEngine()
         {
@@ -45,6 +48,8 @@ namespace GameServer.GameSystem
             ProcessMonitorSystem = new ProcessMonitor();
             AStarPathFindSystem = new AStarPathFindSystem();
             EuclidHuristicMethod = new EuclideanHuristic();
+            EXPSystem = new EXPSystem();
+            HealthSystem = new HealthSystem();
         }
 
         public void Start()
@@ -107,6 +112,7 @@ namespace GameServer.GameSystem
             ResourceLoader.LoadMapData(ref MapDataDictionary);
             CollisionSystem.SetMapData(ref MapDataDictionary);
             ResourceLoader.LoadCharacterPreset(ref ChracterPresetDictionary);
+            ResourceLoader.LoadRequireEXP(ref RequireEXPList);
             ResourceLoader.MakeMapGraph(ref MapGraphDictionary, in MapDataDictionary);
         }
 
@@ -123,6 +129,8 @@ namespace GameServer.GameSystem
                     GOAPSystem.Update();
                     ActionManagerSystem.Update();
                     ProcessMonitorSystem.Update();
+                    EXPSystem.Update();
+                    HealthSystem.Update();
                 }
                 catch (Exception e)
                 {
@@ -218,6 +226,36 @@ namespace GameServer.GameSystem
         public void RemoveCollisionComponentFromSystem(CollisionComponent Component, int Count)
         {
             CollisionSystem.RemoveComponent(Component, Count);
+        }
+
+        public void AddLevelExpComponentToSystem(LevelComponent Component)
+        {
+            EXPSystem.AddComponent(Component);
+        }
+
+        public void RemoveLevelExpComponentFromSystem(LevelComponent Component, int Count)
+        {
+            EXPSystem.RemoveComponent(Component, Count);
+        }
+
+        public void AddHealthPointComponentToSystem(HealthPointComponent Component)
+        {
+            HealthSystem.AddHealthPointComponent(Component);
+        }
+
+        public void AddMagicPointComponentToSystem(MagicPointComponent Component)
+        {
+            HealthSystem.AddMagicPointComponent(Component);
+        }
+
+        public void RemoveHealthPointComponentFromSystem(HealthPointComponent Component, int Count)
+        {
+            HealthSystem.RemoveComponent(Component, Count);
+        }
+
+        public void RemoveMagicPointComponentFromSystem(MagicPointComponent Component, int Count)
+        {
+            HealthSystem.RemoveComponent(Component, Count);
         }
 
         public void AddUserToMap(Pawn Character)
@@ -338,6 +376,11 @@ namespace GameServer.GameSystem
             if(MapGraphDictionary.ContainsKey(MapID))
                 return MapGraphDictionary[MapID];
             return null;
+        }
+
+        public int GetRequireEXP(int Level)
+        {
+            return RequireEXPList[Level-1];
         }
     }
 }

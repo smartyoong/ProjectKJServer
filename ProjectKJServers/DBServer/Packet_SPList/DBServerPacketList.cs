@@ -14,7 +14,10 @@ namespace DBServer.Packet_SPList
         RESPONSE_CHAR_BASE_INFO = 3,
         RESPONSE_NEED_TO_MAKE_CHARACTER = 4,
         REQUEST_CREATE_CHARACTER = 5,
-        RESPONSE_CREATE_CHARACTER = 6
+        RESPONSE_CREATE_CHARACTER = 6,
+        REQUEST_UPDATE_HEALTH_POINT = 7,
+        REQUEST_UPDATE_MAGIC_POINT = 8,
+        REQUEST_UPDATE_LEVEL_EXP = 9
     }
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
     public record GameServerSendPipeLineWrapper<E>(E ID, dynamic Packet) where E : Enum
@@ -65,6 +68,28 @@ namespace DBServer.Packet_SPList
     {
         public string AccountID { get; set; } = AccountID;
         public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentHP { get; set; } = CurrentHP;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentMP { get; set; } = CurrentMP;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+        public int CurrentEXP { get; set; } = CurrentEXP;
     }
 
 }

@@ -74,6 +74,12 @@ namespace GameServer.PacketPipeLine
                     return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBCharBaseInfoPacket)GamePacket.Packet);
                 case GameDBPacketListID.REQUEST_CREATE_CHARACTER:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBCreateCharacterPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_UPDATE_HEALTH_POINT:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateHealthPointPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_UPDATE_MAGIC_POINT:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateMagicPointPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_UPDATE_LEVEL_EXP:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateLevelExpPacket)GamePacket.Packet);
                 default:
                     LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];

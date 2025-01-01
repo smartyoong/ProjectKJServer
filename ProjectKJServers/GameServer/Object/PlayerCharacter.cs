@@ -24,17 +24,12 @@ namespace GameServer.Object
         public int Gender { get; set; } = Gender;
         public int PresetNumber { get; set; } = PresetNumber;
     }
-    struct CharacterLevelInfo(int Level, int CurrentEXP)
-    {
-        public int Level { get; set; } = Level;
-        public int CurrentExp { get; set; } = CurrentEXP;
-    }
     internal class PlayerCharacter : Pawn
     {
         private CharacterAccountInfo AccountInfo;
         private CharacterJobInfo JobInfo;
         private ChracterAppearanceInfo AppearanceInfo;
-        private CharacterLevelInfo LevelInfo;
+        private LevelComponent LevelExpComponent;
         private KinematicComponent MovementComponent;
         private CollisionComponent CircleCollisionComponent;
         private CollisionComponent LineTracerComponent;
@@ -52,8 +47,6 @@ namespace GameServer.Object
 
         public ChracterAppearanceInfo GetAppearanceInfo { get { return AppearanceInfo; } }
 
-        public CharacterLevelInfo GetLevelInfo { get { return LevelInfo; } }
-
         public KinematicComponent GetMovementComponent { get { return MovementComponent; } }
 
         public CollisionComponent GetLineComponent { get { return LineTracerComponent; } }
@@ -62,6 +55,8 @@ namespace GameServer.Object
 
         public MagicPointComponent GetMPComponent { get { return MagicPointComponent; } }
         public HealthPointComponent GetHPComponent { get { return HealthPointComponent; } }
+
+        public LevelComponent GetLevelComponent { get { return LevelExpComponent; } }
 
         public int GetCurrentMapID { get { return CurrentMapID; } }
 
@@ -76,8 +71,10 @@ namespace GameServer.Object
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);
             JobInfo = new CharacterJobInfo(Job, JobLevel);
             AppearanceInfo = new ChracterAppearanceInfo(Gender, PresetNum);
-            LevelInfo = new CharacterLevelInfo(Level, EXP);
             CurrentMapID = MapID;
+
+            LevelExpComponent = new LevelComponent(this, Level, EXP);
+            MainProxy.GetSingletone.AddLevelExpComponent(LevelExpComponent);
 
             // 현재는 서버세팅으로 해놨는데 리소스화 시키자
             MovementComponent = new KinematicComponent(this,StartPosition, GameServerSettings.Default.MaxSpeed, GameServerSettings.Default.MaxAccelrate,
@@ -101,8 +98,10 @@ namespace GameServer.Object
 
             int MaxHP = JobLevel * GameServerSettings.Default.LevelHPRate;
             int MaxMP = JobLevel * GameServerSettings.Default.LevelMPRate;
-            HealthPointComponent = new HealthPointComponent(MaxHP, HP,Death);
-            MagicPointComponent = new MagicPointComponent(MaxMP, MP);
+            HealthPointComponent = new HealthPointComponent(this, MaxHP, HP,Death);
+            MagicPointComponent = new MagicPointComponent(this, MaxMP, MP);
+            MainProxy.GetSingletone.AddHealthPointComponent(HealthPointComponent);
+            MainProxy.GetSingletone.AddMagicPointComponent(MagicPointComponent);
         }
 
         public bool MoveToLocation(Vector3 Position)
@@ -111,11 +110,20 @@ namespace GameServer.Object
             return MovementComponent.MoveToLocation(CurrentMapID, Position);
         }
 
+        // 최종 로그아웃 혹은 강제 종료때 호출되는 함수
         public void RemoveCharacter()
         {
+            // 로그 아웃시에 저장되어야할 정보들
+            HealthPointComponent.UpdateHPInfoToDBForce();
+            MagicPointComponent.UpdateMPInfoToDBForce();
+            LevelExpComponent.UpdateEXPInfoToDBForce();
+
             MainProxy.GetSingletone.RemoveKinematicMoveComponent(MovementComponent, 0);
             MainProxy.GetSingletone.RemoveCollisionComponent(CircleCollisionComponent, 0);
             MainProxy.GetSingletone.RemoveCollisionComponent(LineTracerComponent, 0);
+            MainProxy.GetSingletone.RemoveHealthPointComponent(HealthPointComponent, 0);
+            MainProxy.GetSingletone.RemoveMagicPointComponent(MagicPointComponent, 0);
+            MainProxy.GetSingletone.RemoveLevelExpComponent(LevelExpComponent, 0);
         }
         // 여기서 병목이 일어날 수도 있다. Remove하고 Add하면 알아서 CurrentMapID를 읽어와서 추가한다.
         public void MoveToAnotherMap(int MapID)

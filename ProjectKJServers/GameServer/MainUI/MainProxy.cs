@@ -123,6 +123,36 @@ namespace GameServer.MainUI
             GameEngineClass.RemoveCollisionComponentFromSystem(Component, Count);
         }
 
+        public void AddLevelExpComponent(LevelComponent Component)
+        {
+            GameEngineClass.AddLevelExpComponentToSystem(Component);
+        }
+
+        public void RemoveLevelExpComponent(LevelComponent Component, int Count)
+        {
+            GameEngineClass.RemoveLevelExpComponentFromSystem(Component, Count);
+        }
+
+        public void AddHealthPointComponent(HealthPointComponent Component)
+        {
+            GameEngineClass.AddHealthPointComponentToSystem(Component);
+        }
+
+        public void RemoveHealthPointComponent(HealthPointComponent Component, int Count)
+        {
+            GameEngineClass.RemoveHealthPointComponentFromSystem(Component, Count);
+        }
+
+        public void AddMagicPointComponent(MagicPointComponent Component)
+        {
+            GameEngineClass.AddMagicPointComponentToSystem(Component);
+        }
+
+        public void RemoveMagicPointComponent(MagicPointComponent Component, int Count)
+        {
+            GameEngineClass.RemoveMagicPointComponentFromSystem(Component, Count);
+        }
+
         public void AddUserToMap(Pawn Character)
         {
             GameEngineClass.AddUserToMap(Character);
@@ -195,6 +225,11 @@ namespace GameServer.MainUI
         public List<Node>? FindPath(in Graph G, Node Start, Node End)
         {
             return GameEngineClass.FindPath(G, Start, End);
+        }
+
+        public int GetRequireEXP(int Level)
+        {
+            return GameEngineClass.GetRequireEXP(Level);
         }
 
         ////////////////////////////////////////////////////////////////////////

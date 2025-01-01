@@ -15,7 +15,10 @@
         RESPONSE_CHAR_BASE_INFO = 3,
         RESPONSE_NEED_TO_MAKE_CHARACTER = 4,
         REQUEST_CREATE_CHARACTER = 5,
-        RESPONSE_CREATE_CHARACTER = 6
+        RESPONSE_CREATE_CHARACTER = 6,
+        REQUEST_UPDATE_HEALTH_POINT = 7,
+        REQUEST_UPDATE_MAGIC_POINT = 8,
+        REQUEST_UPDATE_LEVEL_EXP = 9
     }
 
     public enum GamePacketListID
@@ -191,6 +194,30 @@
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
+    [Serializable]
+    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentHP { get; set; } = CurrentHP;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int CurrentHP { get; set; } = CurrentMP;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+        public int CurrentEXP { get; set; } = CurrentEXP;
+    }
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
