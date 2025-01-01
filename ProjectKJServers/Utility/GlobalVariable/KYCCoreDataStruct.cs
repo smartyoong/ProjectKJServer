@@ -90,10 +90,10 @@ namespace CoreUtility.GlobalVariable
         public string PlayerCharacterName { get; set; } = PlayerCharacterName;
     }
 
-    public record RequireEXPInfoData(int Level, int RequireEXP)
+    public record RequireEXPInfoData(int Level, int ExpForNextLevel)
     {
         public int Level { get; set; } = Level;
-        public int RequireEXP { get; set; } = RequireEXP;
+        public int ExpForNextLevel { get; set; } = ExpForNextLevel;
     }
 
 }

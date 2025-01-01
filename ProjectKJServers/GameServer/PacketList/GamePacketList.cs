@@ -207,7 +207,7 @@
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
-        public int CurrentHP { get; set; } = CurrentMP;
+        public int CurrentMP { get; set; } = CurrentMP;
     }
 
     [Serializable]

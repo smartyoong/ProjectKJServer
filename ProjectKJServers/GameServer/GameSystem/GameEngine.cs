@@ -18,7 +18,7 @@ namespace GameServer.GameSystem
         private CancellationTokenSource GameEngineCancleToken = new CancellationTokenSource();
         private Dictionary<int, MapData> MapDataDictionary = new Dictionary<int, MapData>();
         private Dictionary<int, CharacterPresetData> ChracterPresetDictionary = new Dictionary<int, CharacterPresetData>();
-        private List<int> RequireEXPList = new List<int>(GameServerSettings.Default.MaxLevel);
+        private List<int> RequireEXPList = new List<int>();
         private Dictionary<int, Graph> MapGraphDictionary = new Dictionary<int, Graph>();
         private ConcurrentDictionary<string, PlayerCharacter> OnlineCharacterDictionary = new ConcurrentDictionary<string, PlayerCharacter>();
         private ConcurrentDictionary<string, string> NickNameMap = new ConcurrentDictionary<string, string>();

@@ -161,14 +161,8 @@ namespace GameServer.Resource
                         LogManager.GetSingletone.WriteLog($"레벨별 필요 경험치를 로드하는데 값이 0이하인 파일이 존재합니다. 파일명 : {JsonFile}");
                         continue;
                     }
-
-                    if (Data.Level >= RequireEXPList.Count)
-                    {
-                        LogManager.GetSingletone.WriteLog($"레벨별 필요 경험치를 로드하는데 값이 너무 큽니다. 파일명 : {JsonFile}");
-                        continue;
-                    }
-
-                    RequireEXPList[Data.Level-1] = Data.RequireEXP;
+                    RequireEXPList.Add(Data.ExpForNextLevel);
+                    LogManager.GetSingletone.WriteLog($"레벨 {Data.Level}에서 다음으로 레벨업 하기 위한 필요 경험치 : {Data.ExpForNextLevel}");
                 }
             }
         }
