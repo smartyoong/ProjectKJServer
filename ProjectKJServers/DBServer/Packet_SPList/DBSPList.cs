@@ -14,7 +14,9 @@ namespace DBServer.Packet_SPList
         SP_CREATE_CHARACTER = 3,
         SP_UPDATE_HP = 4,
         SP_UPDATE_MP = 5,
-        SP_UPDATE_LEVEL_EXP = 6
+        SP_UPDATE_LEVEL_EXP = 6,
+        SP_UPDATE_JOB_LEVEL = 7,
+        SP_UPDATE_JOB = 8
     }
 
     public interface IGameSQLPacket
@@ -52,5 +54,17 @@ namespace DBServer.Packet_SPList
         public string AccountID { get; set; } = AccountID;
         public int Level { get; set; } = Level;
         public int CurrentEXP { get; set; } = CurrentEXP;
+    }
+
+    public record GameSQLUpdateJobLevel(string AccountID, int Level) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+    }
+
+    public record GameSQLUpdateJob(string AccountID, int Job) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Job { get; set; } = Job;
     }
 }

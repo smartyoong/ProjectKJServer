@@ -74,6 +74,12 @@ namespace DBServer.PacketPipeLine
                 case GameSQLUpdateLevelEXP UpdateLevelEXPPacket:
                     SQL_UPDATE_LEVEL_EXP(UpdateLevelEXPPacket.AccountID, UpdateLevelEXPPacket.Level, UpdateLevelEXPPacket.CurrentEXP);
                     break;
+                case GameSQLUpdateJobLevel UpdateJobLevelPacket:
+                    SQL_UPDATE_JOB_LEVEL(UpdateJobLevelPacket.AccountID, UpdateJobLevelPacket.Level);
+                    break;
+                case GameSQLUpdateJob UpdateJobPacket:
+                    SQL_UPDATE_JOB(UpdateJobPacket.AccountID, UpdateJobPacket.Job);
+                    break;
                 default:
                     LogManager.GetSingletone.WriteLog($"Unknown SQL Packet Type : {Packet.GetType().Name}");
                     break;
@@ -105,6 +111,12 @@ namespace DBServer.PacketPipeLine
                                 break;
                             case DB_SP.SP_UPDATE_LEVEL_EXP:
                                 await CALL_SQL_UPDATE_LEVEL_EXP(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_JOB_LEVEL:
+                                await CALL_SQL_UPDATE_JOB_LVEL(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_JOB:
+                                await CALL_SQL_UPDATE_JOB(item.parameters);
                                 break;
                             default:
                                 break;
@@ -149,7 +161,7 @@ namespace DBServer.PacketPipeLine
             SqlParameter[] sqlParameters =
             [
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@CurrentHP", SqlDbType.Int) { Value = CurrentHP },
+                new SqlParameter("@HP", SqlDbType.Int) { Value = CurrentHP },
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_HP, sqlParameters));
         }
@@ -159,7 +171,7 @@ namespace DBServer.PacketPipeLine
             SqlParameter[] sqlParameters =
             [
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@CurrentMP", SqlDbType.Int) { Value = CurrentMP }
+                new SqlParameter("@MP", SqlDbType.Int) { Value = CurrentMP }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_MP, sqlParameters));
         }
@@ -169,10 +181,30 @@ namespace DBServer.PacketPipeLine
             SqlParameter[] sqlParameters =
             [
                 new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@Level", SqlDbType.Int) { Value = Level },
-                new SqlParameter("@CurrentEXP", SqlDbType.Int) { Value = CurrentEXP }
+                new SqlParameter("@LEVEL", SqlDbType.Int) { Value = Level },
+                new SqlParameter("@EXP", SqlDbType.Int) { Value = CurrentEXP }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_LEVEL_EXP, sqlParameters));
+        }
+
+        public void SQL_UPDATE_JOB_LEVEL(string AccountID, int Level)
+        {
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@JOB_LEVEL", SqlDbType.Int) { Value = Level }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB_LEVEL, sqlParameters));
+        }
+
+        public void SQL_UPDATE_JOB(string AccountID, int Job)
+        {
+            SqlParameter[] sqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
+                new SqlParameter("@JOB", SqlDbType.Int) { Value = Job }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB, sqlParameters));
         }
 
         public async Task CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
@@ -216,7 +248,7 @@ namespace DBServer.PacketPipeLine
             const int SUCCESS = 0;
             int ReturnValue = 99999;
             ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_HP.ToString(), Parameters).ConfigureAwait(false);
-            if(ReturnValue != SUCCESS)
+            if (ReturnValue != SUCCESS)
             {
                 LogManager.GetSingletone.WriteLog($@"HP, MP 업데이트 실패 {(string)Parameters[0].Value}");
             }
@@ -241,6 +273,28 @@ namespace DBServer.PacketPipeLine
             if (ReturnValue != SUCCESS)
             {
                 LogManager.GetSingletone.WriteLog($@"Level, EXP 업데이트 실패 {(string)Parameters[0].Value}");
+            }
+        }
+
+        public async Task CALL_SQL_UPDATE_JOB_LVEL(SqlParameter[] Parameters)
+        {
+            const int SUCCESS = 0;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_JOB_LEVEL.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"직업 레벨 업데이트 실패 {(string)Parameters[0].Value}");
+            }
+        }
+
+        public async Task CALL_SQL_UPDATE_JOB(SqlParameter[] Parameters)
+        {
+            const int SUCCESS = 0;
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_JOB.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"직업 업데이트 실패 {(string)Parameters[0].Value}");
             }
         }
     }

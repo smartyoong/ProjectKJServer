@@ -133,6 +133,21 @@ namespace DBServer.PacketPipeLine
                 case DBPacketListID.REQUEST_CREATE_CHARACTER:
                     RequestDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<RequestDBCreateCharacterPacket>(ref packet);
                     return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
+                case DBPacketListID.REQUEST_UPDATE_HEALTH_POINT:
+                    RequestDBUpdateHealthPointPacket? UpdateHealthPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateHealthPointPacket>(ref packet);
+                    return UpdateHealthPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateHealthPointPacket;
+                case DBPacketListID.REQUEST_UPDATE_MAGIC_POINT:
+                    RequestDBUpdateMagicPointPacket? UpdateMagicPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateMagicPointPacket>(ref packet);
+                    return UpdateMagicPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateMagicPointPacket;
+                case DBPacketListID.REQUEST_UPDATE_LEVEL_EXP:
+                    RequestDBUpdateLevelExpPacket? UpdateLevelExpPacket = PacketUtils.GetPacketStruct<RequestDBUpdateLevelExpPacket>(ref packet);
+                    return UpdateLevelExpPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateLevelExpPacket;
+                case DBPacketListID.REQUEST_UPDATE_JOB_LEVEL:
+                    RequestDBUpdateJobLevelPacket? UpdateJobLevelPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobLevelPacket>(ref packet);
+                    return UpdateJobLevelPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobLevelPacket;
+                case DBPacketListID.REQUEST_UPDATE_JOB:
+                    RequestDBUpdateJobPacket? UpdateJobPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobPacket>(ref packet);
+                    return UpdateJobPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -159,6 +174,12 @@ namespace DBServer.PacketPipeLine
                 case RequestDBUpdateLevelExpPacket UpdateLevelExpPacket:
                     SP_RequestUpdateLevelEXP(UpdateLevelExpPacket);
                     break;
+                case RequestDBUpdateJobLevelPacket UpdateJobLevelPacket:
+                    SP_RequestUpdateJobLevel(UpdateJobLevelPacket);
+                    break;
+                case RequestDBUpdateJobPacket UpdateJobPacket:
+                    SP_RequestUpdateJob(UpdateJobPacket);
+                    break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
                     break;
@@ -169,7 +190,7 @@ namespace DBServer.PacketPipeLine
         {
             if (IsErrorPacket(packet, "RequestCharBaseInfo"))
                 return;
-            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID,packet.NickName);
+            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID, packet.NickName);
             MainProxy.GetSingletone.HandleSQLPacket(ReadCharacterPacket);
         }
 
@@ -183,7 +204,7 @@ namespace DBServer.PacketPipeLine
 
         private void SP_RequestUpdateHealthPoint(RequestDBUpdateHealthPointPacket Packet)
         {
-            if(IsErrorPacket(Packet, "RequestUpdateHealth"))
+            if (IsErrorPacket(Packet, "RequestUpdateHealthPoint"))
                 return;
             GameSQLUpdateHealthPoint UpdateHealthPacket = new GameSQLUpdateHealthPoint(Packet.AccountID, Packet.CurrentHP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateHealthPacket);
@@ -191,7 +212,7 @@ namespace DBServer.PacketPipeLine
 
         private void SP_RequestUpdateMagicPoint(RequestDBUpdateMagicPointPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateHealth"))
+            if (IsErrorPacket(Packet, "RequestUpdateMagicPoint"))
                 return;
             GameSQLUpdateMagicPoint UpdateMagicPacket = new GameSQLUpdateMagicPoint(Packet.AccountID, Packet.CurrentMP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateMagicPacket);
@@ -199,10 +220,26 @@ namespace DBServer.PacketPipeLine
 
         private void SP_RequestUpdateLevelEXP(RequestDBUpdateLevelExpPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateHealth"))
+            if (IsErrorPacket(Packet, "RequestUpdateLevelEXP"))
                 return;
             GameSQLUpdateLevelEXP UpdateLevelExpPacket = new GameSQLUpdateLevelEXP(Packet.AccountID, Packet.Level, Packet.CurrentEXP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateLevelExpPacket);
+        }
+
+        private void SP_RequestUpdateJobLevel(RequestDBUpdateJobLevelPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdateJobLevel"))
+                return;
+            GameSQLUpdateJobLevel UpdateJobLevelPacket = new GameSQLUpdateJobLevel(Packet.AccountID, Packet.Level);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateJobLevelPacket);
+        }
+
+        private void SP_RequestUpdateJob(RequestDBUpdateJobPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdateJob"))
+                return;
+            GameSQLUpdateJob UpdateJobPacket = new GameSQLUpdateJob(Packet.AccountID, Packet.Job);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateJobPacket);
         }
     }
 }

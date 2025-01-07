@@ -14,11 +14,6 @@ namespace GameServer.Object
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
-    struct CharacterJobInfo(int Job, int Level)
-    {
-        public int Job { get; set; } = Job;
-        public int Level { get; set; } = Level;
-    }
     struct ChracterAppearanceInfo(int Gender, int PresetNumber)
     {
         public int Gender { get; set; } = Gender;
@@ -27,7 +22,7 @@ namespace GameServer.Object
     internal class PlayerCharacter : Pawn
     {
         private CharacterAccountInfo AccountInfo;
-        private CharacterJobInfo JobInfo;
+        private JobComponent JobComponent;
         private ChracterAppearanceInfo AppearanceInfo;
         private LevelComponent LevelExpComponent;
         private KinematicComponent MovementComponent;
@@ -43,7 +38,7 @@ namespace GameServer.Object
 
         public CharacterAccountInfo GetAccountInfo { get { return AccountInfo; } }
 
-        public CharacterJobInfo GetJobInfo { get { return JobInfo; } }
+        public JobComponent GetJobComponent { get { return JobComponent; } }
 
         public ChracterAppearanceInfo GetAppearanceInfo { get { return AppearanceInfo; } }
 
@@ -69,7 +64,7 @@ namespace GameServer.Object
         public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition, int HP, int MP)
         {
             AccountInfo = new CharacterAccountInfo(AccountID, NickName);
-            JobInfo = new CharacterJobInfo(Job, JobLevel);
+            JobComponent = new JobComponent(this, Job, JobLevel);
             AppearanceInfo = new ChracterAppearanceInfo(Gender, PresetNum);
             CurrentMapID = MapID;
 

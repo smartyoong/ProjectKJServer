@@ -18,7 +18,9 @@
         RESPONSE_CREATE_CHARACTER = 6,
         REQUEST_UPDATE_HEALTH_POINT = 7,
         REQUEST_UPDATE_MAGIC_POINT = 8,
-        REQUEST_UPDATE_LEVEL_EXP = 9
+        REQUEST_UPDATE_LEVEL_EXP = 9,
+        REQUEST_UPDATE_JOB_LEVEL = 10,
+        REQUEST_UPDATE_JOB = 11
     }
 
     public enum GamePacketListID
@@ -217,6 +219,20 @@
         public string AccountID { get; set; } = AccountID;
         public int Level { get; set; } = Level;
         public int CurrentEXP { get; set; } = CurrentEXP;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateJobLevelPacket(string AccountID, int Level)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateJobPacket(string AccountID, int Job)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Job { get; set; } = Job;
     }
 
 
