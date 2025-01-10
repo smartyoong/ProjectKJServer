@@ -69,6 +69,7 @@ namespace GameServer.Component
 
             RequestDBUpdateJobPacket Packet = new RequestDBUpdateJobPacket(Owner.GetName, JobKind);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_UPDATE_JOB, Packet);
+            //클라한테 전송해야한다. 이건 좀따가 만들자
         }
 
     }

@@ -332,8 +332,8 @@ namespace GameServer.PacketPipeLine
                     Destination.Y = -1;
                     Destination.Z = -1;
                 }
-                SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetName, Character.GetAppearanceInfo.Gender,
-                    Character.GetAppearanceInfo.PresetNumber, (int)Character.GetJobComponent.GetJob, Character.GetJobComponent.GetJobLevel, Character.GetCurrentMapID,
+                SendAnotherCharBaseInfoPacket SendPacketToNewUser = new SendAnotherCharBaseInfoPacket(User.GetName, (int)Character.GetAppearanceComponent.GetGender,
+                    Character.GetAppearanceComponent.GetPresetNumber, (int)Character.GetJobComponent.GetJob, Character.GetJobComponent.GetJobLevel, Character.GetCurrentMapID,
                     (int)Position.X, (int)Position.Y, Character.GetLevelComponent.GetLevel, Character.GetLevelComponent.GetEXP, NickName, (int)Destination.X, (int)Destination.Y
                     , Character.GetHPComponent.CurrentHealthPoint, Character.GetMPComponent.CurrentMagicPoint);
 
