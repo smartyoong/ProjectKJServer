@@ -148,6 +148,12 @@ namespace DBServer.PacketPipeLine
                 case DBPacketListID.REQUEST_UPDATE_JOB:
                     RequestDBUpdateJobPacket? UpdateJobPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobPacket>(ref packet);
                     return UpdateJobPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobPacket;
+                case DBPacketListID.REQUEST_UPDATE_GENDER:
+                    RequestDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<RequestDBUpdateGenderPacket>(ref packet);
+                    return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
+                case DBPacketListID.REQUEST_UPDATE_PRESET:
+                    RequestDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<RequestDBUpdatePresetPacket>(ref packet);
+                    return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -179,6 +185,12 @@ namespace DBServer.PacketPipeLine
                     break;
                 case RequestDBUpdateJobPacket UpdateJobPacket:
                     SP_RequestUpdateJob(UpdateJobPacket);
+                    break;
+                case RequestDBUpdateGenderPacket UpdateGenderPacket:
+                    SP_RequestUpdateGender(UpdateGenderPacket);
+                    break;
+                case RequestDBUpdatePresetPacket UpdatePresetPacket:
+                    SP_RequestUpdatePreset(UpdatePresetPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -240,6 +252,22 @@ namespace DBServer.PacketPipeLine
                 return;
             GameSQLUpdateJob UpdateJobPacket = new GameSQLUpdateJob(Packet.AccountID, Packet.Job);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateJobPacket);
+        }
+
+        private void SP_RequestUpdateGender(RequestDBUpdateGenderPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdateGender"))
+                return;
+            GameSQLUpdateGender UpdateGenderPacket = new GameSQLUpdateGender(Packet.AccountID, Packet.Gender);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdateGenderPacket);
+        }
+
+        private void SP_RequestUpdatePreset(RequestDBUpdatePresetPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "RequestUpdatePreset"))
+                return;
+            GameSQLUpdatePreset UpdatePresetPacket = new GameSQLUpdatePreset(Packet.AccountID, Packet.PresetNumber);
+            MainProxy.GetSingletone.HandleSQLPacket(UpdatePresetPacket);
         }
     }
 }

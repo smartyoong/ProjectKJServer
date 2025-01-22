@@ -84,6 +84,10 @@ namespace GameServer.PacketPipeLine
                     return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateJobLevelPacket)GamePacket.Packet);
                 case GameDBPacketListID.REQUEST_UPDATE_JOB:
                     return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateJobPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_UPDATE_GENDER:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateGenderPacket)GamePacket.Packet);
+                case GameDBPacketListID.REQUEST_UPDATE_PRESET:
+                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdatePresetPacket)GamePacket.Packet);
                 default:
                     LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];

@@ -9,6 +9,13 @@ using System.Threading.Channels;
 
 namespace DBServer.PacketPipeLine
 {
+
+    public enum COMMON_SQL_ERROR
+    {
+        SUCCESS = 0,
+        NOT_FOUND_USER = 999
+    }
+
     public class GameSQLPipeLine
     {
         private SQLExecuter SQLWorker;
@@ -80,6 +87,12 @@ namespace DBServer.PacketPipeLine
                 case GameSQLUpdateJob UpdateJobPacket:
                     SQL_UPDATE_JOB(UpdateJobPacket.AccountID, UpdateJobPacket.Job);
                     break;
+                case GameSQLUpdateGender UpdateGenderPacket:
+                    SQL_UPDATE_GENDER(UpdateGenderPacket.AccountID, UpdateGenderPacket.Gender);
+                    break;
+                case GameSQLUpdatePreset UpdatePresetPacket:
+                    SQL_UPDATE_PRESET(UpdatePresetPacket.AccountID, UpdatePresetPacket.PresetNumber);
+                    break;
                 default:
                     LogManager.GetSingletone.WriteLog($"Unknown SQL Packet Type : {Packet.GetType().Name}");
                     break;
@@ -117,6 +130,12 @@ namespace DBServer.PacketPipeLine
                                 break;
                             case DB_SP.SP_UPDATE_JOB:
                                 await CALL_SQL_UPDATE_JOB(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_GENDER:
+                                await CALL_SQL_UPDATE_GENDER(item.parameters);
+                                break;
+                            case DB_SP.SP_UPDATE_PRESET:
+                                await CALL_SQL_UPDATE_PRESET(item.parameters);
                                 break;
                             default:
                                 break;
@@ -205,6 +224,26 @@ namespace DBServer.PacketPipeLine
                 new SqlParameter("@JOB", SqlDbType.Int) { Value = Job }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB, sqlParameters));
+        }
+
+        public void SQL_UPDATE_GENDER(string Account, int Gender)
+        {
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = Account },
+                new SqlParameter("@Gender", SqlDbType.Int) { Value = Gender }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_GENDER, SqlParameters));
+        }
+
+        public void SQL_UPDATE_PRESET(string Account, int PresetNumber)
+        {
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = Account },
+                new SqlParameter("@PRESET_NUMBER", SqlDbType.Int) { Value = PresetNumber }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_PRESET, SqlParameters));
         }
 
         public async Task CALL_SQL_READ_CHARACTER(SqlParameter[] Parameters)
@@ -296,6 +335,30 @@ namespace DBServer.PacketPipeLine
             {
                 LogManager.GetSingletone.WriteLog($@"직업 업데이트 실패 {(string)Parameters[0].Value}");
             }
+        }
+
+        public async Task CALL_SQL_UPDATE_GENDER(SqlParameter[] Parameters)
+        {
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_GENDER.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != (int)COMMON_SQL_ERROR.SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"성별 업데이트 실패 {(string)Parameters[0].Value} ErrorCode : {ReturnValue}");
+            }
+            ResponseDBUpdateGenderPacket Packet = new ResponseDBUpdateGenderPacket((string)Parameters[0].Value, ReturnValue);
+            MainProxy.GetSingletone.SendToGameServer(DBPacketListID.RESPONSE_UPDATE_GENDER, Packet);
+        }
+
+        public async Task CALL_SQL_UPDATE_PRESET(SqlParameter[] Parameters)
+        {
+            int ReturnValue = 99999;
+            ReturnValue = await SQLWorker.ExecuteSqlSPAsync(DB_SP.SP_UPDATE_PRESET.ToString(), Parameters).ConfigureAwait(false);
+            if (ReturnValue != (int)COMMON_SQL_ERROR.SUCCESS)
+            {
+                LogManager.GetSingletone.WriteLog($@"프리셋 업데이트 실패 {(string)Parameters[0].Value} ErrorCode : {ReturnValue}");
+            }
+            ResponseDBUpdatePresetPacket Packet = new ResponseDBUpdatePresetPacket((string)Parameters[0].Value, ReturnValue, (int)Parameters[1].Value); // 1번 파라미터가 프리셋 번호
+            MainProxy.GetSingletone.SendToGameServer(DBPacketListID.RESPONSE_UPDATE_PRESET, Packet);
         }
     }
 }

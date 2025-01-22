@@ -19,7 +19,11 @@ namespace DBServer.Packet_SPList
         REQUEST_UPDATE_MAGIC_POINT = 8,
         REQUEST_UPDATE_LEVEL_EXP = 9,
         REQUEST_UPDATE_JOB_LEVEL = 10,
-        REQUEST_UPDATE_JOB = 11
+        REQUEST_UPDATE_JOB = 11,
+        REQUEST_UPDATE_GENDER = 12,
+        REQUEST_UPDATE_PRESET = 13,
+        RESPONSE_UPDATE_GENDER = 14,
+        RESPONSE_UPDATE_PRESET = 15
     }
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
     public record GameServerSendPipeLineWrapper<E>(E ID, dynamic Packet) where E : Enum
@@ -106,6 +110,37 @@ namespace DBServer.Packet_SPList
     {
         public string AccountID { get; set; } = AccountID;
         public int Job { get; set; } = Job;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdateGenderPacket(string AccountID, int Gender)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Gender { get; set; } = Gender;
+    }
+
+    [Serializable]
+    public struct RequestDBUpdatePresetPacket(string AccountID, int PresetNumber)
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int PresetNumber { get; set; } = PresetNumber;
+    }
+
+    [Serializable]
+    public struct ResponseDBUpdateGenderPacket(string AccountID, int ErrorCode)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int ErrorCode { get; set; } = ErrorCode;
+    }
+
+    [Serializable]
+    public struct ResponseDBUpdatePresetPacket(string AccountID, int ErrorCode, int PresetNumber)
+    {
+        // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
+        public string AccountID { get; set; } = AccountID;
+        public int ErrorCode { get; set; } = ErrorCode;
+        public int PresetNumber { get; set; } = PresetNumber;
     }
 
 }

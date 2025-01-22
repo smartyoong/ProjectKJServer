@@ -45,19 +45,28 @@ namespace GameServer.Component
         public void RequestChangeGender()
         {
             //DB에게 성별 변경 요청
+
+            // 성별은 2개뿐이니까 0 혹은 1로 무조건 나온다. +보다 %가 우선순위가 더 높아서 괄호를 쳐줘야한다.
+            RequestDBUpdateGenderPacket Packet = new RequestDBUpdateGenderPacket(Owner.GetName, (((int)Gender+1)%2));
+            MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_UPDATE_GENDER, Packet);
         }
-        public void RequestChangePresetNumber()
+        public void RequestChangePresetNumber(int GoalNumber)
         {
             //DB에게 프리셋 변경 요청
+            RequestDBUpdatePresetPacket Packet = new RequestDBUpdatePresetPacket(Owner.GetName, GoalNumber);
+            MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_UPDATE_PRESET, Packet);
         }
 
         public void ApplyChangeGender()
         {
+            // 성별은 0 혹은 1밖에 없다.
+            Gender = (GenderType)(((int)Gender + 1) % 2);
             //클라한테 전송해야한다. 이건 좀따가 만들자
         }
 
-        public void ApplyChangePresetNumber()
+        public void ApplyChangePresetNumber(int NewPresetNumber)
         {
+            PresetNumber = NewPresetNumber;
             //클라한테 전송해야한다. 이건 좀따가 만들자
         }
 

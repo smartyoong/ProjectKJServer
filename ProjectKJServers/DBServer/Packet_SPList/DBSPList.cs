@@ -16,7 +16,9 @@ namespace DBServer.Packet_SPList
         SP_UPDATE_MP = 5,
         SP_UPDATE_LEVEL_EXP = 6,
         SP_UPDATE_JOB_LEVEL = 7,
-        SP_UPDATE_JOB = 8
+        SP_UPDATE_JOB = 8,
+        SP_UPDATE_GENDER = 9,
+        SP_UPDATE_PRESET = 10
     }
 
     public interface IGameSQLPacket
@@ -66,5 +68,17 @@ namespace DBServer.Packet_SPList
     {
         public string AccountID { get; set; } = AccountID;
         public int Job { get; set; } = Job;
+    }
+
+    public record GameSQLUpdateGender(string AccountID, int Gender) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Gender { get; set; } = Gender;
+    }
+
+    public record GameSQLUpdatePreset(string AccountID, int PresetNumber) : IGameSQLPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int PresetNumber { get; set; } = PresetNumber;
     }
 }

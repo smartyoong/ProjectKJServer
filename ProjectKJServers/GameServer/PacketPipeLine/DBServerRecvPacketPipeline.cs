@@ -145,6 +145,12 @@ namespace GameServer.PacketPipeLine
                 case GameDBPacketListID.RESPONSE_CHAR_BASE_INFO:
                     ResponseDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseDBCharBaseInfoPacket>(ref packet);
                     return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
+                case GameDBPacketListID.RESPONSE_UPDATE_GENDER:
+                    ResponseDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<ResponseDBUpdateGenderPacket>(ref packet);
+                    return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
+                case GameDBPacketListID.RESPONSE_UPDATE_PRESET:
+                    ResponseDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<ResponseDBUpdatePresetPacket>(ref packet);
+                    return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
                 default:
                     return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
@@ -167,6 +173,12 @@ namespace GameServer.PacketPipeLine
                     break;
                 case ResponseDBCharBaseInfoPacket CharBaseInfoPacket:
                     Func_ResponseCharBaseInfo(CharBaseInfoPacket);
+                    break;
+                case ResponseDBUpdateGenderPacket UpdateGenderPacket:
+                    Func_ResponseUpdateGender(UpdateGenderPacket);
+                    break;
+                case ResponseDBUpdatePresetPacket UpdatePresetPacket:
+                    Func_ResponseUpdatePreset(UpdatePresetPacket);
                     break;
                 default:
                     LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
@@ -212,16 +224,46 @@ namespace GameServer.PacketPipeLine
         {
             if (IsErrorPacket(Packet, "ResponseCharBaseInfo"))
                 return;
-            ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender,Packet.PresetNumber, Packet.Job, 
+            ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender, Packet.PresetNumber, Packet.Job,
                 Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP, Packet.HP, Packet.MP);
             MainProxy.GetSingletone.CreateCharacter(Packet);
-            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket,Packet.AccountID);
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket, Packet.AccountID);
             //같은 맵 유저에게 해당 캐릭터를 렌더링하도록 명령내린다.
             SendAnotherCharBaseInfoPacket SendPacket = new SendAnotherCharBaseInfoPacket(Packet.AccountID, Packet.Gender, Packet.PresetNumber, Packet.Job,
                 Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP, MainProxy.GetSingletone.GetNickName(Packet.AccountID),
                 -1, -1 /*최초 생성시에는 이동 목표가 없다*/, Packet.HP, Packet.MP);
 
             MainProxy.GetSingletone.SendToSameMap(Packet.MapID, GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacket);
+        }
+
+        private void Func_ResponseUpdateGender(ResponseDBUpdateGenderPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "ResponseUpdateGender"))
+                return;
+            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(Packet.AccountID);
+
+            if (User == null)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdateGender: {Packet.AccountID}에 해당하는 캐릭터가 없습니다.");
+                return;
+            }
+
+            User.GetAppearanceComponent.ApplyChangeGender();
+        }
+
+        private void Func_ResponseUpdatePreset(ResponseDBUpdatePresetPacket Packet)
+        {
+            if (IsErrorPacket(Packet, "ResponseUpdatePreset"))
+                return;
+            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(Packet.AccountID);
+
+            if (User == null)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdatePreset: {Packet.AccountID}에 해당하는 캐릭터가 없습니다.");
+                return;
+            }
+
+            User.GetAppearanceComponent.ApplyChangePresetNumber(Packet.PresetNumber);
         }
     }
 }
