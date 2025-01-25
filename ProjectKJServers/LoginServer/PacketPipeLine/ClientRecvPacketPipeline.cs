@@ -11,6 +11,7 @@ using CoreUtility.Utility;
 using LoginServer.SocketConnect;
 using LoginServer.Packet_SPList;
 using LoginServer.MainUI;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LoginServer.PacketPipeLine
 {
@@ -31,12 +32,29 @@ namespace LoginServer.PacketPipeLine
         };
         private TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper> MemoryToPacketBlock;
         private ActionBlock<ClientRecvPacketPipeLineWrapper> PacketProcessBlock;
+        private Dictionary<LoginPacketListID, Func<Memory<byte>, int, ClientRecvPacketPipeLineWrapper>> MemoryLookUpTable;
+        private Dictionary<Type, Action<ClientRecvPacket, int>> PacketLookUpTable;
 
 
 
 
         public ClientRecvPacketPipeline()
         {
+            MemoryLookUpTable = new Dictionary<LoginPacketListID, Func<Memory<byte>, int, ClientRecvPacketPipeLineWrapper>>
+            {
+                { LoginPacketListID.LOGIN_REQUEST, MakeLoginRequestPacket },
+                { LoginPacketListID.ID_UNIQUE_CHECK_REQUEST, MakeIDUniqueCheckRequestPacket },
+                { LoginPacketListID.REGIST_ACCOUNT_REQUEST, MakeRegistAccountRequestPacket },
+                { LoginPacketListID.CREATE_NICKNAME_REQUEST, MakeCreateNickNameRequestPacket }
+            };
+            
+            PacketLookUpTable = new Dictionary<Type, Action<ClientRecvPacket, int>>
+            {
+                { typeof(LoginRequestPacket), SP_LoginRequest },
+                { typeof(IDUniqueCheckRequestPacket), SP_IDUniqueCheckRequest },
+                { typeof(RegistAccountRequestPacket), SP_RegistAccountRequest },
+                { typeof(CreateNickNameRequestPacket), SP_CreateNickNameRequest }
+            };
 
             MemoryToPacketBlock = new TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -133,80 +151,113 @@ namespace LoginServer.PacketPipeLine
         {
             var Data = Packet.MemoryData;
             LoginPacketListID ID = PacketUtils.GetIDFromPacket<LoginPacketListID>(ref Data);
-
-            switch (ID)
+            if (MemoryLookUpTable.TryGetValue(ID,out var Func))
             {
-                case LoginPacketListID.LOGIN_REQUEST:
-                    LoginRequestPacket? RequestLoginPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
-                    return RequestLoginPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestLoginPacket, Packet.ClientID);
-                case LoginPacketListID.ID_UNIQUE_CHECK_REQUEST:
-                    IDUniqueCheckRequestPacket? RequestIDUniqueCheckPacket = PacketUtils.GetPacketStruct<IDUniqueCheckRequestPacket>(ref Data);
-                    return RequestIDUniqueCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestIDUniqueCheckPacket, Packet.ClientID);
-                case LoginPacketListID.REGIST_ACCOUNT_REQUEST:
-                    RegistAccountRequestPacket? RequestRegistAccountPacket = PacketUtils.GetPacketStruct<RegistAccountRequestPacket>(ref Data);
-                    return RequestRegistAccountPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestRegistAccountPacket, Packet.ClientID);
-                case LoginPacketListID.CREATE_NICKNAME_REQUEST:
-                    CreateNickNameRequestPacket? RequestCreateNickNamePacket = PacketUtils.GetPacketStruct<CreateNickNameRequestPacket>(ref Data);
-                    return RequestCreateNickNamePacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), Packet.ClientID) : new ClientRecvPacketPipeLineWrapper(RequestCreateNickNamePacket, Packet.ClientID);
-                default:
-                    return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
+                return Func(Data, Packet.ClientID);
             }
+            else
+            {
+                return new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED), Packet.ClientID);
+            }
+        }
+
+        private ClientRecvPacketPipeLineWrapper MakeLoginRequestPacket(Memory<byte> Data, int ClientID)
+        {
+            LoginRequestPacket? RequestLoginPacket = PacketUtils.GetPacketStruct<LoginRequestPacket>(ref Data);
+            return RequestLoginPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) : new ClientRecvPacketPipeLineWrapper(RequestLoginPacket, ClientID);
+        }
+
+        private ClientRecvPacketPipeLineWrapper MakeIDUniqueCheckRequestPacket(Memory<byte> Data, int ClientID)
+        {
+            IDUniqueCheckRequestPacket? RequestIDUniqueCheckPacket = PacketUtils.GetPacketStruct<IDUniqueCheckRequestPacket>(ref Data);
+            return RequestIDUniqueCheckPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) : new ClientRecvPacketPipeLineWrapper(RequestIDUniqueCheckPacket, ClientID);
+        }
+
+        private ClientRecvPacketPipeLineWrapper MakeRegistAccountRequestPacket(Memory<byte> Data, int ClientID)
+        {
+            RegistAccountRequestPacket? RequestRegistAccountPacket = PacketUtils.GetPacketStruct<RegistAccountRequestPacket>(ref Data);
+            return RequestRegistAccountPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) : new ClientRecvPacketPipeLineWrapper(RequestRegistAccountPacket, ClientID);
+        }
+
+        private ClientRecvPacketPipeLineWrapper MakeCreateNickNameRequestPacket(Memory<byte> Data, int ClientID)
+        {
+            CreateNickNameRequestPacket? RequestCreateNickNamePacket = PacketUtils.GetPacketStruct<CreateNickNameRequestPacket>(ref Data);
+            return RequestCreateNickNamePacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) : new ClientRecvPacketPipeLineWrapper(RequestCreateNickNamePacket, ClientID);
         }
 
         public void ProcessPacket(ClientRecvPacketPipeLineWrapper Packet)
         {
             if (IsErrorPacket(Packet.Packet, "ProcessPacket"))
                 return;
-            switch (Packet.Packet)
+
+            if (PacketLookUpTable.TryGetValue(Packet.Packet.GetType(), out Action<ClientRecvPacket,int> Func))
             {
-                case LoginRequestPacket RequestPacket:
-                    SP_LoginRequest(RequestPacket, Packet.ClientID);
-                    break;
-                case IDUniqueCheckRequestPacket RequestPacket:
-                    SP_IDUniqueCheckRequest(RequestPacket, Packet.ClientID);
-                    break;
-                case RegistAccountRequestPacket RequestPacket:
-                    SP_RegistAccountRequest(RequestPacket, Packet.ClientID);
-                    break;
-                case CreateNickNameRequestPacket RequestPacket:
-                    SP_CreateNickNameRequest(RequestPacket, Packet.ClientID);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog("ClientRecvPipeline ProcessPacket에서 할당되지 않은 패킷이 들어왔습니다.");
-                    break;
+                Func(Packet.Packet, Packet.ClientID);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ClientRecvPacketPipeline ProcessPacket에 잘못된 타입이 들어왔습니다. {Packet.Packet}");
             }
         }
 
-        private void SP_LoginRequest(LoginRequestPacket packet, int ClientID)
+        private void SP_LoginRequest(ClientRecvPacket Packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "LoginRequest"))
+            if(Packet is not LoginRequestPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"ClientRecvPacketPipeline SP_LoginRequest에 잘못된 타입이 들어왔습니다. {Packet}");
                 return;
-            MainProxy.GetSingletone.HandleSQLPacket(new SQLLoginRequest(packet.AccountID, packet.Password, ClientID));
+            }
+
+            if (IsErrorPacket(ValidPacket, "LoginRequest"))
+                return;
+
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLLoginRequest(ValidPacket.AccountID, ValidPacket.Password, ClientID));
         }
 
-        private void SP_IDUniqueCheckRequest(IDUniqueCheckRequestPacket packet, int ClientID)
+        private void SP_IDUniqueCheckRequest(ClientRecvPacket Packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "IDUniqueCheckRequest"))
+            if(Packet is not IDUniqueCheckRequestPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"ClientRecvPacketPipeline SP_IDUniqueCheckRequest에 잘못된 타입이 들어왔습니다. {Packet}");
                 return;
-            MainProxy.GetSingletone.HandleSQLPacket(new SQLIDUniqueCheckRequest(packet.AccountID, ClientID));
+            }
+
+            if (IsErrorPacket(ValidPacket, "IDUniqueCheckRequest"))
+                return;
+
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLIDUniqueCheckRequest(ValidPacket.AccountID, ClientID));
         }
 
-        private void SP_RegistAccountRequest(RegistAccountRequestPacket packet, int ClientID)
+        private void SP_RegistAccountRequest(ClientRecvPacket Packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "RegistAccountRequest"))
+            if(Packet is not RegistAccountRequestPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"ClientRecvPacketPipeline SP_RegistAccountRequest에 잘못된 타입이 들어왔습니다. {Packet}");
                 return;
+            }
+
+            if (IsErrorPacket(ValidPacket, "RegistAccountRequest"))
+                return;
+
             IPEndPoint? ClientIPEndPoint = MainProxy.GetSingletone.GetClientSocket(ClientID)!.RemoteEndPoint as IPEndPoint;
             if (ClientIPEndPoint != null)
-                MainProxy.GetSingletone.HandleSQLPacket(new SQLRegistAccountRequest(packet.AccountID, packet.Password, ClientIPEndPoint.Address.ToString(), ClientID));
+                MainProxy.GetSingletone.HandleSQLPacket(new SQLRegistAccountRequest(ValidPacket.AccountID, ValidPacket.Password, ClientIPEndPoint.Address.ToString(), ClientID));
             else
                 LogManager.GetSingletone.WriteLog("ClientRecvPacketPipeline SP_RegistAccountRequest에서 ClientIPEndPoint가 null입니다.");
         }
 
-        private void SP_CreateNickNameRequest(CreateNickNameRequestPacket packet, int ClientID)
+        private void SP_CreateNickNameRequest(ClientRecvPacket Packet, int ClientID)
         {
-            if (IsErrorPacket(packet, "CreateNickNameRequest"))
+            if (Packet is not CreateNickNameRequestPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"ClientRecvPacketPipeline SP_CreateNickNameRequest에 잘못된 타입이 들어왔습니다. {Packet}");
                 return;
-            MainProxy.GetSingletone.HandleSQLPacket(new SQLCreateNickNameRequest(packet.AccountID, packet.NickName, ClientID));
+            }
+
+            if (IsErrorPacket(ValidPacket, "CreateNickNameRequest"))
+                return;
+
+            MainProxy.GetSingletone.HandleSQLPacket(new SQLCreateNickNameRequest(ValidPacket.AccountID, ValidPacket.NickName, ClientID));
         }
     }
 }

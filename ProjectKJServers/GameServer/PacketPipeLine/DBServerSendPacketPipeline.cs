@@ -27,9 +27,23 @@ namespace GameServer.PacketPipeLine
         };
         private TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
+        private Dictionary<GameDBPacketListID, Func<GameDBPacketListID, DBSendPacket, Memory<byte>>> PacketLookUpTable;
 
         public DBServerSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<GameDBPacketListID, Func<GameDBPacketListID, DBSendPacket, Memory<byte>>>
+            {
+                { GameDBPacketListID.REQUEST_CHAR_BASE_INFO, MakeRequestDBCharBaseInfoPacket },
+                { GameDBPacketListID.REQUEST_CREATE_CHARACTER, MakeRequestDBCreateCharacterPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_HEALTH_POINT, MakeRequestDBUpdateHealthPointPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_MAGIC_POINT, MakeRequestDBUpdateMagicPointPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_LEVEL_EXP, MakeRequestDBUpdateLevelExpPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_JOB_LEVEL, MakeRequestDBUpdateJobLevelPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_JOB, MakeRequestDBUpdateJobPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_GENDER, MakeRequestDBUpdateGenderPacket },
+                { GameDBPacketListID.REQUEST_UPDATE_PRESET, MakeRequestDBUpdatePresetPacket }
+            };
+
             PacketToMemoryBlock = new TransformBlock<DBServerSendPipeLineWrapper<GameDBPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
@@ -66,31 +80,131 @@ namespace GameServer.PacketPipeLine
 
         private Memory<byte> MakePacketToMemory(DBServerSendPipeLineWrapper<GameDBPacketListID> GamePacket)
         {
-            switch (GamePacket.PacketID)
+            if(PacketLookUpTable.TryGetValue(GamePacket.PacketID, out var func))
             {
-                case GameDBPacketListID.REQUEST_DB_TEST:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBTestPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_CHAR_BASE_INFO:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBCharBaseInfoPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_CREATE_CHARACTER:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBCreateCharacterPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_HEALTH_POINT:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateHealthPointPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_MAGIC_POINT:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateMagicPointPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_LEVEL_EXP:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateLevelExpPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_JOB_LEVEL:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateJobLevelPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_JOB:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateJobPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_GENDER:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdateGenderPacket)GamePacket.Packet);
-                case GameDBPacketListID.REQUEST_UPDATE_PRESET:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestDBUpdatePresetPacket)GamePacket.Packet);
-                default:
-                    LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
-                    return new byte[0];
+                return func(GamePacket.PacketID, GamePacket.Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBCharBaseInfoPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if (Packet is RequestDBCharBaseInfoPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBCharBaseInfoPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBCreateCharacterPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBCreateCharacterPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBCreateCharacterPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateHealthPointPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if (Packet is RequestDBUpdateHealthPointPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateHealthPointPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateMagicPointPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if (Packet is RequestDBUpdateMagicPointPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateMagicPointPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateLevelExpPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBUpdateLevelExpPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateLevelExpPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateJobLevelPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBUpdateJobLevelPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateJobLevelPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateJobPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBUpdateJobPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateJobPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdateGenderPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBUpdateGenderPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdateGenderPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestDBUpdatePresetPacket(GameDBPacketListID ID, DBSendPacket Packet)
+        {
+            if(Packet is RequestDBUpdatePresetPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(ID, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"DBServerSendPacketPipeline에서 RequestDBUpdatePresetPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
             }
         }
 

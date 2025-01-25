@@ -2,6 +2,22 @@
 
 namespace LoginServer.Packet_SPList
 {
+    interface ClientRecvPacket
+    {
+    }
+
+    interface ClientSendPacket
+    {
+    }
+
+    interface GameSendPacket
+    {
+    }
+
+    interface GameRecvPacket
+    {
+    }
+
     public enum LoginPacketListID
     {
         LOGIN_REQUEST = 0,
@@ -55,14 +71,14 @@ namespace LoginServer.Packet_SPList
 
     // 패킷은 데이터가 크지않고 내부 값이 변경될 수 있기 때문에 Struct가 적합
     [Serializable]
-    public struct LoginRequestPacket(string AccountID, string Password)
+    public struct LoginRequestPacket(string AccountID, string Password) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string Password { get; set; } = Password;
     }
 
     [Serializable]
-    public struct LoginResponsePacket(string NickName, string HashCode, int ErrorCode)
+    public struct LoginResponsePacket(string NickName, string HashCode, int ErrorCode) : ClientSendPacket
     {
         public string NickName { get; set; } = NickName;
         public string HashValue { get; set; } = HashCode;
@@ -70,32 +86,32 @@ namespace LoginServer.Packet_SPList
     }
 
     [Serializable]
-    public struct RegistAccountRequestPacket(string AccountID, string Password)
+    public struct RegistAccountRequestPacket(string AccountID, string Password) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string Password { get; set; } = Password;
     }
 
     [Serializable]
-    public struct RegistAccountResponsePacket(int ErrorCode)
+    public struct RegistAccountResponsePacket(int ErrorCode) : ClientSendPacket
     {
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct IDUniqueCheckRequestPacket(string AccountID)
+    public struct IDUniqueCheckRequestPacket(string AccountID) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
     }
 
     [Serializable]
-    public struct IDUniqueCheckResponsePacket(bool IsSuccess)
+    public struct IDUniqueCheckResponsePacket(bool IsSuccess) : ClientSendPacket
     {
         public bool IsUnique { get; set; } = IsSuccess;
     }
     //한글을 지원하기 위한 특수화
     [Serializable]
-    public struct CreateNickNameRequestPacket(string AccountID, string NickName)
+    public struct CreateNickNameRequestPacket(string AccountID, string NickName) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName; // Base64 인코딩된 문자열
@@ -103,7 +119,7 @@ namespace LoginServer.Packet_SPList
     // Encoding.UTF8.GetString(packet.NickName) 이거 사용해서 byte[]를 string으로 변환
     //Encoding.UTF8.GetBytes((string)Parameters[1].Value) 이거 사용해서 string을 byte[]로 변환
     [Serializable]
-    public struct CreateNickNameResponsePacket(string NickName, int ErrorCode)
+    public struct CreateNickNameResponsePacket(string NickName, int ErrorCode) : ClientSendPacket
     {
         public string NickName { get; set; } = NickName;
         public int ErrorCode { get; set; } = ErrorCode;
@@ -116,16 +132,7 @@ namespace LoginServer.Packet_SPList
     /// <param name="AccountID"></param>
 
     [Serializable]
-    public struct ResponseGameTestPacket(string AccountID, string NickName, int Level, int Exp)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-        public int Level { get; set; } = Level;
-        public int Exp { get; set; } = Exp;
-    }
-
-    [Serializable]
-    public struct SendUserHashInfoPacket(string AccountID, string HashValue, int ClientID, string IPAddr)
+    public struct SendUserHashInfoPacket(string AccountID, string HashValue, int ClientID, string IPAddr) : GameSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashValue;
@@ -135,7 +142,7 @@ namespace LoginServer.Packet_SPList
     }
 
     [Serializable]
-    public struct ResponseUserHashInfoPacket(int ClientID, string NickName, int ErrCode, int TTL)
+    public struct ResponseUserHashInfoPacket(int ClientID, string NickName, int ErrCode, int TTL) : GameRecvPacket
     {
         public int ClientLoginID { get; set; } = ClientID;
         public string NickName { get; set; } = NickName;
@@ -144,7 +151,7 @@ namespace LoginServer.Packet_SPList
     }
 
     [Serializable]
-    public struct RequestKickUserPacket(string IPAddr, string AccountID)
+    public struct RequestKickUserPacket(string IPAddr, string AccountID) : GameRecvPacket
     {
         public string IPAddr { get; set; } = IPAddr;
         public string AccountID { get; set; } = AccountID;

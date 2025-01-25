@@ -30,12 +30,25 @@ namespace LoginServer.PacketPipeLine
         };
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
         private ActionBlock<dynamic> PacketProcessBlock;
+        private Dictionary<LoginGamePacketListID, Func<Memory<byte>, dynamic>> MemoryLookUpTable;
+        private Dictionary<Type, Action<GameRecvPacket>> PacketLookUpTable;
 
 
 
 
         public GameServerRecvPacketPipeline()
         {
+            MemoryLookUpTable = new Dictionary<LoginGamePacketListID, Func<Memory<byte>, dynamic>>
+            {
+                { LoginGamePacketListID.RESPONSE_USER_HASH_INFO, MakeResponseUserHashInfoPacket },
+                { LoginGamePacketListID.REQUEST_KICK_USER, MakeRequestKickUserPacket }
+            };
+
+            PacketLookUpTable = new Dictionary<Type, Action<GameRecvPacket>>
+            {
+                { typeof(ResponseUserHashInfoPacket), Func_ResponseUserHashInfo },
+                { typeof(RequestKickUserPacket), Func_RequestKickUser }
+            };
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -131,84 +144,97 @@ namespace LoginServer.PacketPipeLine
         {
             LoginGamePacketListID ID = PacketUtils.GetIDFromPacket<LoginGamePacketListID>(ref packet);
 
-            switch (ID)
+            if (MemoryLookUpTable.TryGetValue(ID, out var func))
             {
-                case LoginGamePacketListID.RESPONSE_USER_HASH_INFO:
-                    ResponseUserHashInfoPacket? ResponseUserHashInfoPacket = PacketUtils.GetPacketStruct<ResponseUserHashInfoPacket>(ref packet);
-                    return ResponseUserHashInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : ResponseUserHashInfoPacket;
-                case LoginGamePacketListID.REQUEST_KICK_USER:
-                    RequestKickUserPacket? RequestKickUserPacket = PacketUtils.GetPacketStruct<RequestKickUserPacket>(ref packet);
-                    return RequestKickUserPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : RequestKickUserPacket;
-                default:
-                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+                return func(packet);
             }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"GameServerRecvPacketPipeline.MakeMemoryToPacket: 패킷이 할당되지 않았습니다. {ID}");
+                return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+            }
+        }
+
+        private dynamic MakeResponseUserHashInfoPacket(Memory<byte> packet)
+        {
+            ResponseUserHashInfoPacket? ResponseUserHashInfoPacket = PacketUtils.GetPacketStruct<ResponseUserHashInfoPacket>(ref packet);
+            return ResponseUserHashInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : ResponseUserHashInfoPacket;
+        }
+
+        private dynamic MakeRequestKickUserPacket(Memory<byte> packet)
+        {
+            RequestKickUserPacket? RequestKickUserPacket = PacketUtils.GetPacketStruct<RequestKickUserPacket>(ref packet);
+            return RequestKickUserPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : RequestKickUserPacket;
         }
 
         public void ProcessPacket(dynamic Packet)
         {
             if (IsErrorPacket(Packet, "GameServerRecvProcessPacket"))
                 return;
-            switch (Packet)
+
+            if (PacketLookUpTable.TryGetValue(Packet.GetType(), out Action<GameRecvPacket> func))
             {
-                case ResponseUserHashInfoPacket ResponseUserHashInfoPacket:
-                    Func_ResponseUserHashInfo(ResponseUserHashInfoPacket);
-                    break;
-                case RequestKickUserPacket RequestKickUserPacket:
-                    Func_RequestKickUser(RequestKickUserPacket);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
-                    break;
+                func(Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"GameServerRecvPacketPipeline.ProcessPacket: 패킷이 할당되지 않았습니다. {Packet}");
             }
         }
 
-        private void SP_ResponseUserInfoSummary(ResponseGameTestPacket packet)
-        {
-            if (IsErrorPacket(packet, "ResponseUserInfoSummary"))
-                return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} Level: {packet.Level} Exp: {packet.Exp}");
-        }
 
-        private void Func_ResponseUserHashInfo(ResponseUserHashInfoPacket Packet)
+        private void Func_ResponseUserHashInfo(GameRecvPacket Packet)
         {
+            if(Packet is not ResponseUserHashInfoPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseUserHashInfo: ResponseUserHashInfoPacket이 아닙니다. {Packet}");
+                return;
+            }
+
             const int MAX_TTL = 10;
-            if (IsErrorPacket(Packet, "ResponseUserHashInfo"))
+            if (IsErrorPacket(ValidPacket, "ResponseUserHashInfo"))
                 return;
-            if (Packet.TimeToLive == MAX_TTL)
+            if (ValidPacket.TimeToLive == MAX_TTL)
             {
-                LogManager.GetSingletone.WriteLog($"TimeToLive이 만료되었습니다. {Packet.NickName}의 해쉬값이 만료됩니다.");
+                LogManager.GetSingletone.WriteLog($"TimeToLive이 만료되었습니다. {ValidPacket.NickName}의 해쉬값이 만료됩니다.");
                 return;
             }
-            else if (Packet.ErrorCode == (int)GeneralErrorCode.ERR_AUTH_FAIL)
+            else if (ValidPacket.ErrorCode == (int)GeneralErrorCode.ERR_AUTH_FAIL)
             {
-                string HashCode = MainProxy.GetSingletone.MakeAuthHashCode(Packet.NickName, Packet.ClientLoginID);
+                string HashCode = MainProxy.GetSingletone.MakeAuthHashCode(ValidPacket.NickName, ValidPacket.ClientLoginID);
                 int ReturnValue = (int)GeneralErrorCode.ERR_AUTH_RETRY;
                 if (string.IsNullOrEmpty(HashCode))
                 {
-                    LogManager.GetSingletone.WriteLog($"해시 코드 재생성에 실패했습니다. NickName : {Packet.NickName}");
+                    LogManager.GetSingletone.WriteLog($"해시 코드 재생성에 실패했습니다. NickName : {ValidPacket.NickName}");
                     ReturnValue = (int)GeneralErrorCode.ERR_AUTH_FAIL;
                 }
                 else
                 {
                     MainProxy.GetSingletone.ProcessSendPacketToGameServer(LoginGamePacketListID.SEND_USER_HASH_INFO,
-                        new SendUserHashInfoPacket(Packet.NickName, HashCode, Packet.ClientLoginID,
-                        MainProxy.GetSingletone.GetIPAddrByClientID(Packet.ClientLoginID)));
+                        new SendUserHashInfoPacket(ValidPacket.NickName, HashCode, ValidPacket.ClientLoginID,
+                        MainProxy.GetSingletone.GetIPAddrByClientID(ValidPacket.ClientLoginID)));
                 }
                 // 클라이언트한테는 어떻게든 전달한다
-                MainProxy.GetSingletone.SendToClient(LoginPacketListID.LOGIN_RESPONESE, new LoginResponsePacket(Packet.NickName, HashCode, ReturnValue), Packet.ClientLoginID);
+                MainProxy.GetSingletone.SendToClient(LoginPacketListID.LOGIN_RESPONESE, new LoginResponsePacket(ValidPacket.NickName, HashCode, ReturnValue), ValidPacket.ClientLoginID);
             }
         }
 
-        private void Func_RequestKickUser(RequestKickUserPacket Packet)
+        private void Func_RequestKickUser(GameRecvPacket Packet)
         {
+            if (Packet is not RequestKickUserPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_RequestKickUser: RequestKickUserPacket이 아닙니다. {Packet}");
+                return;
+            }
+
             if (IsErrorPacket(Packet, "RequestKickUser"))
                 return;
-            Socket? ClientSocket = MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID);
+            Socket? ClientSocket = MainProxy.GetSingletone.GetClientSocketByAccountID(ValidPacket.AccountID);
             if (ClientSocket == null)
             {
                 return;
             }
-            LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {Packet.IPAddr} {Packet.AccountID}");
+            LogManager.GetSingletone.WriteLog($"게임서버 요청에 따라 다음 클라이언트를 강제 종료시킵니다. IPAddr: {ValidPacket.IPAddr} {ValidPacket.AccountID}");
             MainProxy.GetSingletone.KickClient(ClientSocket);
         }
     }

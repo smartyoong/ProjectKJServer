@@ -6,6 +6,14 @@ using System.Threading.Tasks;
 
 namespace DBServer.Packet_SPList
 {
+    interface GameRecvPacket
+    {
+    }
+
+    interface GameSendPacket
+    {
+    }
+
     enum DBPacketListID
     {
         REQUEST_DB_TEST = 0,
@@ -33,13 +41,13 @@ namespace DBServer.Packet_SPList
     }
     // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
     [Serializable]
-    public struct RequestDBCharBaseInfoPacket(string AccountID, string NickName)
+    public struct RequestDBCharBaseInfoPacket(string AccountID, string NickName) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
     [Serializable]
-    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP)
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP) : GameSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -56,13 +64,13 @@ namespace DBServer.Packet_SPList
         public int MP { get; set; } = MP;
     }
     [Serializable]
-    public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
+    public struct ResponseDBNeedToMakeCharacterPacket(string AccountID) : GameSendPacket
     {
         public string AccountID { get; set; } = AccountID;
     }
 
     [Serializable]
-    public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID)
+    public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -70,28 +78,28 @@ namespace DBServer.Packet_SPList
     }
 
     [Serializable]
-    public struct ResponseDBCreateCharacterPacket(string AccountID, int ErrorCode)
+    public struct ResponseDBCreateCharacterPacket(string AccountID, int ErrorCode) : GameSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP)
+    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int CurrentHP { get; set; } = CurrentHP;
     }
 
     [Serializable]
-    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP)
+    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int CurrentMP { get; set; } = CurrentMP;
     }
 
     [Serializable]
-    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP)
+    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Level { get; set; } = Level;
@@ -99,35 +107,35 @@ namespace DBServer.Packet_SPList
     }
 
     [Serializable]
-    public struct RequestDBUpdateJobLevelPacket(string AccountID, int Level)
+    public struct RequestDBUpdateJobLevelPacket(string AccountID, int Level) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Level { get; set; } = Level;
     }
 
     [Serializable]
-    public struct RequestDBUpdateJobPacket(string AccountID, int Job)
+    public struct RequestDBUpdateJobPacket(string AccountID, int Job) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Job { get; set; } = Job;
     }
 
     [Serializable]
-    public struct RequestDBUpdateGenderPacket(string AccountID, int Gender)
+    public struct RequestDBUpdateGenderPacket(string AccountID, int Gender) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
     }
 
     [Serializable]
-    public struct RequestDBUpdatePresetPacket(string AccountID, int PresetNumber)
+    public struct RequestDBUpdatePresetPacket(string AccountID, int PresetNumber) : GameRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int PresetNumber { get; set; } = PresetNumber;
     }
 
     [Serializable]
-    public struct ResponseDBUpdateGenderPacket(string AccountID, int ErrorCode)
+    public struct ResponseDBUpdateGenderPacket(string AccountID, int ErrorCode) : GameSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -135,7 +143,7 @@ namespace DBServer.Packet_SPList
     }
 
     [Serializable]
-    public struct ResponseDBUpdatePresetPacket(string AccountID, int ErrorCode, int PresetNumber)
+    public struct ResponseDBUpdatePresetPacket(string AccountID, int ErrorCode, int PresetNumber) : GameSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;

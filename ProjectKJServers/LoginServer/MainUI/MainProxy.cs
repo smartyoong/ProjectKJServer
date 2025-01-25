@@ -51,26 +51,8 @@ namespace LoginServer.MainUI
 
         public void HandleSQLPacket(ISQLPacket Packet)
         {
-            switch(Packet)
-            {
-                case SQLLoginRequest SQLPacket:
-                    AccountSQLClass.SQL_LOGIN_REQUEST(SQLPacket.AccountID,SQLPacket.Password,SQLPacket.ClientID);
-                    break;
-                case SQLIDUniqueCheckRequest SQLPacket:
-                    AccountSQLClass.SQL_ID_UNIQUE_CHECK_REQUEST(SQLPacket.AccountID,SQLPacket.ClientID);
-                    break;
-                case SQLRegistAccountRequest SQLPacket:
-                    AccountSQLClass.SQL_REGIST_ACCOUNT_REQUEST(SQLPacket.AccountID,SQLPacket.Password, SQLPacket.IPAddr, SQLPacket.ClientID);
-                    break;
-                case SQLCreateNickNameRequest SQLPacket:
-                    AccountSQLClass.SQL_CREATE_NICKNAME_REQUEST(SQLPacket.AccountID,SQLPacket.NickName,SQLPacket.ClientID);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog("Invalid SQL Packet");
-                    break;
-            }
+            AccountSQLClass.HandleSQLPacket(Packet);
         }
-
 
         ///////////////////////////////////////////////////////////////////
         public void StartGameServerConnect(TaskCompletionSource<bool> ServerEvent)

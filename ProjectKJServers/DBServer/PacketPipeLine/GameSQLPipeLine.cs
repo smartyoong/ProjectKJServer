@@ -29,10 +29,37 @@ namespace DBServer.PacketPipeLine
 
         private TaskCompletionSource<bool>? SQLReadyEvent;
 
+        private Dictionary<DB_SP, Func<SqlParameter[], Task>> SQLLookUpTable;
+
+        private Dictionary<Type, Action<IGameSQLPacket>> ParameterLookUpTable;
 
 
         public GameSQLPipeLine()
         {
+            ParameterLookUpTable = new Dictionary<Type, Action<IGameSQLPacket>>()
+                {
+                { typeof(GameSQLReadCharacterPacket), SQL_READ_CHARACTER },
+                { typeof(GameSQLCreateCharacterPacket), SQL_CREATE_CHARACTER },
+                { typeof(GameSQLUpdateHealthPoint), SQL_UPDATE_HP },
+                { typeof(GameSQLUpdateMagicPoint), SQL_UPDATE_MP },
+                { typeof(GameSQLUpdateLevelEXP), SQL_UPDATE_LEVEL_EXP },
+                { typeof(GameSQLUpdateJobLevel), SQL_UPDATE_JOB_LEVEL },
+                { typeof(GameSQLUpdateJob), SQL_UPDATE_JOB },
+                { typeof(GameSQLUpdateGender), SQL_UPDATE_GENDER },
+                { typeof(GameSQLUpdatePreset), SQL_UPDATE_PRESET }
+            };
+            SQLLookUpTable = new Dictionary<DB_SP, Func<SqlParameter[], Task>>()
+            {
+                { DB_SP.SP_READ_CHARACTER, CALL_SQL_READ_CHARACTER },
+                { DB_SP.SP_CREATE_CHARACTER, CALL_SQL_CREATE_CHARACTER },
+                { DB_SP.SP_UPDATE_HP, CALL_SQL_UPDATE_HP },
+                { DB_SP.SP_UPDATE_MP, CALL_SQL_UPDATE_MP },
+                { DB_SP.SP_UPDATE_LEVEL_EXP, CALL_SQL_UPDATE_LEVEL_EXP },
+                { DB_SP.SP_UPDATE_JOB_LEVEL, CALL_SQL_UPDATE_JOB_LVEL },
+                { DB_SP.SP_UPDATE_JOB, CALL_SQL_UPDATE_JOB },
+                { DB_SP.SP_UPDATE_GENDER, CALL_SQL_UPDATE_GENDER },
+                { DB_SP.SP_UPDATE_PRESET, CALL_SQL_UPDATE_PRESET }
+            };
             SQLWorker = new SQLExecuter(DBServerSettings.Default.SQLDataSoruce, DBServerSettings.Default.SQLGameDataBaseName,
                 DBServerSettings.Default.SQLSecurity, DBServerSettings.Default.SQLPoolMinSize, DBServerSettings.Default.SQLPoolMaxSize, DBServerSettings.Default.SQLTimeOut);
             StartSQLProcess();
@@ -64,38 +91,13 @@ namespace DBServer.PacketPipeLine
 
         public void DispatchSQLPacket(IGameSQLPacket Packet)
         {
-            switch (Packet)
+            if(ParameterLookUpTable.TryGetValue(Packet.GetType(), out var SQLParameterFunc))
             {
-                case GameSQLReadCharacterPacket ReadCharacterPacket:
-                    SQL_READ_CHARACTER(ReadCharacterPacket.AccountID, ReadCharacterPacket.NickName);
-                    break;
-                case GameSQLCreateCharacterPacket CreateCharacterPacket:
-                    SQL_CREATE_CHARACTER(CreateCharacterPacket.AccountID, CreateCharacterPacket.Gender, CreateCharacterPacket.PresetID);
-                    break;
-                case GameSQLUpdateHealthPoint UpdateHealthPacket:
-                    SQL_UPDATE_HP(UpdateHealthPacket.AccountID, UpdateHealthPacket.CurrentHP);
-                    break;
-                case GameSQLUpdateMagicPoint UpdateMagicPacket:
-                    SQL_UPDATE_MP(UpdateMagicPacket.AccountID, UpdateMagicPacket.CurrentMP);
-                    break;
-                case GameSQLUpdateLevelEXP UpdateLevelEXPPacket:
-                    SQL_UPDATE_LEVEL_EXP(UpdateLevelEXPPacket.AccountID, UpdateLevelEXPPacket.Level, UpdateLevelEXPPacket.CurrentEXP);
-                    break;
-                case GameSQLUpdateJobLevel UpdateJobLevelPacket:
-                    SQL_UPDATE_JOB_LEVEL(UpdateJobLevelPacket.AccountID, UpdateJobLevelPacket.Level);
-                    break;
-                case GameSQLUpdateJob UpdateJobPacket:
-                    SQL_UPDATE_JOB(UpdateJobPacket.AccountID, UpdateJobPacket.Job);
-                    break;
-                case GameSQLUpdateGender UpdateGenderPacket:
-                    SQL_UPDATE_GENDER(UpdateGenderPacket.AccountID, UpdateGenderPacket.Gender);
-                    break;
-                case GameSQLUpdatePreset UpdatePresetPacket:
-                    SQL_UPDATE_PRESET(UpdatePresetPacket.AccountID, UpdatePresetPacket.PresetNumber);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog($"Unknown SQL Packet Type : {Packet.GetType().Name}");
-                    break;
+                SQLParameterFunc(Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"SQLPipeLine에 일치하는 타입의 패킷이 없습니다. {Packet}");
             }
         }
 
@@ -108,37 +110,9 @@ namespace DBServer.PacketPipeLine
                     await SQLChannel.Reader.WaitToReadAsync(SQLCancelToken.Token).ConfigureAwait(false);
                     while (SQLChannel.Reader.TryRead(out var item))
                     {
-                        switch (item.ID)
+                        if (SQLLookUpTable.TryGetValue(item.ID, out var SQLFunc))
                         {
-                            case DB_SP.SP_READ_CHARACTER:
-                                await CALL_SQL_READ_CHARACTER(item.parameters);
-                                break;
-                            case DB_SP.SP_CREATE_CHARACTER:
-                                await CALL_SQL_CREATE_CHARACTER(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_HP:
-                                await CALL_SQL_UPDATE_HP(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_MP:
-                                await CALL_SQL_UPDATE_MP(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_LEVEL_EXP:
-                                await CALL_SQL_UPDATE_LEVEL_EXP(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_JOB_LEVEL:
-                                await CALL_SQL_UPDATE_JOB_LVEL(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_JOB:
-                                await CALL_SQL_UPDATE_JOB(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_GENDER:
-                                await CALL_SQL_UPDATE_GENDER(item.parameters);
-                                break;
-                            case DB_SP.SP_UPDATE_PRESET:
-                                await CALL_SQL_UPDATE_PRESET(item.parameters);
-                                break;
-                            default:
-                                break;
+                            await SQLFunc(item.parameters).ConfigureAwait(false);
                         }
                     }
                 }
@@ -152,96 +126,149 @@ namespace DBServer.PacketPipeLine
                 }
             }
         }
-        public void SQL_READ_CHARACTER(string AccountID, string NickName)
+        public void SQL_READ_CHARACTER(IGameSQLPacket Packet)
         {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@NickName", SqlDbType.VarChar, 50) { Value = NickName }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_READ_CHARACTER, sqlParameters));
-        }
-        public void SQL_CREATE_CHARACTER(string AccountID, int Gender, int PrestID)
-        {
-            const int NO_JOB = 0;
-            //닉네임은 따로 가야하는데
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@Job",SqlDbType.Int) {Value = NO_JOB },
-                new SqlParameter("@Gender", SqlDbType.Int) { Value = Gender },
-                new SqlParameter("@Prest_ID", SqlDbType.Int) { Value = PrestID }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_CREATE_CHARACTER, sqlParameters));
-        }
+            if(Packet is not GameSQLReadCharacterPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_READ_CHARACTER에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
 
-        public void SQL_UPDATE_HP(string AccountID, int CurrentHP)
-        {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@HP", SqlDbType.Int) { Value = CurrentHP },
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_HP, sqlParameters));
-        }
-
-        public void SQL_UPDATE_MP(string AccountID, int CurrentMP)
-        {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@MP", SqlDbType.Int) { Value = CurrentMP }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_MP, sqlParameters));
-        }
-
-        public void SQL_UPDATE_LEVEL_EXP(string AccountID, int Level, int CurrentEXP)
-        {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@LEVEL", SqlDbType.Int) { Value = Level },
-                new SqlParameter("@EXP", SqlDbType.Int) { Value = CurrentEXP }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_LEVEL_EXP, sqlParameters));
-        }
-
-        public void SQL_UPDATE_JOB_LEVEL(string AccountID, int Level)
-        {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@JOB_LEVEL", SqlDbType.Int) { Value = Level }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB_LEVEL, sqlParameters));
-        }
-
-        public void SQL_UPDATE_JOB(string AccountID, int Job)
-        {
-            SqlParameter[] sqlParameters =
-            [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = AccountID },
-                new SqlParameter("@JOB", SqlDbType.Int) { Value = Job }
-            ];
-            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB, sqlParameters));
-        }
-
-        public void SQL_UPDATE_GENDER(string Account, int Gender)
-        {
             SqlParameter[] SqlParameters =
             [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = Account },
-                new SqlParameter("@Gender", SqlDbType.Int) { Value = Gender }
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@NickName", SqlDbType.VarChar, 50) { Value = ValidPacket.NickName }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_READ_CHARACTER, SqlParameters));
+        }
+        public void SQL_CREATE_CHARACTER(IGameSQLPacket Packet)
+        {
+            if(Packet is not GameSQLCreateCharacterPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_CREATE_CHARACTER에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            const int NO_JOB = 0;
+            //닉네임은 따로 가야하는데
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@Job",SqlDbType.Int) {Value = NO_JOB },
+                new SqlParameter("@Gender", SqlDbType.Int) { Value = ValidPacket.Gender },
+                new SqlParameter("@Prest_ID", SqlDbType.Int) { Value = ValidPacket.PresetID }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_CREATE_CHARACTER, SqlParameters));
+        }
+
+        public void SQL_UPDATE_HP(IGameSQLPacket Packet)
+        {
+            if (Packet is not GameSQLUpdateHealthPoint ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_HP에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@HP", SqlDbType.Int) { Value = ValidPacket.CurrentHP },
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_HP, SqlParameters));
+        }
+
+        public void SQL_UPDATE_MP(IGameSQLPacket Packet)
+        {
+            if (Packet is not GameSQLUpdateMagicPoint ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_MP에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@MP", SqlDbType.Int) { Value = ValidPacket.CurrentMP }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_MP, SqlParameters));
+        }
+
+        public void SQL_UPDATE_LEVEL_EXP(IGameSQLPacket Packet)
+        {
+            if (Packet is not GameSQLUpdateLevelEXP ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_LEVEL_EXP에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@LEVEL", SqlDbType.Int) { Value = ValidPacket.Level },
+                new SqlParameter("@EXP", SqlDbType.Int) { Value = ValidPacket.CurrentEXP }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_LEVEL_EXP, SqlParameters));
+        }
+
+        public void SQL_UPDATE_JOB_LEVEL(IGameSQLPacket Packet)
+        {
+            if (Packet is not GameSQLUpdateJobLevel ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_JOB_LEVEL에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@JOB_LEVEL", SqlDbType.Int) { Value = ValidPacket.Level }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB_LEVEL, SqlParameters));
+        }
+
+        public void SQL_UPDATE_JOB(IGameSQLPacket Packet)
+        {
+            if(Packet is not GameSQLUpdateJob ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_JOB에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@JOB", SqlDbType.Int) { Value = ValidPacket.Job }
+            ];
+            SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_JOB, SqlParameters));
+        }
+
+        public void SQL_UPDATE_GENDER(IGameSQLPacket Packet)
+        {
+            if (Packet is not GameSQLUpdateGender ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_GENDER에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            SqlParameter[] SqlParameters =
+            [
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@Gender", SqlDbType.Int) { Value = ValidPacket.Gender }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_GENDER, SqlParameters));
         }
 
-        public void SQL_UPDATE_PRESET(string Account, int PresetNumber)
+        public void SQL_UPDATE_PRESET(IGameSQLPacket Packet)
         {
+            if (Packet is not GameSQLUpdatePreset ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SQL_UPDATE_PRESET에 일치하지 않는 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
             SqlParameter[] SqlParameters =
             [
-                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = Account },
-                new SqlParameter("@PRESET_NUMBER", SqlDbType.Int) { Value = PresetNumber }
+                new SqlParameter("@ID", SqlDbType.VarChar, 50) { Value = ValidPacket.AccountID },
+                new SqlParameter("@PRESET_NUMBER", SqlDbType.Int) { Value = ValidPacket.PresetNumber }
             ];
             SQLChannel.Writer.TryWrite((DB_SP.SP_UPDATE_PRESET, SqlParameters));
         }
@@ -264,7 +291,8 @@ namespace DBServer.PacketPipeLine
             }
             else
             {
-                ResponseDBCharBaseInfoPacket CharBaseInfoPacket = new ResponseDBCharBaseInfoPacket((string)CharacterInfoList[0][0],
+                //CharacterInfoList[0][0] = AccountID였으나, int로 저장으로 바꿈에 따라 Parameter에서 주는 AccountID를 그대로 사용
+                ResponseDBCharBaseInfoPacket CharBaseInfoPacket = new ResponseDBCharBaseInfoPacket((string)Parameters[0].Value,
                     (int)CharacterInfoList[0][1], (int)CharacterInfoList[0][2], (int)CharacterInfoList[0][3], (int)CharacterInfoList[0][4],
                     (int)CharacterInfoList[0][5], (int)CharacterInfoList[0][6], (int)CharacterInfoList[0][7], (int)CharacterInfoList[0][8], (int)CharacterInfoList[0][9],
                     (string)Parameters[1].Value, (int)CharacterInfoList[0][10], (int)CharacterInfoList[0][11]);

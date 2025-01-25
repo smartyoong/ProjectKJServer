@@ -28,9 +28,18 @@ namespace LoginServer.PacketPipeLine
         };
         private TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
         private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
+        private Dictionary<LoginPacketListID, Func<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>> PacketLookUpTable;
 
         public ClientSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<LoginPacketListID, Func<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>>
+            {
+                { LoginPacketListID.LOGIN_RESPONESE, MakeLoginResponseMemory },
+                { LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE, MakeIDUniqueCheckResponseMemory },
+                { LoginPacketListID.REGIST_ACCOUNT_RESPONESE, MakeRegistAccountResponseMemory },
+                { LoginPacketListID.CREATE_NICKNAME_RESPONESE, MakeCreateNickNameResponseMemory }
+            };
+
             PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<LoginPacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
@@ -67,20 +76,35 @@ namespace LoginServer.PacketPipeLine
 
         private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> packet)
         {
-            switch (packet.ID)
+            if(PacketLookUpTable.TryGetValue(packet.ID, out var func))
             {
-                case LoginPacketListID.LOGIN_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (LoginResponsePacket)packet.Packet), packet.ClientID);
-                case LoginPacketListID.ID_UNIQUE_CHECK_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (IDUniqueCheckResponsePacket)packet.Packet), packet.ClientID);
-                case LoginPacketListID.REGIST_ACCOUNT_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (RegistAccountResponsePacket)packet.Packet), packet.ClientID);
-                case LoginPacketListID.CREATE_NICKNAME_RESPONESE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (CreateNickNameResponsePacket)packet.Packet), packet.ClientID);
-                default:
-                    LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
-                    return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);
+                return func(packet);
             }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
+                return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);
+            }
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeLoginResponseMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> Packet)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(Packet.ID, (LoginResponsePacket)Packet.Packet), Packet.ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeIDUniqueCheckResponseMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> Packet)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(Packet.ID, (IDUniqueCheckResponsePacket)Packet.Packet), Packet.ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeRegistAccountResponseMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> Packet)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(Packet.ID, (RegistAccountResponsePacket)Packet.Packet), Packet.ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeCreateNickNameResponseMemory(ClientSendPacketPipeLineWrapper<LoginPacketListID> Packet)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(Packet.ID, (CreateNickNameResponsePacket)Packet.Packet), Packet.ClientID);
         }
 
         private async Task SendMemory(ClientSendMemoryPipeLineWrapper packet)

@@ -28,9 +28,16 @@ namespace GameServer.PacketPipeLine
         };
         private TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
+        private Dictionary<GameLoginPacketListID, Func<LoginSendPacket, Memory<byte>>> PacketLookUpTable;
 
         public LoginServerSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<GameLoginPacketListID, Func<LoginSendPacket, Memory<byte>>>
+            {
+                { GameLoginPacketListID.RESPONSE_USER_HASH_INFO, MakeResponseUserHashInfoMemory },
+                { GameLoginPacketListID.REQUEST_KICK_USER, MakeRequestKickUserMemory }
+            };
+
             PacketToMemoryBlock = new TransformBlock<LoginServerSendPipeLineWrapper<GameLoginPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
@@ -67,15 +74,40 @@ namespace GameServer.PacketPipeLine
 
         private Memory<byte> MakePacketToMemory(LoginServerSendPipeLineWrapper<GameLoginPacketListID> GamePacket)
         {
-            switch (GamePacket.PacketID)
+            if (PacketLookUpTable.TryGetValue(GamePacket.ID, out var PacketMaker))
             {
-                case GameLoginPacketListID.RESPONSE_USER_HASH_INFO:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (ResponseUserHashInfoPacket)GamePacket.Packet);
-                case GameLoginPacketListID.REQUEST_KICK_USER:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (RequestKickUserPacket)GamePacket.Packet);
-                default:
-                    LogManager.GetSingletone.WriteLog($"ServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
-                    return new byte[0];
+                return PacketMaker(GamePacket.Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseUserHashInfoMemory(LoginSendPacket Packet)
+        {
+            if (Packet is ResponseUserHashInfoPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(GameLoginPacketListID.RESPONSE_USER_HASH_INFO, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ServerSendPacketPipeline에서 ResponseUserHashInfoPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeRequestKickUserMemory(LoginSendPacket Packet)
+        {
+            if (Packet is RequestKickUserPacket ValidPacket)
+            {
+                return PacketUtils.MakePacket(GameLoginPacketListID.REQUEST_KICK_USER, ValidPacket);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ServerSendPacketPipeline에서 RequestKickUserPacket이 아닌 패킷이 들어왔습니다.{Packet}");
+                return new byte[0];
             }
         }
 

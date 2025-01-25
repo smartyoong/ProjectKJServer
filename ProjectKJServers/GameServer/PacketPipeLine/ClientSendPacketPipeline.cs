@@ -28,9 +28,24 @@ namespace GameServer.PacketPipeLine
         };
         private TransformBlock<ClientSendPacketPipeLineWrapper<GamePacketListID>, ClientSendMemoryPipeLineWrapper> PacketToMemoryBlock;
         private ActionBlock<ClientSendMemoryPipeLineWrapper> MemorySendBlock;
+        private Dictionary<GamePacketListID, Func<GamePacketListID, ClientSendPacket, int, ClientSendMemoryPipeLineWrapper>> PacketLookUpTable;
 
         public ClientSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<GamePacketListID, Func<GamePacketListID, ClientSendPacket, int, ClientSendMemoryPipeLineWrapper>>
+            {
+                { GamePacketListID.KICK_CLIENT, MakeSendKickClientPacket },
+                { GamePacketListID.RESPONSE_HASH_AUTH_CHECK, MakeResponseHashAuthCheckPacket },
+                { GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, MakeResponseNeedToMakeCharacterPacket },
+                { GamePacketListID.RESPONSE_CREATE_CHARACTER, MakeResponseCreateCharacterPacket },
+                { GamePacketListID.RESPONSE_CHAR_BASE_INFO, MakeResponseCharBaseInfoPacket },
+                { GamePacketListID.RESPONSE_MOVE, MakeResponseMovePacket },
+                { GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, MakeSendAnotherCharBaseInfoPacket },
+                { GamePacketListID.SEND_USER_MOVE, MakeSendUserMovePacket },
+                { GamePacketListID.RESPONSE_PING_CHECK, MakeResponsePingCheckPacket },
+                { GamePacketListID.SEND_USER_MOVE_ARRIVED, MakeSendUserMoveArrivedPacket }
+            };
+
             PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<GamePacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 10,
@@ -65,33 +80,17 @@ namespace GameServer.PacketPipeLine
             CancelToken.Cancel();
         }
 
-        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<GamePacketListID> packet)
+        private ClientSendMemoryPipeLineWrapper MakePacketToMemory(ClientSendPacketPipeLineWrapper<GamePacketListID> Packet)
         {
-            switch (packet.ID)
+
+            if(PacketLookUpTable.TryGetValue(Packet.ID, out var func))
             {
-                case GamePacketListID.KICK_CLIENT:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendKickClientPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_HASH_AUTH_CHECK:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseHashAuthCheckPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseNeedToMakeCharcterPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_CREATE_CHARACTER:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseCreateCharacterPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_CHAR_BASE_INFO:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseCharBaseInfoPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_MOVE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponseMovePacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendAnotherCharBaseInfoPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.SEND_USER_MOVE:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendUserMovePacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.RESPONSE_PING_CHECK:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (ResponsePingCheckPacket)packet.Packet), packet.ClientID);
-                case GamePacketListID.SEND_USER_MOVE_ARRIVED:
-                    return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(packet.ID, (SendUserMoveArrivedPacket)packet.Packet), packet.ClientID);
-                default:
-                    LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{packet.ID}");
-                    return new ClientSendMemoryPipeLineWrapper(new byte[0], packet.ClientID);
+                return func(Packet.ID, Packet.Packet, Packet.ClientID);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"ClientSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{Packet.ID}");
+                return new ClientSendMemoryPipeLineWrapper(new byte[0], Packet.ClientID);
             }
         }
 
@@ -100,6 +99,56 @@ namespace GameServer.PacketPipeLine
             if (packet.MemoryData.IsEmpty)
                 return;
             await MainProxy.GetSingletone.SendToClient(MainProxy.GetSingletone.GetClientSocket(packet.ClientID)!, packet.MemoryData).ConfigureAwait(false);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeSendKickClientPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendKickClientPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponseHashAuthCheckPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponseHashAuthCheckPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponseNeedToMakeCharacterPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponseNeedToMakeCharcterPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponseCreateCharacterPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponseCreateCharacterPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponseCharBaseInfoPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponseCharBaseInfoPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponseMovePacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponseMovePacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeSendAnotherCharBaseInfoPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendAnotherCharBaseInfoPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeSendUserMovePacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendUserMovePacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeResponsePingCheckPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (ResponsePingCheckPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeSendUserMoveArrivedPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendUserMoveArrivedPacket)Packet), ClientID);
         }
     }
 }

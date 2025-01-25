@@ -27,9 +27,19 @@ namespace DBServer.PacketPipeLine
         };
         private TransformBlock<GameServerSendPipeLineWrapper<DBPacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
+        private Dictionary<DBPacketListID, Func<GameSendPacket, Memory<byte>>> PacketLookUpTable;
 
         public GameServerSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<DBPacketListID, Func<GameSendPacket, Memory<byte>>>()
+            {
+                { DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, MakeResponseDBNeedToMakeCharacterPacket },
+                { DBPacketListID.RESPONSE_CREATE_CHARACTER, MakeResponseDBCreateCharacterPacket },
+                { DBPacketListID.RESPONSE_CHAR_BASE_INFO, MakeResponseDBCharBaseInfoPacket },
+                { DBPacketListID.RESPONSE_UPDATE_GENDER, MakeResponseDBUpdateGenderPacket },
+                { DBPacketListID.RESPONSE_UPDATE_PRESET, MakeResponseDBUpdatePresetPacket }
+            };
+
             PacketToMemoryBlock = new TransformBlock<GameServerSendPipeLineWrapper<DBPacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
@@ -81,6 +91,61 @@ namespace DBServer.PacketPipeLine
                 default:
                     LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
                     return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseDBNeedToMakeCharacterPacket(GameSendPacket Packet)
+        {
+            if(Packet is ResponseDBNeedToMakeCharacterPacket ValidPacket)
+                return PacketUtils.MakePacket(DBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ValidPacket);
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"MakeResponseDBNeedToMakeCharacterPacket에서 잘못된 패킷이 들어왔습니다.");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseDBCreateCharacterPacket(GameSendPacket Packet)
+        {
+            if (Packet is ResponseDBCreateCharacterPacket ValidPacket)
+                return PacketUtils.MakePacket(DBPacketListID.RESPONSE_CREATE_CHARACTER, ValidPacket);
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"MakeResponseDBCreateCharacterPacket에서 잘못된 패킷이 들어왔습니다.");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseDBCharBaseInfoPacket(GameSendPacket Packet)
+        {
+            if (Packet is ResponseDBCharBaseInfoPacket ValidPacket)
+                return PacketUtils.MakePacket(DBPacketListID.RESPONSE_CHAR_BASE_INFO, ValidPacket);
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"MakeResponseDBCharBaseInfoPacket에서 잘못된 패킷이 들어왔습니다.");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseDBUpdateGenderPacket(GameSendPacket Packet)
+        {
+            if (Packet is ResponseDBUpdateGenderPacket ValidPacket)
+                return PacketUtils.MakePacket(DBPacketListID.RESPONSE_UPDATE_GENDER, ValidPacket);
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"MakeResponseDBUpdateGenderPacket에서 잘못된 패킷이 들어왔습니다.");
+                return new byte[0];
+            }
+        }
+
+        private Memory<byte> MakeResponseDBUpdatePresetPacket(GameSendPacket Packet)
+        {
+            if (Packet is ResponseDBUpdatePresetPacket ValidPacket)
+                return PacketUtils.MakePacket(DBPacketListID.RESPONSE_UPDATE_PRESET, ValidPacket);
+            else
+            {
+                LogManager.GetSingletone.WriteLog($"MakeResponseDBUpdatePresetPacket에서 잘못된 패킷이 들어왔습니다.");
+                return new byte[0];
             }
         }
 

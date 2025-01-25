@@ -24,12 +24,39 @@ namespace DBServer.PacketPipeLine
         };
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
         private ActionBlock<dynamic> PacketProcessBlock;
+        private Dictionary<DBPacketListID, Func<Memory<byte>, dynamic>> MemoryLookUpTable;
+        private Dictionary<Type, Action<GameRecvPacket>> PacketLookUpTable;
 
 
 
 
         public GameServerRecvPacketPipeline()
         {
+            MemoryLookUpTable = new Dictionary<DBPacketListID, Func<Memory<byte>, dynamic>>()
+            {
+                { DBPacketListID.REQUEST_CHAR_BASE_INFO, MakeRequestDBCharBaseInfoPacket },
+                { DBPacketListID.REQUEST_CREATE_CHARACTER, MakeRequestDBCreateCharacterPacket },
+                { DBPacketListID.REQUEST_UPDATE_HEALTH_POINT, MakeRequestDBUpdateHealthPointPacket },
+                { DBPacketListID.REQUEST_UPDATE_MAGIC_POINT, MakeRequestDBUpdateMagicPointPacket },
+                { DBPacketListID.REQUEST_UPDATE_LEVEL_EXP, MakeRequestDBUpdateLevelExpPacket },
+                { DBPacketListID.REQUEST_UPDATE_JOB_LEVEL, MakeRequestDBUpdateJobLevelPacket },
+                { DBPacketListID.REQUEST_UPDATE_JOB, MakeRequestDBUpdateJobPacket },
+                { DBPacketListID.REQUEST_UPDATE_GENDER, MakeRequestDBUpdateGenderPacket },
+                { DBPacketListID.REQUEST_UPDATE_PRESET, MakeRequestDBUpdatePresetPacket }
+            };
+
+            PacketLookUpTable = new Dictionary<Type, Action<GameRecvPacket>>()
+            {
+                { typeof(RequestDBCharBaseInfoPacket), SP_RequestCharBaseInfo },
+                { typeof(RequestDBCreateCharacterPacket), SP_ReuquestCreateCharacter },
+                { typeof(RequestDBUpdateHealthPointPacket), SP_RequestUpdateHealthPoint },
+                { typeof(RequestDBUpdateMagicPointPacket), SP_RequestUpdateMagicPoint },
+                { typeof(RequestDBUpdateLevelExpPacket), SP_RequestUpdateLevelEXP },
+                { typeof(RequestDBUpdateJobLevelPacket), SP_RequestUpdateJobLevel },
+                { typeof(RequestDBUpdateJobPacket), SP_RequestUpdateJob },
+                { typeof(RequestDBUpdateGenderPacket), SP_RequestUpdateGender },
+                { typeof(RequestDBUpdatePresetPacket), SP_RequestUpdatePreset }
+            };
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -121,152 +148,220 @@ namespace DBServer.PacketPipeLine
             }
         }
 
-        private dynamic MakeMemoryToPacket(Memory<byte> packet)
+        private dynamic MakeMemoryToPacket(Memory<byte> Packet)
         {
-            DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref packet);
-
-            switch (ID)
+            DBPacketListID ID = PacketUtils.GetIDFromPacket<DBPacketListID>(ref Packet);
+            if(MemoryLookUpTable.TryGetValue(ID,out var MemoryFunc))
             {
-                case DBPacketListID.REQUEST_CHAR_BASE_INFO:
-                    RequestDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestDBCharBaseInfoPacket>(ref packet);
-                    return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
-                case DBPacketListID.REQUEST_CREATE_CHARACTER:
-                    RequestDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<RequestDBCreateCharacterPacket>(ref packet);
-                    return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
-                case DBPacketListID.REQUEST_UPDATE_HEALTH_POINT:
-                    RequestDBUpdateHealthPointPacket? UpdateHealthPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateHealthPointPacket>(ref packet);
-                    return UpdateHealthPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateHealthPointPacket;
-                case DBPacketListID.REQUEST_UPDATE_MAGIC_POINT:
-                    RequestDBUpdateMagicPointPacket? UpdateMagicPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateMagicPointPacket>(ref packet);
-                    return UpdateMagicPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateMagicPointPacket;
-                case DBPacketListID.REQUEST_UPDATE_LEVEL_EXP:
-                    RequestDBUpdateLevelExpPacket? UpdateLevelExpPacket = PacketUtils.GetPacketStruct<RequestDBUpdateLevelExpPacket>(ref packet);
-                    return UpdateLevelExpPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateLevelExpPacket;
-                case DBPacketListID.REQUEST_UPDATE_JOB_LEVEL:
-                    RequestDBUpdateJobLevelPacket? UpdateJobLevelPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobLevelPacket>(ref packet);
-                    return UpdateJobLevelPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobLevelPacket;
-                case DBPacketListID.REQUEST_UPDATE_JOB:
-                    RequestDBUpdateJobPacket? UpdateJobPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobPacket>(ref packet);
-                    return UpdateJobPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobPacket;
-                case DBPacketListID.REQUEST_UPDATE_GENDER:
-                    RequestDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<RequestDBUpdateGenderPacket>(ref packet);
-                    return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
-                case DBPacketListID.REQUEST_UPDATE_PRESET:
-                    RequestDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<RequestDBUpdatePresetPacket>(ref packet);
-                    return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
-                default:
-                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+                return MemoryFunc(Packet);
             }
+            else
+            {
+                return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+            }
+        }
+
+        private dynamic MakeRequestDBCharBaseInfoPacket(Memory<byte> packet)
+        {
+            RequestDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<RequestDBCharBaseInfoPacket>(ref packet);
+            return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
+        }
+
+        private dynamic MakeRequestDBCreateCharacterPacket(Memory<byte> packet)
+        {
+            RequestDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<RequestDBCreateCharacterPacket>(ref packet);
+            return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateHealthPointPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateHealthPointPacket? UpdateHealthPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateHealthPointPacket>(ref packet);
+            return UpdateHealthPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateHealthPointPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateMagicPointPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateMagicPointPacket? UpdateMagicPointPacket = PacketUtils.GetPacketStruct<RequestDBUpdateMagicPointPacket>(ref packet);
+            return UpdateMagicPointPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateMagicPointPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateLevelExpPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateLevelExpPacket? UpdateLevelExpPacket = PacketUtils.GetPacketStruct<RequestDBUpdateLevelExpPacket>(ref packet);
+            return UpdateLevelExpPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateLevelExpPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateJobLevelPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateJobLevelPacket? UpdateJobLevelPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobLevelPacket>(ref packet);
+            return UpdateJobLevelPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobLevelPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateJobPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateJobPacket? UpdateJobPacket = PacketUtils.GetPacketStruct<RequestDBUpdateJobPacket>(ref packet);
+            return UpdateJobPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateJobPacket;
+        }
+
+        private dynamic MakeRequestDBUpdateGenderPacket(Memory<byte> packet)
+        {
+            RequestDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<RequestDBUpdateGenderPacket>(ref packet);
+            return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
+        }
+
+        private dynamic MakeRequestDBUpdatePresetPacket(Memory<byte> packet)
+        {
+            RequestDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<RequestDBUpdatePresetPacket>(ref packet);
+            return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
         }
 
         public void ProcessPacket(dynamic Packet)
         {
             if (IsErrorPacket(Packet, "GameServerRecvProcessPacket"))
                 return;
-            switch (Packet)
+
+            if (PacketLookUpTable.TryGetValue(Packet.GetType(), out Action<GameRecvPacket> PacketFunc))
             {
-                case RequestDBCharBaseInfoPacket CharBaseInfoPacket:
-                    SP_RequestCharBaseInfo(CharBaseInfoPacket);
-                    break;
-                case RequestDBCreateCharacterPacket CreateCharacterPacket:
-                    SP_ReuquestCreateCharacter(CreateCharacterPacket);
-                    break;
-                case RequestDBUpdateHealthPointPacket UpdateHealthPointPacket:
-                    SP_RequestUpdateHealthPoint(UpdateHealthPointPacket);
-                    break;
-                case RequestDBUpdateMagicPointPacket UpdateMagicPointPacket:
-                    SP_RequestUpdateMagicPoint(UpdateMagicPointPacket);
-                    break;
-                case RequestDBUpdateLevelExpPacket UpdateLevelExpPacket:
-                    SP_RequestUpdateLevelEXP(UpdateLevelExpPacket);
-                    break;
-                case RequestDBUpdateJobLevelPacket UpdateJobLevelPacket:
-                    SP_RequestUpdateJobLevel(UpdateJobLevelPacket);
-                    break;
-                case RequestDBUpdateJobPacket UpdateJobPacket:
-                    SP_RequestUpdateJob(UpdateJobPacket);
-                    break;
-                case RequestDBUpdateGenderPacket UpdateGenderPacket:
-                    SP_RequestUpdateGender(UpdateGenderPacket);
-                    break;
-                case RequestDBUpdatePresetPacket UpdatePresetPacket:
-                    SP_RequestUpdatePreset(UpdatePresetPacket);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
-                    break;
+                PacketFunc(Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog("GameServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
             }
         }
 
-        private void SP_RequestCharBaseInfo(RequestDBCharBaseInfoPacket packet)
+        private void SP_RequestCharBaseInfo(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(packet, "RequestCharBaseInfo"))
+            if(Packet is not RequestDBCharBaseInfoPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestCharBaseInfo: RequestDBCharBaseInfoPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(packet.AccountID, packet.NickName);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestCharBaseInfo"))
+                return;
+
+            GameSQLReadCharacterPacket ReadCharacterPacket = new GameSQLReadCharacterPacket(ValidPacket.AccountID, ValidPacket.NickName);
             MainProxy.GetSingletone.HandleSQLPacket(ReadCharacterPacket);
         }
 
-        private void SP_ReuquestCreateCharacter(RequestDBCreateCharacterPacket packet)
+        private void SP_ReuquestCreateCharacter(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(packet, "RequestCreateCharacter"))
+            if(Packet is not RequestDBCreateCharacterPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_ReuquestCreateCharacter: RequestDBCreateCharacterPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLCreateCharacterPacket CreateCharacterPacket = new GameSQLCreateCharacterPacket(packet.AccountID, packet.Gender, packet.PresetID);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestCreateCharacter"))
+                return;
+
+            GameSQLCreateCharacterPacket CreateCharacterPacket = new GameSQLCreateCharacterPacket(ValidPacket.AccountID, ValidPacket.Gender, ValidPacket.PresetID);
             MainProxy.GetSingletone.HandleSQLPacket(CreateCharacterPacket);
         }
 
-        private void SP_RequestUpdateHealthPoint(RequestDBUpdateHealthPointPacket Packet)
+        private void SP_RequestUpdateHealthPoint(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateHealthPoint"))
+            if(Packet is not RequestDBUpdateHealthPointPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateHealthPoint: RequestDBUpdateHealthPointPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateHealthPoint UpdateHealthPacket = new GameSQLUpdateHealthPoint(Packet.AccountID, Packet.CurrentHP);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdateHealthPoint"))
+                return;
+
+            GameSQLUpdateHealthPoint UpdateHealthPacket = new GameSQLUpdateHealthPoint(ValidPacket.AccountID, ValidPacket.CurrentHP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateHealthPacket);
         }
 
-        private void SP_RequestUpdateMagicPoint(RequestDBUpdateMagicPointPacket Packet)
+        private void SP_RequestUpdateMagicPoint(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateMagicPoint"))
+            if (Packet is not RequestDBUpdateMagicPointPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateMagicPoint: RequestDBUpdateMagicPointPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateMagicPoint UpdateMagicPacket = new GameSQLUpdateMagicPoint(Packet.AccountID, Packet.CurrentMP);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdateMagicPoint"))
+                return;
+
+            GameSQLUpdateMagicPoint UpdateMagicPacket = new GameSQLUpdateMagicPoint(ValidPacket.AccountID, ValidPacket.CurrentMP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateMagicPacket);
         }
 
-        private void SP_RequestUpdateLevelEXP(RequestDBUpdateLevelExpPacket Packet)
+        private void SP_RequestUpdateLevelEXP(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateLevelEXP"))
+            if(Packet is not RequestDBUpdateLevelExpPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateLevelEXP: RequestDBUpdateLevelExpPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateLevelEXP UpdateLevelExpPacket = new GameSQLUpdateLevelEXP(Packet.AccountID, Packet.Level, Packet.CurrentEXP);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdateLevelEXP"))
+                return;
+
+            GameSQLUpdateLevelEXP UpdateLevelExpPacket = new GameSQLUpdateLevelEXP(ValidPacket.AccountID, ValidPacket.Level, ValidPacket.CurrentEXP);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateLevelExpPacket);
         }
 
-        private void SP_RequestUpdateJobLevel(RequestDBUpdateJobLevelPacket Packet)
+        private void SP_RequestUpdateJobLevel(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateJobLevel"))
+            if(Packet is not RequestDBUpdateJobLevelPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateJobLevel: RequestDBUpdateJobLevelPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateJobLevel UpdateJobLevelPacket = new GameSQLUpdateJobLevel(Packet.AccountID, Packet.Level);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdateJobLevel"))
+                return;
+
+            GameSQLUpdateJobLevel UpdateJobLevelPacket = new GameSQLUpdateJobLevel(ValidPacket.AccountID, ValidPacket.Level);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateJobLevelPacket);
         }
 
-        private void SP_RequestUpdateJob(RequestDBUpdateJobPacket Packet)
+        private void SP_RequestUpdateJob(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateJob"))
+            if(Packet is not RequestDBUpdateJobPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateJob: RequestDBUpdateJobPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateJob UpdateJobPacket = new GameSQLUpdateJob(Packet.AccountID, Packet.Job);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdateJob"))
+                return;
+
+            GameSQLUpdateJob UpdateJobPacket = new GameSQLUpdateJob(ValidPacket.AccountID, ValidPacket.Job);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateJobPacket);
         }
 
-        private void SP_RequestUpdateGender(RequestDBUpdateGenderPacket Packet)
+        private void SP_RequestUpdateGender(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdateGender"))
+            if (Packet is not RequestDBUpdateGenderPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdateGender: RequestDBUpdateGenderPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdateGender UpdateGenderPacket = new GameSQLUpdateGender(Packet.AccountID, Packet.Gender);
+            }
+
+                if (IsErrorPacket(ValidPacket, "RequestUpdateGender"))
+                return;
+
+            GameSQLUpdateGender UpdateGenderPacket = new GameSQLUpdateGender(ValidPacket.AccountID, ValidPacket.Gender);
             MainProxy.GetSingletone.HandleSQLPacket(UpdateGenderPacket);
         }
 
-        private void SP_RequestUpdatePreset(RequestDBUpdatePresetPacket Packet)
+        private void SP_RequestUpdatePreset(GameRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "RequestUpdatePreset"))
+            if(Packet is not RequestDBUpdatePresetPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"SP_RequestUpdatePreset: RequestDBUpdatePresetPacket이 아닙니다. {Packet}");
                 return;
-            GameSQLUpdatePreset UpdatePresetPacket = new GameSQLUpdatePreset(Packet.AccountID, Packet.PresetNumber);
+            }
+
+            if (IsErrorPacket(ValidPacket, "RequestUpdatePreset"))
+                return;
+
+            GameSQLUpdatePreset UpdatePresetPacket = new GameSQLUpdatePreset(ValidPacket.AccountID, ValidPacket.PresetNumber);
             MainProxy.GetSingletone.HandleSQLPacket(UpdatePresetPacket);
         }
     }

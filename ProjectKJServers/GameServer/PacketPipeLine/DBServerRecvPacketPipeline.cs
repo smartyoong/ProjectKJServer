@@ -30,9 +30,28 @@ namespace GameServer.PacketPipeLine
         };
         private TransformBlock<Memory<byte>, dynamic> MemoryToPacketBlock;
         private ActionBlock<dynamic> PacketProcessBlock;
+        private Dictionary<GameDBPacketListID, Func<Memory<byte>, dynamic>> MemoryLookUpTable;
+        private Dictionary<Type, Action<DBRecvPacket>> PacketLookUpTable;
 
         public DBServerRecvPacketPipeline()
         {
+            MemoryLookUpTable = new Dictionary<GameDBPacketListID, Func<Memory<byte>, dynamic>>
+            {
+                { GameDBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, MakeResponseDBNeedToMakeCharacterPacket},
+                { GameDBPacketListID.RESPONSE_CREATE_CHARACTER, MakeResponseDBCreateCharacterPacket},
+                { GameDBPacketListID.RESPONSE_CHAR_BASE_INFO, MakeResponseDBCharBaseInfoPacket},
+                { GameDBPacketListID.RESPONSE_UPDATE_GENDER, MakeResponseDBUpdateGenderPacket},
+                { GameDBPacketListID.RESPONSE_UPDATE_PRESET, MakeResponseDBUpdatePresetPacket}
+            };
+
+            PacketLookUpTable = new Dictionary<Type, Action<DBRecvPacket>>
+            {
+                { typeof(ResponseDBNeedToMakeCharacterPacket), Func_ResponseNeedToMakeCharacter },
+                { typeof(ResponseDBCreateCharacterPacket), Func_ResponseCreateCharacter},
+                { typeof(ResponseDBCharBaseInfoPacket), Func_ResponseCharBaseInfo },
+                { typeof(ResponseDBUpdateGenderPacket), Func_ResponseUpdateGender },
+                { typeof(ResponseDBUpdatePresetPacket), Func_ResponseUpdatePreset }
+            };
 
             MemoryToPacketBlock = new TransformBlock<Memory<byte>, dynamic>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
             {
@@ -124,35 +143,18 @@ namespace GameServer.PacketPipeLine
             }
         }
 
-        private dynamic MakeMemoryToPacket(Memory<byte> packet)
+        private dynamic MakeMemoryToPacket(Memory<byte> Packet)
         {
-            GameDBPacketListID ID = PacketUtils.GetIDFromPacket<GameDBPacketListID>(ref packet);
+            GameDBPacketListID ID = PacketUtils.GetIDFromPacket<GameDBPacketListID>(ref Packet);
 
-            switch (ID)
+            if(MemoryLookUpTable.TryGetValue(ID,out var MemoryToPacketFunc))
             {
-                case GameDBPacketListID.RESPONSE_DB_TEST:
-                    ResponseDBTestPacket? TestPacket = PacketUtils.GetPacketStruct<ResponseDBTestPacket>(ref packet);
-                    if (TestPacket == null)
-                        return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL);
-                    else
-                        return TestPacket;
-                case GameDBPacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER:
-                    ResponseDBNeedToMakeCharacterPacket? NeedToMakeCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBNeedToMakeCharacterPacket>(ref packet);
-                    return NeedToMakeCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : NeedToMakeCharacterPacket;
-                case GameDBPacketListID.RESPONSE_CREATE_CHARACTER:
-                    ResponseDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBCreateCharacterPacket>(ref packet);
-                    return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
-                case GameDBPacketListID.RESPONSE_CHAR_BASE_INFO:
-                    ResponseDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseDBCharBaseInfoPacket>(ref packet);
-                    return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
-                case GameDBPacketListID.RESPONSE_UPDATE_GENDER:
-                    ResponseDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<ResponseDBUpdateGenderPacket>(ref packet);
-                    return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
-                case GameDBPacketListID.RESPONSE_UPDATE_PRESET:
-                    ResponseDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<ResponseDBUpdatePresetPacket>(ref packet);
-                    return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
-                default:
-                    return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
+                var TransferedMemory = MemoryToPacketFunc(Packet);
+                return TransferedMemory;
+            }
+            else
+            {
+                return new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NOT_ASSIGNED);
             }
         }
 
@@ -160,110 +162,143 @@ namespace GameServer.PacketPipeLine
         {
             if (IsErrorPacket(Packet, "DBServerRecvProcessPacket"))
                 return;
-            switch (Packet)
+            var PacketType = Packet.GetType();
+
+            if(PacketLookUpTable.TryGetValue(PacketType, out Action<DBRecvPacket> ProcessFunc))
             {
-                case ResponseDBTestPacket TestPacket:
-                    Func_DBTest(TestPacket);
-                    break;
-                case ResponseDBNeedToMakeCharacterPacket NeedToMakeCharacterPacket:
-                    Func_ResponseNeedToMakeCharacter(NeedToMakeCharacterPacket);
-                    break;
-                case ResponseDBCreateCharacterPacket CreateCharacterPacket:
-                    Func_ResponseCreateCharacter(CreateCharacterPacket);
-                    break;
-                case ResponseDBCharBaseInfoPacket CharBaseInfoPacket:
-                    Func_ResponseCharBaseInfo(CharBaseInfoPacket);
-                    break;
-                case ResponseDBUpdateGenderPacket UpdateGenderPacket:
-                    Func_ResponseUpdateGender(UpdateGenderPacket);
-                    break;
-                case ResponseDBUpdatePresetPacket UpdatePresetPacket:
-                    Func_ResponseUpdatePreset(UpdatePresetPacket);
-                    break;
-                default:
-                    LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
-                    break;
+                ProcessFunc(Packet);
+            }
+            else
+            {
+                LogManager.GetSingletone.WriteLog("DBServerRecvPacketPipeline.ProcessPacket: 알수 없는 패킷이 들어왔습니다.");
             }
         }
 
-        private void Func_DBTest(ResponseDBTestPacket packet)
+        private dynamic MakeResponseDBNeedToMakeCharacterPacket(Memory<byte> Packet)
         {
-            if (IsErrorPacket(packet, "ResponseDBTest"))
-                return;
-            LogManager.GetSingletone.WriteLog($"AccountID: {packet.AccountID} NickName: {packet.NickName} {packet.Level} {packet.Exp}");
-            MainProxy.GetSingletone.SendToLoginServer(GameLoginPacketListID.RESPONSE_USER_HASH_INFO, new ResponseLoginTestPacket(packet.AccountID, packet.NickName, packet.Level, packet.Exp));
+            ResponseDBNeedToMakeCharacterPacket? NeedToMakeCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBNeedToMakeCharacterPacket>(ref Packet);
+            return NeedToMakeCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : NeedToMakeCharacterPacket;
         }
 
-        private void Func_ResponseNeedToMakeCharacter(ResponseDBNeedToMakeCharacterPacket Packet)
+        private dynamic MakeResponseDBCreateCharacterPacket(Memory<byte> Packet)
         {
-            if (IsErrorPacket(Packet, "ResponseDBNeedToMakeNewCharcter"))
-                return;
+            ResponseDBCreateCharacterPacket? CreateCharacterPacket = PacketUtils.GetPacketStruct<ResponseDBCreateCharacterPacket>(ref Packet);
+            return CreateCharacterPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CreateCharacterPacket;
+        }
+
+        private dynamic MakeResponseDBCharBaseInfoPacket(Memory<byte> Packet)
+        {
+            ResponseDBCharBaseInfoPacket? CharBaseInfoPacket = PacketUtils.GetPacketStruct<ResponseDBCharBaseInfoPacket>(ref Packet);
+            return CharBaseInfoPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : CharBaseInfoPacket;
+        }
+
+        private dynamic MakeResponseDBUpdateGenderPacket(Memory<byte> Packet)
+        {
+            ResponseDBUpdateGenderPacket? UpdateGenderPacket = PacketUtils.GetPacketStruct<ResponseDBUpdateGenderPacket>(ref Packet);
+            return UpdateGenderPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdateGenderPacket;
+        }
+
+        private dynamic MakeResponseDBUpdatePresetPacket(Memory<byte> Packet)
+        {
+            ResponseDBUpdatePresetPacket? UpdatePresetPacket = PacketUtils.GetPacketStruct<ResponseDBUpdatePresetPacket>(ref Packet);
+            return UpdatePresetPacket == null ? new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL) : UpdatePresetPacket;
+        }
+
+        private void Func_ResponseNeedToMakeCharacter(DBRecvPacket Packet)
+        {
             const int NEED_TO_MAKE_CHARACTER = 1;
-            ResponseNeedToMakeCharcterPacket ResponsePacket = new ResponseNeedToMakeCharcterPacket(NEED_TO_MAKE_CHARACTER);
-            if (MainProxy.GetSingletone.GetClientSocketByAccountID(Packet.AccountID) == null)
+
+            if(Packet is not ResponseDBNeedToMakeCharacterPacket ValidPacket)
             {
-                LogManager.GetSingletone.WriteLog($"Func_ResponseNeedToMakeCharacter: {Packet.AccountID}에 해당하는 클라이언트 소켓이 없습니다.");
+                LogManager.GetSingletone.WriteLog("Func_ResponseNeedToMakeCharacter: ResponseDBNeedToMakeCharacterPacket이 아닌 패킷이 들어왔습니다.");
                 return;
             }
-            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ResponsePacket, Packet.AccountID);
+
+            ResponseNeedToMakeCharcterPacket ResponsePacket = new ResponseNeedToMakeCharcterPacket(NEED_TO_MAKE_CHARACTER);
+            if (MainProxy.GetSingletone.GetClientSocketByAccountID(ValidPacket.AccountID) == null)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseNeedToMakeCharacter: {ValidPacket.AccountID}에 해당하는 클라이언트 소켓이 없습니다.");
+                return;
+            }
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_NEED_TO_MAKE_CHARACTER, ResponsePacket, ValidPacket.AccountID);
         }
 
-        private void Func_ResponseCreateCharacter(ResponseDBCreateCharacterPacket Packet)
+        private void Func_ResponseCreateCharacter(DBRecvPacket Packet)
         {
             const int FAIL = -1;
-            if (IsErrorPacket(Packet, "ResponseCreateCharacter"))
-                return;
-            if (Packet.ErrorCode == FAIL)
+
+            if(Packet is not ResponseDBCreateCharacterPacket ValidPacket)
             {
-                LogManager.GetSingletone.WriteLog($"Func_ResponseCreateCharacter: {Packet.AccountID}에 캐릭터 생성 실패 ErrorCode: {Packet.ErrorCode}");
+                LogManager.GetSingletone.WriteLog("Func_ResponseCreateCharacter: ResponseDBCreateCharacterPacket이 아닌 패킷이 들어왔습니다.");
+                return;
             }
-            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(Packet.ErrorCode), Packet.AccountID);
+
+            if (ValidPacket.ErrorCode == FAIL)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseCreateCharacter: {ValidPacket.AccountID}에 캐릭터 생성 실패 ErrorCode: {ValidPacket.ErrorCode}");
+            }
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CREATE_CHARACTER, new ResponseCreateCharacterPacket(ValidPacket.ErrorCode), ValidPacket.AccountID);
         }
 
-        private void Func_ResponseCharBaseInfo(ResponseDBCharBaseInfoPacket Packet)
+        private void Func_ResponseCharBaseInfo(DBRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "ResponseCharBaseInfo"))
+
+            if(Packet is not ResponseDBCharBaseInfoPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog("Func_ResponseCharBaseInfo: ResponseDBCharBaseInfoPacket이 아닌 패킷이 들어왔습니다.");
                 return;
-            ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(Packet.AccountID, Packet.Gender, Packet.PresetNumber, Packet.Job,
-                Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP, Packet.HP, Packet.MP);
-            MainProxy.GetSingletone.CreateCharacter(Packet);
-            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket, Packet.AccountID);
+            }
+
+            ResponseCharBaseInfoPacket ResponsePacket = new ResponseCharBaseInfoPacket(ValidPacket.AccountID, ValidPacket.Gender, ValidPacket.PresetNumber, ValidPacket.Job,
+                ValidPacket.JobLevel, ValidPacket.MapID, ValidPacket.X, ValidPacket.Y, ValidPacket.Level, ValidPacket.EXP, ValidPacket.HP, ValidPacket.MP);
+            MainProxy.GetSingletone.CreateCharacter(ValidPacket);
+            MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_CHAR_BASE_INFO, ResponsePacket, ValidPacket.AccountID);
             //같은 맵 유저에게 해당 캐릭터를 렌더링하도록 명령내린다.
-            SendAnotherCharBaseInfoPacket SendPacket = new SendAnotherCharBaseInfoPacket(Packet.AccountID, Packet.Gender, Packet.PresetNumber, Packet.Job,
-                Packet.JobLevel, Packet.MapID, Packet.X, Packet.Y, Packet.Level, Packet.EXP, MainProxy.GetSingletone.GetNickName(Packet.AccountID),
-                -1, -1 /*최초 생성시에는 이동 목표가 없다*/, Packet.HP, Packet.MP);
+            SendAnotherCharBaseInfoPacket SendPacket = new SendAnotherCharBaseInfoPacket(ValidPacket.AccountID, ValidPacket.Gender, ValidPacket.PresetNumber, ValidPacket.Job,
+                ValidPacket.JobLevel, ValidPacket.MapID, ValidPacket.X, ValidPacket.Y, ValidPacket.Level, ValidPacket.EXP, MainProxy.GetSingletone.GetNickName(ValidPacket.AccountID),
+                -1, -1 /*최초 생성시에는 이동 목표가 없다*/, ValidPacket.HP, ValidPacket.MP);
 
-            MainProxy.GetSingletone.SendToSameMap(Packet.MapID, GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacket);
+            MainProxy.GetSingletone.SendToSameMap(ValidPacket.MapID, GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, SendPacket);
         }
 
-        private void Func_ResponseUpdateGender(ResponseDBUpdateGenderPacket Packet)
+        private void Func_ResponseUpdateGender(DBRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "ResponseUpdateGender"))
+
+            if(Packet is not ResponseDBUpdateGenderPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog("Func_ResponseUpdateGender: ResponseDBUpdateGenderPacket이 아닌 패킷이 들어왔습니다.");
                 return;
-            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(Packet.AccountID);
+            }
+
+            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(ValidPacket.AccountID);
 
             if (User == null)
             {
-                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdateGender: {Packet.AccountID}에 해당하는 캐릭터가 없습니다.");
+                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdateGender: {ValidPacket.AccountID}에 해당하는 캐릭터가 없습니다.");
                 return;
             }
 
             User.GetAppearanceComponent.ApplyChangeGender();
         }
 
-        private void Func_ResponseUpdatePreset(ResponseDBUpdatePresetPacket Packet)
+        private void Func_ResponseUpdatePreset(DBRecvPacket Packet)
         {
-            if (IsErrorPacket(Packet, "ResponseUpdatePreset"))
-                return;
-            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(Packet.AccountID);
 
-            if (User == null)
+            if (Packet is not ResponseDBUpdatePresetPacket ValidPacket)
             {
-                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdatePreset: {Packet.AccountID}에 해당하는 캐릭터가 없습니다.");
+                LogManager.GetSingletone.WriteLog("Func_ResponseUpdatePreset: ResponseDBUpdatePresetPacket이 아닌 패킷이 들어왔습니다.");
                 return;
             }
 
-            User.GetAppearanceComponent.ApplyChangePresetNumber(Packet.PresetNumber);
+            PlayerCharacter? User = MainProxy.GetSingletone.GetCharacterByAccountID(ValidPacket.AccountID);
+
+            if (User == null)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ResponseUpdatePreset: {ValidPacket.AccountID}에 해당하는 캐릭터가 없습니다.");
+                return;
+            }
+
+            User.GetAppearanceComponent.ApplyChangePresetNumber(ValidPacket.PresetNumber);
         }
     }
 }

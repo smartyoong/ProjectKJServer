@@ -1,5 +1,28 @@
 ﻿namespace GameServer.PacketList
 {
+    public interface ClientRecvPacket
+    { 
+    }
+
+    public interface ClientSendPacket
+    {
+    }
+
+    public interface DBSendPacket
+    { 
+    }
+    public interface DBRecvPacket
+    {
+    }
+
+    public interface LoginSendPacket
+    {
+    }
+
+    public interface LoginRecvPacket
+    {
+    }
+
     public enum GameLoginPacketListID
     {
         SEND_USER_HASH_INFO = 1,
@@ -92,16 +115,7 @@
     /// <param name="NickName"></param>
 
     [Serializable]
-    public struct ResponseLoginTestPacket(string AccountID, string NickName, int Level, int Exp)
-    {
-        public string AccountID { get; set; } = AccountID;
-        public string NickName { get; set; } = NickName;
-        public int Level { get; set; } = Level;
-        public int Exp { get; set; } = Exp;
-    }
-
-    [Serializable]
-    public struct SendUserHashInfoPacket(string Account, string HashValue, int ClientID, string IPAddr)
+    public struct SendUserHashInfoPacket(string Account, string HashValue, int ClientID, string IPAddr) : LoginRecvPacket
     {
         public string AccountID { get; set; } = Account;
         public string HashCode { get; set; } = HashValue;
@@ -112,7 +126,7 @@
     }
 
     [Serializable]
-    public struct ResponseUserHashInfoPacket(int ClientID, string NickName, int ErrCode, int TTL)
+    public struct ResponseUserHashInfoPacket(int ClientID, string NickName, int ErrCode, int TTL) : LoginSendPacket
     {
         public int ClientLoginID { get; set; } = ClientID;
         public string NickName { get; set; } = NickName;
@@ -120,7 +134,7 @@
         public int TimeToLive { get; set; } = TTL;
     }
     [Serializable]
-    public struct RequestKickUserPacket(string IPAddr, string AccountID)
+    public struct RequestKickUserPacket(string IPAddr, string AccountID) : LoginSendPacket
     {
         public string IPAddr { get; set; } = IPAddr;
         public string AccountID { get; set; } = AccountID;
@@ -136,14 +150,14 @@
 
     // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
     [Serializable]
-    public struct RequestDBTestPacket(string AccountID, string NickName)
+    public struct RequestDBTestPacket(string AccountID, string NickName) : DBSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
 
     [Serializable]
-    public struct ResponseDBTestPacket(string AccountID, string NickName, int Level, int Exp)
+    public struct ResponseDBTestPacket(string AccountID, string NickName, int Level, int Exp) : DBRecvPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -153,20 +167,20 @@
     }
 
     [Serializable]
-    public struct RequestDBCharBaseInfoPacket(string AccountID, string NickName)
+    public struct RequestDBCharBaseInfoPacket(string AccountID, string NickName) : DBSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
     }
     [Serializable]
-    public struct ResponseDBNeedToMakeCharacterPacket(string AccountID)
+    public struct ResponseDBNeedToMakeCharacterPacket(string AccountID) : DBRecvPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
     }
     [Serializable]
-    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP)
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP) : DBRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -184,7 +198,7 @@
     }
 
     [Serializable]
-    public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID)
+    public struct RequestDBCreateCharacterPacket(string AccountID, int Gender, int PresetID) : DBSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -193,7 +207,7 @@
     }
 
     [Serializable]
-    public struct ResponseDBCreateCharacterPacket(string AccountID, int ErrorCode)
+    public struct ResponseDBCreateCharacterPacket(string AccountID, int ErrorCode) : DBRecvPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -201,7 +215,7 @@
     }
 
     [Serializable]
-    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP)
+    public struct RequestDBUpdateHealthPointPacket(string AccountID, int CurrentHP) : DBSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -209,7 +223,7 @@
     }
 
     [Serializable]
-    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP)
+    public struct RequestDBUpdateMagicPointPacket(string AccountID, int CurrentMP) : DBSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -217,7 +231,7 @@
     }
 
     [Serializable]
-    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP)
+    public struct RequestDBUpdateLevelExpPacket(string AccountID, int Level, int CurrentEXP) : DBSendPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -226,35 +240,35 @@
     }
 
     [Serializable]
-    public struct RequestDBUpdateJobLevelPacket(string AccountID, int Level)
+    public struct RequestDBUpdateJobLevelPacket(string AccountID, int Level) : DBSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Level { get; set; } = Level;
     }
 
     [Serializable]
-    public struct RequestDBUpdateJobPacket(string AccountID, int Job)
+    public struct RequestDBUpdateJobPacket(string AccountID, int Job) : DBSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Job { get; set; } = Job;
     }
 
     [Serializable]
-    public struct RequestDBUpdateGenderPacket(string AccountID, int Gender)
+    public struct RequestDBUpdateGenderPacket(string AccountID, int Gender) : DBSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
     }
 
     [Serializable]
-    public struct RequestDBUpdatePresetPacket(string AccountID, int PresetNumber)
+    public struct RequestDBUpdatePresetPacket(string AccountID, int PresetNumber) : DBSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int PresetNumber { get; set; } = PresetNumber;
     }
 
     [Serializable]
-    public struct ResponseDBUpdateGenderPacket(string AccountID, int ErrorCode)
+    public struct ResponseDBUpdateGenderPacket(string AccountID, int ErrorCode) : DBRecvPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -262,7 +276,7 @@
     }
 
     [Serializable]
-    public struct ResponseDBUpdatePresetPacket(string AccountID, int ErrorCode, int PresetNumber)
+    public struct ResponseDBUpdatePresetPacket(string AccountID, int ErrorCode, int PresetNumber) : DBRecvPacket
     {
         // AccountID는 반드시 필요함 안그러면 클라한테 응답 못보냄!
         public string AccountID { get; set; } = AccountID;
@@ -275,27 +289,27 @@
     /// 클라이언트
     /// 
     [Serializable]
-    public struct RequestHashAuthCheckPacket(string AccountID, string HashCode)
+    public struct RequestHashAuthCheckPacket(string AccountID, string HashCode) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
     }
 
     [Serializable]
-    public struct ResponseHashAuthCheckPacket(string AccountID, int ErrorCode)
+    public struct ResponseHashAuthCheckPacket(string AccountID, int ErrorCode) : ClientSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct SendKickClientPacket(int Reason)
+    public struct SendKickClientPacket(int Reason) : ClientSendPacket
     {
         public int Reason { get; set; } = Reason;
     }
 
     [Serializable]
-    public struct RequestCharBaseInfoPacket(string AccountID, string HashCode, string NickName)
+    public struct RequestCharBaseInfoPacket(string AccountID, string HashCode, string NickName) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
@@ -303,13 +317,13 @@
     }
 
     [Serializable]
-    public struct ResponseNeedToMakeCharcterPacket(int ErrorCode)
+    public struct ResponseNeedToMakeCharcterPacket(int ErrorCode) : ClientSendPacket
     {
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct ResponseCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, int HP, int MP)
+    public struct ResponseCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, int HP, int MP) : ClientSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -326,7 +340,7 @@
     }
 
     [Serializable]
-    public struct RequestCreateCharacterPacket(string AccountID, string HashCode, int Gender, int PresetID)
+    public struct RequestCreateCharacterPacket(string AccountID, string HashCode, int Gender, int PresetID) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
@@ -335,13 +349,13 @@
     }
 
     [Serializable]
-    public struct ResponseCreateCharacterPacket(int ErrorCode)
+    public struct ResponseCreateCharacterPacket(int ErrorCode) : ClientSendPacket
     {
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct RequestMovePacket(string AccountID, string HashCode, int MapID, int X, int Y)
+    public struct RequestMovePacket(string AccountID, string HashCode, int MapID, int X, int Y) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
@@ -351,13 +365,13 @@
     }
 
     [Serializable]
-    public struct ResponseMovePacket(int ErrorCode)
+    public struct ResponseMovePacket(int ErrorCode) : ClientSendPacket
     {
         public int ErrorCode { get; set; } = ErrorCode;
     }
 
     [Serializable]
-    public struct SendAnotherCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int DestX, int DestY, int HP, int MP)
+    public struct SendAnotherCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int DestX, int DestY, int HP, int MP) : ClientSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -377,7 +391,7 @@
     }
 
     [Serializable]
-    public struct RequestGetSameMapUserPacket(string AccountID, string HashCode, int MapID)
+    public struct RequestGetSameMapUserPacket(string AccountID, string HashCode, int MapID) : ClientRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public string HashCode { get; set; } = HashCode;
@@ -385,14 +399,14 @@
     }
 
     [Serializable]
-    public struct SendUserMovePacket(string AccountID, int X, int Y)
+    public struct SendUserMovePacket(string AccountID, int X, int Y) : ClientSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int X { get; set; } = X;
         public int Y { get; set; } = Y;
     }
     [Serializable]
-    public struct RequestPingCheckPacket(int Hour, int Min, int Secs, int MSecs)
+    public struct RequestPingCheckPacket(int Hour, int Min, int Secs, int MSecs) : ClientRecvPacket
     {
         public int Hour { get; set; } = Hour;
         public int Min { get; set; } = Min;
@@ -400,7 +414,7 @@
         public int MSecs { get; set; } = MSecs;
     }
     [Serializable]
-    public struct ResponsePingCheckPacket(int Hour, int Min, int Secs, int MSecs)
+    public struct ResponsePingCheckPacket(int Hour, int Min, int Secs, int MSecs) : ClientSendPacket
     {
         public int Hour { get; set; } = Hour;
         public int Min { get; set; } = Min;
@@ -409,7 +423,7 @@
     }
 
     [Serializable]
-    public struct SendUserMoveArrivedPacket(string AccountID, int MapID ,int X, int Y)
+    public struct SendUserMoveArrivedPacket(string AccountID, int MapID ,int X, int Y) : ClientSendPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int MapID { get; set; } = MapID;

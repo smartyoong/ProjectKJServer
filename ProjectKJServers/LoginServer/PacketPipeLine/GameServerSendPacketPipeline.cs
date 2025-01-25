@@ -28,9 +28,15 @@ namespace LoginServer.PacketPipeLine
         };
         private TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>> PacketToMemoryBlock;
         private ActionBlock<Memory<byte>> MemorySendBlock;
+        private Dictionary<LoginGamePacketListID, Func<LoginGamePacketListID, GameSendPacket, Memory<byte>>> PacketLookUpTable;
 
         public GameServerSendPacketPipeline()
         {
+            PacketLookUpTable = new Dictionary<LoginGamePacketListID, Func<LoginGamePacketListID, GameSendPacket, Memory<byte>>>()
+            { 
+                { LoginGamePacketListID.SEND_USER_HASH_INFO, MakeSendUserHashInfoPacket }
+            };
+
             PacketToMemoryBlock = new TransformBlock<GameServerSendPipeLineWrapper<LoginGamePacketListID>, Memory<byte>>(MakePacketToMemory, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 5,
@@ -67,14 +73,23 @@ namespace LoginServer.PacketPipeLine
 
         private Memory<byte> MakePacketToMemory(GameServerSendPipeLineWrapper<LoginGamePacketListID> GamePacket)
         {
-            switch (GamePacket.PacketID)
+            if (!PacketLookUpTable.TryGetValue(GamePacket.PacketID, out var PacketFunc))
             {
-                case LoginGamePacketListID.SEND_USER_HASH_INFO:
-                    return PacketUtils.MakePacket(GamePacket.PacketID, (SendUserHashInfoPacket)GamePacket.Packet);
-                default:
-                    LogManager.GetSingletone.WriteLog($"GameServerSendPacketPipeline에서 정의되지 않은 패킷이 들어왔습니다.{GamePacket.PacketID}");
-                    return new byte[0];
+                LogManager.GetSingletone.WriteLog($"MakePacketToMemory에서 {GamePacket.PacketID}에 해당하는 패킷 함수가 없습니다.");
+                return new byte[0];
             }
+            return PacketFunc(GamePacket.PacketID, GamePacket.Packet);
+        }
+
+        private Memory<byte> MakeSendUserHashInfoPacket(LoginGamePacketListID ID, GameSendPacket Packet)
+        {
+            if(Packet is not SendUserHashInfoPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"MakeSendUserHashInfoPacket에서 SendUserHashInfoPacket이 아닌 패킷이 들어왔습니다.");
+                return new byte[0];
+            }
+
+            return PacketUtils.MakePacket(ID, ValidPacket);
         }
 
         private async Task SendMemory(Memory<byte> data)
