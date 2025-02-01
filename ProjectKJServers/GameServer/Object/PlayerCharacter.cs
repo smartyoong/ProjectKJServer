@@ -13,6 +13,7 @@ namespace GameServer.Object
     {
         public string AccountID { get; set; } = AccountID;
         public string NickName { get; set; } = NickName;
+        public bool IsGM { get; set; } = false;
     }
     internal class PlayerCharacter : Pawn
     {
@@ -55,6 +56,7 @@ namespace GameServer.Object
         public PawnType GetPawnType { get { return PawnType.Player; } }
 
         public string GetName { get { return AccountInfo.AccountID; } }
+        public void ActiveGMAuthority() { AccountInfo.IsGM = true; }
 
         public PlayerCharacter(string AccountID, string NickName, int MapID, int Job, int JobLevel, int Level, int EXP, int PresetNum, int Gender, Vector3 StartPosition, int HP, int MP)
         {

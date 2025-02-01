@@ -180,7 +180,7 @@
         public string AccountID { get; set; } = AccountID;
     }
     [Serializable]
-    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP) : DBRecvPacket
+    public struct ResponseDBCharBaseInfoPacket(string AccountID, int Gender, int PresetNumber, int Job, int JobLevel, int MapID, int X, int Y, int Level, int EXP, string NickName, int HP, int MP, bool GM) : DBRecvPacket
     {
         public string AccountID { get; set; } = AccountID;
         public int Gender { get; set; } = Gender;
@@ -195,6 +195,7 @@
         public string NickName { get; set; } = NickName;
         public int HP { get; set; } = HP;
         public int MP { get; set; } = MP;
+        public bool IsGM { get; set; } = GM;
     }
 
     [Serializable]

@@ -325,6 +325,12 @@ namespace GameServer.GameSystem
                 Info.JobLevel, Info.Level, Info.EXP, Info.PresetNumber, Info.Gender, new System.Numerics.Vector3(Info.X, Info.Y, 0)
                 ,Info.HP,Info.MP);
 
+            if (Info.IsGM)
+            {
+                NewCharacter.ActiveGMAuthority();
+                LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 GM 권한을 활성화했습니다.");
+            }
+
             if (OnlineCharacterDictionary.TryAdd(Info.AccountID, NewCharacter))
                 LogManager.GetSingletone.WriteLog($"계정 {Info.AccountID} {Info.NickName}의 캐릭터를 생성했습니다.");
 
