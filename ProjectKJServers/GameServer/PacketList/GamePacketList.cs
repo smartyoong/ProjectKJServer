@@ -69,7 +69,9 @@
         SEND_USER_MOVE = 14,
         REQUEST_PING_CHECK = 15,
         RESPONSE_PING_CHECK = 16,
-        SEND_USER_MOVE_ARRIVED = 17
+        SEND_USER_MOVE_ARRIVED = 17,
+        SEND_USER_SAY = 18,
+        REQUEST_USER_SAY = 19
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -430,5 +432,21 @@
         public int MapID { get; set; } = MapID;
         public int X { get; set; } = X;
         public int Y { get; set; } = Y;
+    }
+
+    [Serializable]
+    public struct SendUserSayPacket(string AccountID, string Sender, string Message, int SayType) : ClientSendPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string SenderNickName { get; set; } = Sender;
+        public string Message { get; set; } = Message;
+        public int SayType { get; set; } = SayType;
+    }
+
+    [Serializable]
+    public struct RequestUserSayPacket(string AccountID, string Message) : ClientRecvPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public string Message { get; set; } = Message;
     }
 }

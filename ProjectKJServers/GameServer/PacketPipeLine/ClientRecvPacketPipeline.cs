@@ -50,7 +50,8 @@ namespace GameServer.PacketPipeLine
                 { GamePacketListID.REQUEST_CREATE_CHARACTER, MakeRequestCreateCharacterPacket },
                 { GamePacketListID.REQUEST_MOVE, MakeRequestMovePacket },
                 { GamePacketListID.REQUEST_GET_SAME_MAP_USER, MakeRequestGetSameMapUserPacket },
-                { GamePacketListID.REQUEST_PING_CHECK, MakeRequestPingCheckPacket }
+                { GamePacketListID.REQUEST_PING_CHECK, MakeRequestPingCheckPacket },
+                { GamePacketListID.REQUEST_USER_SAY, MakeRequestUserSayPacket }
             };
 
             PacketLookUpTable = new Dictionary<Type, Action<ClientRecvPacket, int>>
@@ -60,7 +61,8 @@ namespace GameServer.PacketPipeLine
                 { typeof(RequestCreateCharacterPacket), DB_Func_RequestCreateCharacter },
                 { typeof(RequestMovePacket), Func_RequestMove },
                 { typeof(RequestGetSameMapUserPacket), Func_GetSameMapUser },
-                { typeof(RequestPingCheckPacket), Func_RequestPingCheckPacket }
+                { typeof(RequestPingCheckPacket), Func_RequestPingCheckPacket },
+                { typeof(RequestUserSayPacket), Func_ReuqestUserSayPacket }
             };
 
             MemoryToPacketBlock = new TransformBlock<ClientRecvMemoryPipeLineWrapper, ClientRecvPacketPipeLineWrapper>(MakeMemoryToPacket, new ExecutionDataflowBlockOptions
@@ -225,6 +227,14 @@ namespace GameServer.PacketPipeLine
             return RequestPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) :
                 new ClientRecvPacketPipeLineWrapper(RequestPacket, ClientID);
         }
+
+        private ClientRecvPacketPipeLineWrapper MakeRequestUserSayPacket(Memory<byte> Packet, int ClientID)
+        {
+            RequestUserSayPacket? RequestPacket = PacketUtils.GetPacketStruct<RequestUserSayPacket>(ref Packet);
+            return RequestPacket == null ? new ClientRecvPacketPipeLineWrapper(new ErrorPacket(GeneralErrorCode.ERR_PACKET_IS_NULL), ClientID) :
+                new ClientRecvPacketPipeLineWrapper(RequestPacket, ClientID);
+        }
+
         private void SendAuthFailToClient(string AccountID, int ClientID)
         {
             MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_HASH_AUTH_CHECK,
@@ -407,6 +417,29 @@ namespace GameServer.PacketPipeLine
             }
             // 해쉬코드 인증이 필요없는 단순 핑 체크용 패킷
             MainProxy.GetSingletone.SendToClient(GamePacketListID.RESPONSE_PING_CHECK, new ResponsePingCheckPacket(ValidPacket.Hour, ValidPacket.Min, ValidPacket.Secs, ValidPacket.MSecs), ClientID);
+        }
+
+        private void Func_ReuqestUserSayPacket(ClientRecvPacket Packet, int ClientID)
+        {
+            if (Packet is not RequestUserSayPacket ValidPacket)
+            {
+                LogManager.GetSingletone.WriteLog($"Func_ReuqestUserSayPacket 메서드에 다른 타입의 패킷이 들어왔습니다. {Packet}");
+                return;
+            }
+
+            // 채팅은 해쉬 코드 무시하자 DB 처리까지 필요 없으니까 필요하면 주석 제거
+            //string HashCode = ValidPacket.HashCode;
+            //if(!CheckHashCodeIfFailSend(ValidPacket.AccountID, ref HashCode, ClientID, "Func_ReuqestUserSayPacket"))
+            //    return;
+
+            // 채팅 패킷을 처리한다.
+            PlayerCharacter? Character = MainProxy.GetSingletone.GetPlayerCharacter(ValidPacket.AccountID);
+            if (Character == null)
+            {
+                LogManager.GetSingletone.WriteLog($"캐릭터가 없습니다. {ValidPacket.AccountID}");
+                return;
+            }
+            Character.Say(ValidPacket.Message);
         }
     }
 }

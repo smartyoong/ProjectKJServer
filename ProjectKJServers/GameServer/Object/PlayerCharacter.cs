@@ -28,6 +28,7 @@ namespace GameServer.Object
         private int CurrentMapID = 0;
         private HealthPointComponent HealthPointComponent;
         private MagicPointComponent MagicPointComponent;
+        private ChatComponent ChatComponent;
 
         public bool IsLineCollideObstacle { get; set; } = false;
         public bool IsCircleCollideObstacle { get; set; } = false;
@@ -94,6 +95,8 @@ namespace GameServer.Object
             MagicPointComponent = new MagicPointComponent(this, MaxMP, MP);
             MainProxy.GetSingletone.AddHealthPointComponent(HealthPointComponent);
             MainProxy.GetSingletone.AddMagicPointComponent(MagicPointComponent);
+
+            ChatComponent = new ChatComponent(this);
         }
 
         public bool MoveToLocation(Vector3 Position)
@@ -130,6 +133,11 @@ namespace GameServer.Object
             Vector3 CurrentPosition = MovementComponent.CharcaterStaticData.Position;
             SendUserMoveArrivedPacket Packet = new SendUserMoveArrivedPacket(GetAccountInfo.AccountID, CurrentMapID, (int)CurrentPosition.X, (int)CurrentPosition.Y);
             MainProxy.GetSingletone.SendToSameMap(CurrentMapID, GamePacketListID.SEND_USER_MOVE_ARRIVED, Packet);
+        }
+
+        public void Say(string Message)
+        {
+            ChatComponent.Say(Message);
         }
 
         private void OnObstacleBlock(CollisionType Type, ConvertObstacles Obstacle, Vector2 Normal, Vector2 HitPoint)

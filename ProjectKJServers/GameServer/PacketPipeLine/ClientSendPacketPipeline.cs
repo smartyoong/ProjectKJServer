@@ -43,7 +43,8 @@ namespace GameServer.PacketPipeLine
                 { GamePacketListID.SEND_ANOTHER_CHAR_BASE_INFO, MakeSendAnotherCharBaseInfoPacket },
                 { GamePacketListID.SEND_USER_MOVE, MakeSendUserMovePacket },
                 { GamePacketListID.RESPONSE_PING_CHECK, MakeResponsePingCheckPacket },
-                { GamePacketListID.SEND_USER_MOVE_ARRIVED, MakeSendUserMoveArrivedPacket }
+                { GamePacketListID.SEND_USER_MOVE_ARRIVED, MakeSendUserMoveArrivedPacket },
+                { GamePacketListID.SEND_USER_SAY, MakeSendUserSayPacket }
             };
 
             PacketToMemoryBlock = new TransformBlock<ClientSendPacketPipeLineWrapper<GamePacketListID>, ClientSendMemoryPipeLineWrapper>(MakePacketToMemory, new ExecutionDataflowBlockOptions
@@ -149,6 +150,11 @@ namespace GameServer.PacketPipeLine
         private ClientSendMemoryPipeLineWrapper MakeSendUserMoveArrivedPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
         {
             return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendUserMoveArrivedPacket)Packet), ClientID);
+        }
+
+        private ClientSendMemoryPipeLineWrapper MakeSendUserSayPacket(GamePacketListID ID, ClientSendPacket Packet, int ClientID)
+        {
+            return new ClientSendMemoryPipeLineWrapper(PacketUtils.MakePacket(ID, (SendUserSayPacket)Packet), ClientID);
         }
     }
 }
