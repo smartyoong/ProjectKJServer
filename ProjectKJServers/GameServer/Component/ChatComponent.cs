@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,9 +34,16 @@ namespace GameServer.Component
         }
 
         private Pawn Owner;
+        private Dictionary<string, Action<string>> GMCommandLookUpTable;
         public ChatComponent(Pawn Owner)
         {
             this.Owner = Owner;
+            GMCommandLookUpTable = new Dictionary<string, Action<string>>
+            {
+                { "ChangeJob", CommandChangeJob },
+                { "ChangeGender", CommandChangeGender },
+                { "ChangePreset", CommandChangePreset }
+            };
         }
 
         public void Say(string Message)
@@ -130,6 +138,13 @@ namespace GameServer.Component
             // 어차피 ChatMessage의 Message는 띄어쓰기가 구분되어 있는 상태로 들어옴 위의 함수에서는 타입만 제거한 상태로 들어옴
             // 그래서 여기서 Split으로 써도 무방함
             // 추후에 작업하자
+
+            string[] SplitedMessage = Message.Message.Split(' ');
+            if (GMCommandLookUpTable.ContainsKey(SplitedMessage[0]))
+            {
+                //[0] 은 명령어이기 때문에 제외하고 넘겨준다.
+                GMCommandLookUpTable[SplitedMessage[0]](Message.Message.Substring(SplitedMessage[0].Length));
+            }
         }
 
         private void Whisper(ChatMessage Message)
@@ -149,6 +164,21 @@ namespace GameServer.Component
 
         private void BroadcastToAll(ChatMessage Message)
         {
+        }
+
+        private void CommandChangeJob(string Message)
+        {
+            // 이건 나중에 작업하자
+        }
+
+        private void CommandChangeGender(string Message)
+        {
+            // 이건 나중에 작업하자
+        }
+
+        private void CommandChangePreset(string Message)
+        {
+            // 이건 나중에 작업하자
         }
     }
 }
