@@ -166,6 +166,8 @@ namespace GameServer.Component
         {
         }
 
+        // 아래의 Command들은 따로 Class화 시킬 수 있나? 펑크터처럼
+
         private void CommandChangeJob(string Message)
         {
             // 이건 나중에 작업하자
