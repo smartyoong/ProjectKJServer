@@ -76,6 +76,7 @@ namespace GameServer.Component
         private ChatMessage ParsingMessage(string Message)
         {
             ChatMessage Chat = new ChatMessage();
+            // 여기 테스트 해보자 버그 수정 필요
             string[] SplitedMessage = Message.Split(' ');
             switch(SplitedMessage[0])
             {
