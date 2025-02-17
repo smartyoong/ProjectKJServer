@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CoreUtility.Utility;
 using GameServer.MainUI;
+using GameServer.Mehtod;
 using GameServer.Object;
 using GameServer.PacketList;
 
@@ -129,11 +130,9 @@ namespace GameServer.Component
 
         private void GiveOrder(ChatMessage Message)
         {
-            PlayerCharacter? Player = Owner as PlayerCharacter;
-            if (Player == null)
+            if (!IsOwnerGM())
                 return;
-            if (Player.GetAccountInfo.IsGM == false)
-                return;
+
             LogManager.GetSingletone.WriteLog("운영자 명령어가 들어옴");
             // 어차피 ChatMessage의 Message는 띄어쓰기가 구분되어 있는 상태로 들어옴 위의 함수에서는 타입만 제거한 상태로 들어옴
             // 그래서 여기서 Split으로 써도 무방함
@@ -166,21 +165,43 @@ namespace GameServer.Component
         {
         }
 
+        private bool IsOwnerGM()
+        {
+            PlayerCharacter? Player = Owner as PlayerCharacter;
+            if (Player == null)
+                return false;
+            if (Player.GetAccountInfo.IsGM == false)
+                return false;
+
+            return true;
+        }
+
         // 아래의 Command들은 따로 Class화 시킬 수 있나? 펑크터처럼
 
         private void CommandChangeJob(string Message)
         {
-            // 이건 나중에 작업하자
+            if (!IsOwnerGM())
+                return;
+
+            PlayerCharacter? User = Owner as PlayerCharacter;
+            GMCommand.CommandChangeJob(User!, Convert.ToInt32(Message));
         }
 
         private void CommandChangeGender(string Message)
         {
-            // 이건 나중에 작업하자
+            if (!IsOwnerGM())
+                return;
+            PlayerCharacter? User = Owner as PlayerCharacter;
+            GMCommand.CommandChangeGender(User!);
         }
 
         private void CommandChangePreset(string Message)
         {
-            // 이건 나중에 작업하자
+            if (!IsOwnerGM())
+                return;
+
+            PlayerCharacter? User = Owner as PlayerCharacter;
+            GMCommand.CommandChangePreset(User!, Convert.ToInt32(Message));
         }
     }
 }
