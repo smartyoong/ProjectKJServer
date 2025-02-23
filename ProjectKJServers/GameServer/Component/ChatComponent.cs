@@ -89,9 +89,6 @@ namespace GameServer.Component
                 case "/a":
                     Chat.Type = ChatType.BroadcastToAll;
                     break;
-                case "/o":
-                    Chat.Type = ChatType.OperatiorCommand;
-                    break;
                 case "/f":
                     Chat.Type = ChatType.BroadcastToFriend;
                     break;
@@ -125,6 +122,15 @@ namespace GameServer.Component
 
             Chat.Message = Message.Substring(SplitedMessage[0].Length + SplitedMessage[1].Length + 2);
             Chat.Time = DateTime.Now;
+
+            // 명령어 필터링
+            if(Chat.Type == ChatType.BroadcastToSameMap && SplitedMessage[2] == "/o")
+            {
+                Chat.Type = ChatType.OperatiorCommand;
+                // 3을 더하는 이유는 Split한 기준이 띄어쓰기이기 때문에 띄어쓰기가 3개이기 때문
+                Chat.Message = Message.Substring(SplitedMessage[0].Length + SplitedMessage[1].Length + SplitedMessage[2].Length + 3);
+            }
+
             return Chat;
         }
 
