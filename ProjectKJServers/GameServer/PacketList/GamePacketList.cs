@@ -71,7 +71,11 @@
         RESPONSE_PING_CHECK = 16,
         SEND_USER_MOVE_ARRIVED = 17,
         SEND_USER_SAY = 18,
-        REQUEST_USER_SAY = 19
+        REQUEST_USER_SAY = 19,
+        SEND_LEVEL_UP = 20,
+        SEND_JOB_CHANGE = 21,
+        SEND_GENDER_CHANGE = 22,
+        SEND_PRESET_CHANGE = 23
     }
 
     // 래핑 클래스들은 한번 생성되고 불변으로 매개변수 전달용으로만 사용할 것이기에 Record가 적합
@@ -448,5 +452,35 @@
     {
         public string AccountID { get; set; } = AccountID;
         public string Message { get; set; } = Message;
+    }
+
+    [Serializable]
+    public struct SendLevelUpPacket(string AccountID, int Level, int EXP) : ClientSendPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Level { get; set; } = Level;
+        public int EXP { get; set; } = EXP;
+    }
+
+    [Serializable]
+    public struct SendJobChangePacket(string AccountID, int Job, int JobLevel) : ClientSendPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int Job { get; set; } = Job;
+        public int JobLevel { get; set; } = JobLevel;
+    }
+
+    [Serializable]
+    public struct SendGenderChangePacket(string AccountID, int Gendertype) : ClientSendPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int GenderType { get; set; } = Gendertype;
+    }
+
+    [Serializable]
+    public struct SendPresetChangePacket(string AccountID, int PresetNumber) : ClientSendPacket
+    {
+        public string AccountID { get; set; } = AccountID;
+        public int PresetNumber { get; set; } = PresetNumber;
     }
 }

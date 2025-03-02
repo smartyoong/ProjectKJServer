@@ -61,16 +61,15 @@ namespace GameServer.Component
         {
             // 성별은 0 혹은 1밖에 없다.
             Gender = (GenderType)(((int)Gender + 1) % 2);
-            //클라한테 전송해야한다. 이건 좀따가 만들자
+            SendGenderChangePacket Packet = new SendGenderChangePacket(Owner.GetName, (int)Gender);
+            MainProxy.GetSingletone.SendToSameMap(Owner.GetCurrentMapID, GamePacketListID.SEND_GENDER_CHANGE, Packet);
         }
 
         public void ApplyChangePresetNumber(int NewPresetNumber)
         {
             PresetNumber = NewPresetNumber;
-            //클라한테 전송해야한다. 이건 좀따가 만들자
+            SendPresetChangePacket Packet = new SendPresetChangePacket(Owner.GetName, PresetNumber);
+            MainProxy.GetSingletone.SendToSameMap(Owner.GetCurrentMapID, GamePacketListID.SEND_PRESET_CHANGE, Packet);
         }
-
-        // 이거 완성하면 채팅 기능 만들자
-        // 그래서 채팅 기능으로 명령어로 로직 문제 없는지 확인하면 될듯
     }
 }

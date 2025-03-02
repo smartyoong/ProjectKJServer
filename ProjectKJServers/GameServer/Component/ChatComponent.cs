@@ -163,7 +163,7 @@ namespace GameServer.Component
 
         private void BroadcastToSameMap(ChatMessage Message)
         {
-            LogManager.GetSingletone.WriteLog($"[{Message.Sender}] : {Message.Message} : {Message.Time}");
+            //LogManager.GetSingletone.WriteLog($"[{Message.Sender}] : {Message.Message} : {Message.Time}");
             SendUserSayPacket Packet = new SendUserSayPacket(Owner.GetName, Message.Sender, Message.Message, ((int)ChatType.BroadcastToSameMap));
             MainProxy.GetSingletone.SendToSameMap(Owner.GetCurrentMapID, GamePacketListID.SEND_USER_SAY, Packet);
         }
@@ -183,7 +183,6 @@ namespace GameServer.Component
             return true;
         }
 
-        // 아래의 Command들은 따로 Class화 시킬 수 있나? 펑크터처럼
 
         private void CommandChangeJob(string Message)
         {

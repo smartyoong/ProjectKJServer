@@ -54,7 +54,8 @@ namespace GameServer.Component
             }
             RequestDBUpdateJobLevelPacket Packet = new RequestDBUpdateJobLevelPacket(Owner.GetName,Level);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_UPDATE_JOB_LEVEL,Packet);
-            //클라한테 전송해야한다. 이건 좀따가 만들자
+            SendLevelUpPacket LevelUpPacket = new SendLevelUpPacket(Owner.GetName, Level,0);
+            MainProxy.GetSingletone.SendToSameMap(Owner.GetCurrentMapID, GamePacketListID.SEND_LEVEL_UP, LevelUpPacket);
         }
 
         public void JobChange(int JobKind)
@@ -69,7 +70,8 @@ namespace GameServer.Component
 
             RequestDBUpdateJobPacket Packet = new RequestDBUpdateJobPacket(Owner.GetName, JobKind);
             MainProxy.GetSingletone.SendToDBServer(GameDBPacketListID.REQUEST_UPDATE_JOB, Packet);
-            //클라한테 전송해야한다. 이건 좀따가 만들자
+            SendJobChangePacket JobChangePacket = new SendJobChangePacket(Owner.GetName, JobKind, 0);
+            MainProxy.GetSingletone.SendToSameMap(Owner.GetCurrentMapID, GamePacketListID.SEND_JOB_CHANGE, JobChangePacket);
         }
 
     }
