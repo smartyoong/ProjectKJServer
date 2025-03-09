@@ -61,6 +61,7 @@
             CPUTemperatureLabel = new Label();
             CPUUsageTextBox = new TextBox();
             CPUUsageLabel = new Label();
+            MoniotorCheckBox = new CheckBox();
             SuspendLayout();
             // 
             // ServerStatusTextBox
@@ -392,11 +393,23 @@
             CPUUsageLabel.TabIndex = 39;
             CPUUsageLabel.Text = "CPU 사용량 : ";
             // 
+            // MoniotorCheckBox
+            // 
+            MoniotorCheckBox.AutoSize = true;
+            MoniotorCheckBox.Location = new Point(625, 105);
+            MoniotorCheckBox.Name = "MoniotorCheckBox";
+            MoniotorCheckBox.Size = new Size(102, 19);
+            MoniotorCheckBox.TabIndex = 67;
+            MoniotorCheckBox.Text = "프로세스 감시";
+            MoniotorCheckBox.UseVisualStyleBackColor = true;
+            MoniotorCheckBox.CheckedChanged += MoniotorCheckBox_CheckedChanged;
+            // 
             // DBServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1072, 450);
+            Controls.Add(MoniotorCheckBox);
             Controls.Add(label9);
             Controls.Add(label8);
             Controls.Add(label7);
@@ -470,5 +483,6 @@
         private Label CPUTemperatureLabel;
         private TextBox CPUUsageTextBox;
         private Label CPUUsageLabel;
+        private CheckBox MoniotorCheckBox;
     }
 }

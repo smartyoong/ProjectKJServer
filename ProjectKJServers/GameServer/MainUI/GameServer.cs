@@ -23,6 +23,8 @@ namespace GameServer
         private delegate void DelegateWriteErrorLog(Exception ex);
         private DelegateWriteLog WriteFileLog;
         private DelegateWriteErrorLog WriteErrorLog;
+        private ProcessMonitor ProcessMonitorSystem;
+        private CancellationTokenSource ProcessManagerToken;
 
         public GameServer()
         {
@@ -30,6 +32,8 @@ namespace GameServer
             Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             LogManager.SetLogPath(GameServerSettings.Default.LogDirectory);
+            ProcessMonitorSystem = new ProcessMonitor();
+            ProcessManagerToken = new CancellationTokenSource();
             UIEvent.GetSingletone.SubscribeLogErrorEvent(log => MessageBox.Show(log));
             UIEvent.GetSingletone.SubscribeLogEvent(
             Log =>
@@ -163,6 +167,7 @@ namespace GameServer
             WriteFileLog("게임 서버를 시작합니다.");
             ServerStartButton.Enabled = false;
             ServerStopButton.Enabled = true;
+            CheckProcessMonitor();
             WriteFileLog("게임 엔진을 시작합니다.");
             MainProxy.GetSingletone.StartGameEngine();
             WriteFileLog("로그인 서버의 연결을 대기합니다.");
@@ -211,6 +216,8 @@ namespace GameServer
             await Task.Delay(TimeSpan.FromSeconds(2));
             WriteFileLog("연결중인 모든 소켓을 중단합니다.");
             await SocketManager.GetSingletone.Cancel();
+            WriteFileLog("프로세스 모니터를 종료합니다.");
+            ProcessManagerToken.Cancel();
             WriteFileLog("잠시후 로그 매니저를 종료하고 게임 서버를 종료합니다.");
             await Task.Delay(TimeSpan.FromSeconds(2));
             LogManager.GetSingletone.Close();
@@ -267,6 +274,29 @@ namespace GameServer
         private void UpdateThreadUsage(float ThreadUsage)
         {
             ThreadUsageTextBox.Text = ThreadUsage.ToString();
+        }
+
+        private void MoniotorCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+                Invoke(new Action(() => MoniotorCheckBox_CheckedChanged(sender, e)));
+            else
+                ProcessMonitorSystem.Activate(MoniotorCheckBox.Checked);
+        }
+        private void CheckProcessMonitor()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    while (!ProcessManagerToken.Token.IsCancellationRequested)
+                        ProcessMonitorSystem.Update();
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    WriteErrorLog(ex);
+                }
+            }, ProcessManagerToken.Token);
         }
     }
 }

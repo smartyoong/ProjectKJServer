@@ -17,6 +17,7 @@ namespace CoreUtility.Utility
         private PerformanceCounter FileIOCounter;
         private bool IsAlreadyDisposed = false;
         private long LastTickCount = 0;
+        private long IsActive = 0;
 
         public ProcessMonitor()
         {
@@ -32,6 +33,10 @@ namespace CoreUtility.Utility
 
         public void Update()
         {
+            if (Interlocked.Read(ref IsActive) == 0)
+            {
+                return;
+            }
             long CurrentTickCount = Environment.TickCount;
             if (CurrentTickCount - LastTickCount < 2 * TimeSpan.MillisecondsPerMinute)
             {
@@ -39,6 +44,11 @@ namespace CoreUtility.Utility
             }
             UpdateAllInfo();
             LastTickCount = CurrentTickCount;
+        }
+
+        public void Activate(bool Active)
+        {
+            Interlocked.Exchange(ref IsActive, Active ? 1 : 0);
         }
 
         private void UpdateAllInfo()

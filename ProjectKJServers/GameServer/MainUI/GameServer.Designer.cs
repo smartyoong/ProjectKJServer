@@ -64,6 +64,7 @@
             label7 = new Label();
             label8 = new Label();
             label9 = new Label();
+            MoniotorCheckBox = new CheckBox();
             SuspendLayout();
             // 
             // ServerStopButton
@@ -426,11 +427,23 @@
             label9.TabIndex = 38;
             label9.Text = "개";
             // 
+            // MoniotorCheckBox
+            // 
+            MoniotorCheckBox.AutoSize = true;
+            MoniotorCheckBox.Location = new Point(626, 183);
+            MoniotorCheckBox.Name = "MoniotorCheckBox";
+            MoniotorCheckBox.Size = new Size(102, 19);
+            MoniotorCheckBox.TabIndex = 39;
+            MoniotorCheckBox.Text = "프로세스 감시";
+            MoniotorCheckBox.UseVisualStyleBackColor = true;
+            MoniotorCheckBox.CheckedChanged += MoniotorCheckBox_CheckedChanged;
+            // 
             // GameServer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1072, 450);
+            Controls.Add(MoniotorCheckBox);
             Controls.Add(label9);
             Controls.Add(label8);
             Controls.Add(label7);
@@ -511,5 +524,6 @@
         private Label label7;
         private Label label8;
         private Label label9;
+        private CheckBox MoniotorCheckBox;
     }
 }

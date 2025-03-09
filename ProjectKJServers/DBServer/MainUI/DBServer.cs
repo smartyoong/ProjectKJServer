@@ -204,14 +204,22 @@ namespace DBServer
             {
                 try
                 {
-                    while(!ProcessManagerToken.Token.IsCancellationRequested)
+                    while (!ProcessManagerToken.Token.IsCancellationRequested)
                         ProcessManager.Update();
                 }
                 catch (Exception ex) when (!(ex is OperationCanceledException))
                 {
                     WriteErrorLog(ex);
                 }
-            },ProcessManagerToken.Token);
+            }, ProcessManagerToken.Token);
+        }
+
+        private void MoniotorCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+                Invoke(new Action(() => MoniotorCheckBox_CheckedChanged(sender, e)));
+            else
+                ProcessManager.Activate(MoniotorCheckBox.Checked);
         }
     }
 }

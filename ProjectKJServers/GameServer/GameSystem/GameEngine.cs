@@ -30,7 +30,6 @@ namespace GameServer.GameSystem
         private BehaviorTreeSystem BehaviorSystem;
         private GOAPSystem GOAPSystem;
         private ActionManagerSystem ActionManagerSystem;
-        private ProcessMonitor ProcessMonitorSystem;
         private AStarPathFindSystem AStarPathFindSystem;
         private EuclideanHuristic EuclidHuristicMethod;
         private EXPSystem EXPSystem;
@@ -45,7 +44,6 @@ namespace GameServer.GameSystem
             BehaviorSystem = new BehaviorTreeSystem();
             GOAPSystem = new GOAPSystem();
             ActionManagerSystem = new ActionManagerSystem();
-            ProcessMonitorSystem = new ProcessMonitor();
             AStarPathFindSystem = new AStarPathFindSystem();
             EuclidHuristicMethod = new EuclideanHuristic();
             EXPSystem = new EXPSystem();
@@ -128,7 +126,6 @@ namespace GameServer.GameSystem
                     BehaviorSystem.Update();
                     GOAPSystem.Update();
                     ActionManagerSystem.Update();
-                    ProcessMonitorSystem.Update();
                     EXPSystem.Update();
                     HealthSystem.Update();
                 }

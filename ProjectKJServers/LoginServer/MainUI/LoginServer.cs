@@ -271,5 +271,13 @@ namespace LoginServer
                 }
             }, ProcessManagerToken.Token);
         }
+
+        private void MoniotorCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+                Invoke(new Action(() => MoniotorCheckBox_CheckedChanged(sender, e)));
+            else
+                ProcessManager.Activate(MoniotorCheckBox.Checked);
+        }
     }
 }
